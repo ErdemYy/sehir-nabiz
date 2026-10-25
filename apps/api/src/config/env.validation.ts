@@ -10,9 +10,9 @@ export const EnvironmentSchema = z.object({
   DATABASE_URL: z
     .string()
     .optional()
-    .default('postgresql://postgres:postgres_secure_dev_password@localhost:5432/sehir_nabiz'),
-  DB_HOST: z.string().default('localhost'),
-  DB_PORT: z.coerce.number().default(5432),
+    .default('postgresql://postgres:postgres_secure_dev_password@localhost:5434/sehir_nabiz'),
+  DB_HOST: z.string().default('127.0.0.1'),
+  DB_PORT: z.coerce.number().default(5434),
   DB_USERNAME: z.string().default('postgres'),
   DB_PASSWORD: z.string().default('postgres_secure_dev_password'),
   DB_DATABASE: z.string().default('sehir_nabiz'),
@@ -20,8 +20,8 @@ export const EnvironmentSchema = z.object({
   DB_SYNCHRONIZE: z.coerce.boolean().default(false),
 
   // Redis
-  REDIS_HOST: z.string().default('localhost'),
-  REDIS_PORT: z.coerce.number().default(6379),
+  REDIS_HOST: z.string().default('127.0.0.1'),
+  REDIS_PORT: z.coerce.number().default(6380),
   REDIS_PASSWORD: z.string().optional().default('redis_dev_secret'),
 
   // JWT Gizli Anahtarları (En az 32 karakter)

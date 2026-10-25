@@ -8,8 +8,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_secure_dev_password}
     ports:
-      # Güvenlik standardı: Yalnızca localhost (127.0.0.1) üzerinden erişim
-      - "127.0.0.1:5432:5432"
+      # Port çakışmalarını önlemek için 5434 host portu kullanılmıştır (127.0.0.1)
+      - "127.0.0.1:${DB_PORT:-5434}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -27,8 +27,8 @@ services:
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-redis_dev_secret}"]
     ports:
-      # Güvenlik standardı: Yalnızca localhost üzerinden erişim
-      - "127.0.0.1:6379:6379"
+      # Port çakışmalarını önlemek için 6380 host portu kullanılmıştır (127.0.0.1)
+      - "127.0.0.1:${REDIS_PORT:-6380}:6379"
     volumes:
       - redis_data:/data
     healthcheck:

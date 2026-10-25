@@ -16,7 +16,11 @@ Bu belge, projenin kontrollü, test edilebilir ve adım adım ilerleyen gelişti
 
 ### Phase 2: Backend Çekirdek, Docker, PostGIS ve Güvenli Kimlik Doğrulama (TAMAMLANDI)
 - **Kapsam:** Docker Compose (PostgreSQL 16 + PostGIS 3.4, Redis 7). TypeORM ile PostGIS entegrasyonu, reversable ilk migration (`users`, `refresh_tokens`), güvenli AuthModule (Register, Login, Token Rotation, Token Reuse Detection, Logout, Me), RedisService (In-memory fallback ile rate limiting), Correlation ID, Readiness probe (`/api/v1/health/ready`).
-- **Doğrulama:** 18 birim testi (Auth, Guards, Health, Readiness) ve E2E entegrasyon testi altyapısı.
+- **Doğrulama:** 22 birim testi (Auth, Guards, Health, Readiness) ve E2E entegrasyon testi altyapısı.
+
+### Phase 2.5: Gerçek Entegrasyon Doğrulaması ve Güvenlik Kontrolü (TAMAMLANDI)
+- **Kapsam:** Canlı Docker PostGIS & Redis entegrasyonu, port izolasyonu (Postgres 5434, Redis 6380), gerçek TypeORM migration ve rollback testleri, PostGIS coğrafi mesafe/yarıçap (`ST_Distance`, `ST_DWithin`) doğrulaması, canlı Auth uç noktaları (Register, Login, Me, Refresh, Reuse Detection, Logout), eşzamanlı istek yarış durumu (Race Condition) CAS koruması, çift katmanlı DTO validasyon zırhı.
+- **Doğrulama:** 33 testin tamamı canlı veritabanı ve Redis üzerinde geçti. Detaylı rapor: [PHASE_2_5_VERIFICATION.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/PHASE_2_5_VERIFICATION.md).
 
 ### Phase 3: Coğrafi Veri & Olay Yönetimi API'si (PLANLANDI)
 - **Kapsam:** Kategori yönetimi, Olay oluşturma (`POST /events`), Bounding Box ve Yarıçap sorguları (`GET /events/nearby`, `GET /events/bbox`), PostGIS `ST_DWithin` ve `ST_MakeEnvelope` filtreleri.

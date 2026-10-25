@@ -13,6 +13,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
+    "migration:run": "typeorm migration:run -d dist/database/data-source.js",
+    "migration:revert": "typeorm migration:revert -d dist/database/data-source.js",
+    "migration:show": "typeorm migration:show -d dist/database/data-source.js",
     "clean": "node -e \"try{require('fs').rmSync('dist',{recursive:true,force:true})}catch(e){}\""
   },
   "dependencies": {

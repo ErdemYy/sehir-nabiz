@@ -1,8 +1,8 @@
 {
   "AGENTS.md": {
-    "mtime": 1792934935.2117896,
-    "seen": 1792935030.672979,
-    "ast_hash": "26e3695e95c9f5fab0fda17df9400cf6",
+    "mtime": 1792937119.1084263,
+    "seen": 1792937128.2582912,
+    "ast_hash": "ae59a99329c82ebb4177e37c52b0972a",
     "semantic_hash": ""
   },
   "docs/architecture/ARCHITECTURE.md": {
@@ -18,9 +18,9 @@
     "semantic_hash": ""
   },
   "docs/architecture/ROADMAP_PHASES.md": {
-    "mtime": 1792934927.37944,
-    "seen": 1792935030.672979,
-    "ast_hash": "ff37c7ad3397ecc259389141a5283032",
+    "mtime": 1792937113.7120035,
+    "seen": 1792937128.2582912,
+    "ast_hash": "8db86d45f4d9d9284debd6ca1b85b726",
     "semantic_hash": ""
   },
   "docs/architecture/SECURITY_PRIVACY.md": {
@@ -36,9 +36,9 @@
     "semantic_hash": ""
   },
   "apps/api/package.json": {
-    "mtime": 1792934419.688751,
-    "seen": 1792935030.672979,
-    "ast_hash": "63c48b970e69cab469da05a81b5bb433",
+    "mtime": 1792936742.331045,
+    "seen": 1792937128.2582912,
+    "ast_hash": "43331ea250c732181bf287d1f2194bf7",
     "semantic_hash": ""
   },
   "apps/api/src/app.module.ts": {
@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "apps/api/src/config/env.validation.ts": {
-    "mtime": 1792936105.1424346,
-    "seen": 1792936281.7167182,
-    "ast_hash": "752ffbc8df9e73316570746b4c007084",
+    "mtime": 1792936679.104193,
+    "seen": 1792937128.2582912,
+    "ast_hash": "da1fbb1027d3f53b708784c694933ae0",
     "semantic_hash": ""
   },
   "apps/api/src/main.ts": {
@@ -384,9 +384,9 @@
     "semantic_hash": ""
   },
   "apps/api/src/database/data-source.ts": {
-    "mtime": 1792934475.2490375,
-    "seen": 1792935030.672979,
-    "ast_hash": "f74416d970adb18331f467e4008779b3",
+    "mtime": 1792936682.2671714,
+    "seen": 1792937128.2582912,
+    "ast_hash": "fbd71bbdf6ede8f2c6a0fc9e12dcc734",
     "semantic_hash": ""
   },
   "apps/api/src/database/database.module.ts": {
@@ -444,21 +444,21 @@
     "semantic_hash": ""
   },
   "apps/api/src/modules/auth/dto/login.dto.ts": {
-    "mtime": 1792934531.9007485,
-    "seen": 1792935030.672979,
-    "ast_hash": "fe66d403b1b9a90126f25439502e3373",
+    "mtime": 1792936923.6835287,
+    "seen": 1792937128.2582912,
+    "ast_hash": "197af8cfe6160e5c34704b82d074457a",
     "semantic_hash": ""
   },
   "apps/api/src/modules/auth/dto/refresh.dto.ts": {
-    "mtime": 1792934536.325696,
-    "seen": 1792935030.672979,
-    "ast_hash": "d59ec670a9a458586ddc939d9e41bdf0",
+    "mtime": 1792936927.4863906,
+    "seen": 1792937128.2582912,
+    "ast_hash": "f791f9311b1b64698a460f4b3a6956d0",
     "semantic_hash": ""
   },
   "apps/api/src/modules/auth/dto/register.dto.ts": {
-    "mtime": 1792934527.0237637,
-    "seen": 1792935030.672979,
-    "ast_hash": "508361310ea726ff7af72c8291eafcd0",
+    "mtime": 1792936919.5192387,
+    "seen": 1792937128.2582912,
+    "ast_hash": "5bf5aac3f7ebc0a55a4b6c99491982ea",
     "semantic_hash": ""
   },
   "apps/api/src/modules/auth/guards/guards.spec.ts": {
@@ -498,9 +498,9 @@
     "semantic_hash": ""
   },
   "apps/api/test/auth.e2e-spec.ts": {
-    "mtime": 1792934800.9383106,
-    "seen": 1792935030.672979,
-    "ast_hash": "d7377e7ce7e1f96497f7909d583626a2",
+    "mtime": 1792936806.4060233,
+    "seen": 1792937128.2582912,
+    "ast_hash": "1462421711415e0a8f2c2fd792d2cb8f",
     "semantic_hash": ""
   },
   "packages/shared/src/schemas/auth.schema.ts": {
@@ -516,9 +516,9 @@
     "semantic_hash": ""
   },
   "docker-compose.yml": {
-    "mtime": 1792934320.440038,
-    "seen": 1792935030.672979,
-    "ast_hash": "764ce5bf3b83e39f5f2fbeb142bc2b9e",
+    "mtime": 1792936602.2694016,
+    "seen": 1792937128.2582912,
+    "ast_hash": "68f8782dbd4a644f86e343b326ff02cf",
     "semantic_hash": ""
   },
   "docs/PHASE_2_REPORT.md": {
@@ -546,9 +546,9 @@
     "semantic_hash": ""
   },
   "docs/PHASE_2_5_VERIFICATION.md": {
-    "mtime": 1792936265.8108397,
-    "seen": 1792936281.7167182,
-    "ast_hash": "12436cad538da4dc5582a5bc323451bf",
+    "mtime": 1792937099.9438782,
+    "seen": 1792937128.2582912,
+    "ast_hash": "bf5e37c4ec51d96163b4630e9f5d6703",
     "semantic_hash": ""
   }
 }

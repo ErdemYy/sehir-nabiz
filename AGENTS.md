@@ -115,6 +115,7 @@ sehir-nabiz/
 | **Phase 0** | Proje Hazırlığı, Mimari Planlama ve Repo Yapılandırması | **Tamamlandı** |
 | **Phase 1** | Monorepo & Ortak Paket Kurulumu | **Tamamlandı** |
 | **Phase 2** | Backend Çekirdek, Docker, PostGIS & Auth | **Tamamlandı** |
+| **Phase 2.5**| Canlı Entegrasyon, PostGIS Mesafe & Güvenlik Denetimi | **Tamamlandı** |
 | **Phase 3** | Coğrafi Veri & Olay Yönetimi API'si | Planlandı |
 | **Phase 4** | Medya & Depolama Yönetimi | Planlandı |
 | **Phase 5** | Mobil Temel, Navigasyon & Durum Yönetimi | Planlandı |
