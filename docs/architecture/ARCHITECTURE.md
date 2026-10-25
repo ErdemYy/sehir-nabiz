@@ -88,6 +88,45 @@ Mobil harita katmanı, uygulamanın çekirdek bileşenidir. Expo ekosistemindeki
 - **TypeScript Strict Entegrasyonu:** Derleme zamanı tip güvenliği ve Zod tabanlı ortak DTO doğrulaması.
 - **WebSocket & Microservice Desteği:** İlerleyen fazlarda bildirim veya analitik servislerinin ayrılmasına hazır yapı.
 
+### 3.2 ORM Karar Analizi: TypeORM vs Prisma vs Drizzle
+PostgreSQL + PostGIS uzamsal yetenekleri ve NestJS 12 ekosistemi için üç temel ORM değerlendirilmiştir:
+
+| Kriter | TypeORM (Seçilen) | Prisma | Drizzle ORM |
+| :--- | :--- | :--- | :--- |
+| **PostGIS Spatial Tipleri** | **Tam Destek (`@Column('geometry')`)** | Kısıtlı (`Unsupported` veri tipi) | Eklenti/Custom Type gerekir |
+| **Spatial Fonksiyonlar & GIST** | **Dahili (`@Index({ spatial: true })`)** | Sadece `$queryRaw` ile mümkün | SQL template ile mümkün |
+| **NestJS Entegrasyonu** | **Resmi `@nestjs/typeorm` (Birinci sınıf)** | Topluluk paketi / Servis wrapper | Manuel Provider yapılandırması |
+| **Migration Yönetimi** | **Dahili çift yönlü (Up/Down) CLI** | Şema odaklı deklaratif migration | Drizzle-kit migration |
+| **TypeScript Strict Uyum** | Tam uyumlu (`strictPropertyInitialization` ! ile)| Tam uyumlu | Tam uyumlu |
+
+**Karar Gerekçesi:** ŞehirNabız'ın çekirdeği coğrafi uzamsal sorgulardır (`ST_DWithin`, `ST_MakeEnvelope`, `GIST`). Prisma'nın PostGIS tiplerini birinci sınıf desteklemeyip raw SQL'e zorlaması dezavantajdır. TypeORM, NestJS'in yerleşik modüler yapısına, transaction yönetim mekanizmasına ve PostGIS spatial entity desteğine en uygun çözümdür.
+
+### 3.3 Oturum ve Token Yaşam Döngüsü (Token Rotation & Reuse Detection)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client as Mobil İstemci (SecureStore)
+    participant Auth as NestJS AuthModule
+    participant DB as PostgreSQL (RefreshTokens)
+
+    Client->>Auth: POST /api/v1/auth/login
+    Auth->>DB: Kullanıcı ve Şifre Doğrula
+    Auth->>DB: Refresh Token Hash'ini Kaydet
+    Auth-->>Client: Access Token (15m) + Refresh Token (7d)
+
+    Note over Client,Auth: Access Token Süresi Dolduğunda
+    Client->>Auth: POST /api/v1/auth/refresh (Mevcut Refresh Token)
+    Auth->>DB: Token Hash Sorgula
+    alt Token Daha Önce Kullanılmış / İptal Edilmiş (Reuse Detection)
+        Auth->>DB: KULLANICININ TÜM AKTİF OTURUMLARINI DERHAL İPTAL ET!
+        Auth-->>Client: 401 Unauthorized (Güvenlik ihlali şüphesi)
+    else Token Geçerli ve Aktif
+        Auth->>DB: Eski Token'ı İptal Et (isRevoked = true, replacedByTokenHash = newHash)
+        Auth->>DB: Yeni Token Hash'ini Kaydet
+        Auth-->>Client: Yeni Access Token + Yeni Refresh Token
+    end
+```
+
 ### 3.2 PostgreSQL + PostGIS Uzamsal (Spatial) Stratejisi
 Tüm coğrafi veriler WGS 84 (`SRID 4326`) projeksiyon sisteminde tutulur.
 

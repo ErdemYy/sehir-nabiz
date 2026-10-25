@@ -7,9 +7,10 @@
 ## 🚀 Proje Mimarisi Özeti
 
 - **Mobil Uygulama (`apps/mobile`):** React Native + Expo SDK 58 (New Architecture / Fabric etkin), Expo Router v58, Zustand, TanStack Query.
-- **Backend API (`apps/api`):** NestJS v12 (TypeScript Strict), PostgreSQL 16 + PostGIS uzamsal (spatial) veritabanı, Redis, Helmet, Zod.
+- **Backend API (`apps/api`):** NestJS v12 (TypeScript Strict), TypeORM, PostgreSQL 16 + PostGIS uzamsal (spatial) veritabanı, Redis 7 (In-memory fallback ile rate limiting), Helmet, Zod, JWT + Rotasyonlu Refresh Token.
+- **Konteyner Altyapısı (`docker-compose.yml`):** PostgreSQL 16 + PostGIS 3.4 (`postgis/postgis:16-3.4`) ve Redis 7 (`redis:7-alpine`) yerel güvenlik konfigürasyonu.
 - **Ortak Paketler (`packages/*`):**
-  - `@sehir-nabiz/shared`: Mobil ve backend ortak TypeScript tipleri, DTO'lar ve Zod şemaları.
+  - `@sehir-nabiz/shared`: Mobil ve backend ortak TypeScript tipleri, Auth/Event DTO'ları ve Zod şemaları.
   - `@sehir-nabiz/design-tokens`: Renk, tipografi, boşluk ve açık/koyu tema tokenları.
   - `@sehir-nabiz/config`: Ortak TypeScript, ESLint ve Prettier konfigürasyonları.
 - **Harita Motoru:** `@maplibre/maplibre-react-native` (Metal/OpenGL GPU hızlandırmalı vektör kenti motoru).
@@ -79,3 +80,5 @@ pnpm --filter sehir-nabiz-mobile start
 - [Güvenlik, Gizlilik & Moderasyon (SECURITY_PRIVACY.md)](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/architecture/SECURITY_PRIVACY.md)
 - [Geliştirme Fazları Yol Haritası (ROADMAP_PHASES.md)](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/architecture/ROADMAP_PHASES.md)
 - [MapLibre Entegrasyon Rehberi (MAPLIBRE_INTEGRATION_GUIDE.md)](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/guides/MAPLIBRE_INTEGRATION_GUIDE.md)
+- [Faz 1 Tamamlanma Raporu (PHASE_1_REPORT.md)](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/PHASE_1_REPORT.md)
+- [Faz 2 Tamamlanma Raporu (PHASE_2_REPORT.md)](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/PHASE_2_REPORT.md)

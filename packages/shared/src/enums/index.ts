@@ -41,3 +41,23 @@ export enum VerificationType {
   DENY = 'DENY',
   RESOLVED = 'RESOLVED',
 }
+
+/**
+ * Kullanıcı Rolleri
+ */
+export enum UserRole {
+  CITIZEN = 'CITIZEN',
+  TRUSTED_REPORTER = 'TRUSTED_REPORTER',
+  MUNICIPAL_OFFICER = 'MUNICIPAL_OFFICER',
+  MODERATOR = 'MODERATOR',
+  ADMIN = 'ADMIN',
+}
+
+/**
+ * Kullanıcı Hesap Durumları
+ */
+export enum AccountStatus {
+  ACTIVE = 'ACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  PENDING_VERIFICATION = 'PENDING_VERIFICATION',
+}

@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import type { ApiErrorResponse } from '@sehir-nabiz/shared';
+import { CORRELATION_ID_HEADER } from '../middleware/correlation-id.middleware';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -17,6 +18,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
+    const correlationId = (request.headers[CORRELATION_ID_HEADER] as string) || 'unknown';
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: string | string[] = 'Sunucu tarafında beklenmeyen bir hata oluştu.';
@@ -34,9 +36,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
         error = (resObj['error'] as string) || exception.name;
       }
     } else if (exception instanceof Error) {
-      message = exception.message;
+      // Hassas veri koruması: SQL hata detayları veya gizli anahtarlar asla istemciye sızdırılmaz
+      message = 'İşlem sırasında bir veritabanı veya sistem hatası meydana geldi.';
       this.logger.error(
-        `Beklenmeyen Hata: ${exception.message}`,
+        `[${correlationId}] Beklenmeyen Hata: ${exception.message}`,
         exception.stack,
         `${request.method} ${request.url}`,
       );

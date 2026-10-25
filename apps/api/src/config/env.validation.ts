@@ -2,9 +2,43 @@ import { z } from 'zod';
 
 export const EnvironmentSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.coerce.number().default(3000),
+  PORT: z.coerce.number().default(3001),
   API_PREFIX: z.string().default('/api/v1'),
   CORS_ORIGIN: z.string().default('*'),
+
+  // PostgreSQL Veritabanı
+  DATABASE_URL: z
+    .string()
+    .optional()
+    .default('postgresql://postgres:postgres_secure_dev_password@localhost:5432/sehir_nabiz'),
+  DB_HOST: z.string().default('localhost'),
+  DB_PORT: z.coerce.number().default(5432),
+  DB_USERNAME: z.string().default('postgres'),
+  DB_PASSWORD: z.string().default('postgres_secure_dev_password'),
+  DB_DATABASE: z.string().default('sehir_nabiz'),
+  DB_LOGGING: z.coerce.boolean().default(false),
+  DB_SYNCHRONIZE: z.coerce.boolean().default(false),
+
+  // Redis
+  REDIS_HOST: z.string().default('localhost'),
+  REDIS_PORT: z.coerce.number().default(6379),
+  REDIS_PASSWORD: z.string().optional().default('redis_dev_secret'),
+
+  // JWT Gizli Anahtarları (En az 32 karakter)
+  JWT_ACCESS_SECRET: z
+    .string()
+    .min(32, 'JWT_ACCESS_SECRET en az 32 karakter olmalıdır')
+    .default('sehir_nabiz_default_access_jwt_secret_key_32chars_min!'),
+  JWT_REFRESH_SECRET: z
+    .string()
+    .min(32, 'JWT_REFRESH_SECRET en az 32 karakter olmalıdır')
+    .default('sehir_nabiz_default_refresh_jwt_secret_key_32chars_min!'),
+  JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
+  JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+
+  // Rate Limiting
+  THROTTLE_TTL: z.coerce.number().default(60),
+  THROTTLE_LIMIT: z.coerce.number().default(20),
 });
 
 export type Environment = z.infer<typeof EnvironmentSchema>;

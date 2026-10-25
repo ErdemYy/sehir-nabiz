@@ -11,9 +11,20 @@ erDiagram
     User ||--o{ Event : creates
     User ||--o{ EventVerification : submits
     User ||--o{ UserReputationLog : has
+    User ||--o{ RefreshToken : owns
     Event ||--|{ EventMedia : contains
     Event ||--o{ EventVerification : receives
     Category ||--o{ Event : classifies
+
+    RefreshToken {
+        uuid id PK
+        uuid user_id FK
+        string token_hash UK
+        timestamp expires_at
+        boolean is_revoked
+        string replaced_by_token_hash
+        timestamp created_at
+    }
 
     User {
         uuid id PK

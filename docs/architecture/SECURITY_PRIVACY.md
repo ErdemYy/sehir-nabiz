@@ -78,3 +78,23 @@ Platformun sürdürülebilirliği için yüksek maliyetli üçüncü taraf bağ�
 | **Push Bildirimleri** | Üçüncü parti SMS / Ücretli bildirim servisleri | **Expo Push Service / Firebase Cloud Messaging (FCM)** | Tamamen ücretsiz ve sınırsız |
 | **Veritabanı & Spatial** | Özel harita SaaS çözümleri | **PostgreSQL + PostGIS** (Hetzner / DigitalOcean Managed veya VPS) | Düşük sabit maliyet, tam kontrol |
 | **Backend Barındırma** | Büyük Kubernetes kümesi | **Docker Compose / Coolify / Hetzner Cloud VPS** | Başlangıçta <$40/ay ile 50k aktif kullanıcı |
+
+
+---
+
+## 5. Mobil Kimlik Doğrulama ve Cihaz Güvenliği (Mobile Auth Strategy)
+
+Phase 2'de geliştirilen kimlik doğrulama mimarisi mobil istemci güvenlik standartlarına tam uyumlu olarak tasarlanmıştır:
+
+### 5.1 Token Saklama Stratejisi
+1. **Access Token (15 Dakika):**
+   - Yalnızca mobil uygulamanın bellek içi durumunda (Zustand state) tutulur.
+   - Uygulama kapatıldığında bellekten silinir; asla diske açık metin yazılmaz.
+2. **Refresh Token (7 Gün):**
+   - **Kesin Kural:** `AsyncStorage` kullanılmaz (AsyncStorage şifresiz düz metin saklar, cihaz yedeklemesine sızabilir).
+   - **`expo-secure-store` Kullanımı:** Refresh token iOS tarafında **Apple Keychain**, Android tarafında **Android Keystore (AES-256-GCM)** ile donanım seviyesinde şifrelenmiş alanda saklanır.
+3. **Sessiz Yenileme (Silent Refresh Flow):**
+   - Mobil istemci uygulama açıldığında veya 401 Unauthorized yanıtı aldığında SecureStore'daki refresh token ile `POST /api/v1/auth/refresh` çağrısı yapar.
+   - Yeni gelen token çifti belleğe ve SecureStore'a güncellenir.
+4. **Token Çalınma Koruması (Reuse Detection):**
+   - Bir saldırgan eski bir refresh token'ı ele geçirip kullanmaya çalışırsa sunucu durumu algılar ve kullanıcının meşru cihazı dahil tüm oturumlarını anında iptal eder. Kullanıcıdan yeniden şifre ile giriş yapması istenir.

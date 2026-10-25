@@ -10,15 +10,15 @@ Bu belge, projenin kontrollü, test edilebilir ve adım adım ilerleyen gelişti
 - **Kapsam:** Mevcut durum tespiti, Graphify entegrasyonu, mimari dokümanların (`AGENTS.md`, `ARCHITECTURE.md`, `DATA_MODELS.md`, `SECURITY_PRIVACY.md`, `ROADMAP_PHASES.md`) oluşturulması. Harita, backend ve veri modeli kararlarının gerekçelendirilmesi.
 - **Başarı Kriteri:** Proje çalışma alanının ve dokümantasyonun eksiksiz hazır olması, Graphify grafının kurulması.
 
-### Phase 1: Monorepo & Ortak Paket Yapılandırması (AKTİF - TAMAMLANIYOR)
-- **Kapsam:** pnpm workspace ve Turborepo altyapısı. `packages/shared`, `packages/config`, `packages/design-tokens`, `apps/api` (NestJS) ve `apps/mobile` (Expo SDK 58) kurulumu. Zod şemaları, ortak TypeScript tipleri, health check, global exception filter ve temiz başlangıç ekranı.
-- **Doğrulama:** `pnpm turbo build`, `pnpm turbo typecheck`, `pnpm turbo test` ve API `/api/v1/health` kontrolü.
+### Phase 1: Monorepo & Ortak Paket Yapılandırması (TAMAMLANDI)
+- **Kapsam:** pnpm workspace ve Turborepo altyapısı. `packages/shared`, `packages/config`, `packages/design-tokens`, `apps/api` (NestJS 12) ve `apps/mobile` (Expo SDK 58) kurulumu. Zod şemaları, ortak TypeScript tipleri, health check, global exception filter ve temiz başlangıç ekranı.
+- **Doğrulama:** `pnpm turbo build`, `pnpm turbo typecheck`, `pnpm turbo test` ve API `/api/v1/health` kontrolü (Commit: `7a7b0b6`).
 
-### Phase 2: Backend Çekirdek, Docker & Veritabanı
-- **Kapsam:** Docker Compose (PostgreSQL 16 + PostGIS, Redis). NestJS projesinin `apps/backend` altına kurulması. Prisma / Kysely or TypeORM konfigürasyonu, PostGIS spatial migration'ları, Auth modülü (JWT, bcrypt, Refresh Token).
-- **Doğrulama:** PostGIS uzamsal tablolarının oluşturulması, kullanıcı kayıt ve giriş uç noktalarının E2E testleri.
+### Phase 2: Backend Çekirdek, Docker, PostGIS ve Güvenli Kimlik Doğrulama (TAMAMLANDI)
+- **Kapsam:** Docker Compose (PostgreSQL 16 + PostGIS 3.4, Redis 7). TypeORM ile PostGIS entegrasyonu, reversable ilk migration (`users`, `refresh_tokens`), güvenli AuthModule (Register, Login, Token Rotation, Token Reuse Detection, Logout, Me), RedisService (In-memory fallback ile rate limiting), Correlation ID, Readiness probe (`/api/v1/health/ready`).
+- **Doğrulama:** 18 birim testi (Auth, Guards, Health, Readiness) ve E2E entegrasyon testi altyapısı.
 
-### Phase 3: Coğrafi Veri & Olay Yönetimi API'si
+### Phase 3: Coğrafi Veri & Olay Yönetimi API'si (PLANLANDI)
 - **Kapsam:** Kategori yönetimi, Olay oluşturma (`POST /events`), Bounding Box ve Yarıçap sorguları (`GET /events/nearby`, `GET /events/bbox`), PostGIS `ST_DWithin` ve `ST_MakeEnvelope` filtreleri.
 - **Doğrulama:** Postman/Supertest ile coğrafi koordinat sorgularının doğrulanması, milisaniyelik yanıt süreleri.
 

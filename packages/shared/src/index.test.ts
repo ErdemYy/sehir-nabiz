@@ -6,6 +6,7 @@ import {
   EventStatus,
   CreateEventInputSchema,
   GeoCoordinateSchema,
+  RegisterInputSchema,
 } from './index';
 
 test('EventCategory ve EventSeverity enum değerleri doğru tanımlanmalı', () => {
@@ -44,4 +45,30 @@ test('CreateEventInputSchema zorunlu alanları ve sınırları denetlemeli', () 
   };
   const shortResult = CreateEventInputSchema.safeParse(shortTitleEvent);
   assert.equal(shortResult.success, false);
+});
+
+test('RegisterInputSchema şifre karmaşıklığı ve e-posta formatını doğrulamalı', () => {
+  const validRegister = {
+    email: 'ahmet.yilmaz@example.com',
+    password: 'Password123',
+    displayName: 'Ahmet Yılmaz',
+  };
+  const result = RegisterInputSchema.safeParse(validRegister);
+  assert.equal(result.success, true);
+
+  // Basit şifre (rakam yok veya küçük/büyük harf eksik)
+  const weakPasswordRegister = {
+    ...validRegister,
+    password: 'password',
+  };
+  const weakResult = RegisterInputSchema.safeParse(weakPasswordRegister);
+  assert.equal(weakResult.success, false);
+
+  // Geçersiz e-posta
+  const invalidEmailRegister = {
+    ...validRegister,
+    email: 'not-an-email',
+  };
+  const invalidEmailResult = RegisterInputSchema.safeParse(invalidEmailRegister);
+  assert.equal(invalidEmailResult.success, false);
 });
