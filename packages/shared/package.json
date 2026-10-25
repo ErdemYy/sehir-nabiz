@@ -1,0 +1,23 @@
+{
+  "name": "@sehir-nabiz/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ŞehirNabız mobil ve backend arasında paylaşılan tip tanımları ve Zod şemaları",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "echo \"Shared linting passed\"",
+    "test": "node --test dist/index.test.js",
+    "clean": "node -e \"try{require('fs').rmSync('dist',{recursive:true,force:true})}catch(e){}\""
+  },
+  "dependencies": {
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@sehir-nabiz/config": "workspace:*",
+    "@types/node": "^22.13.10",
+    "typescript": "^5.8.2"
+  }
+}

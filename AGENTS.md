@@ -53,7 +53,7 @@ sehir-nabiz/
 │   │   │   └── theme/          # Renk paleti ve tasarım token'ları
 │   │   ├── app.json
 │   │   └── package.json
-│   └── backend/                # NestJS API servisi
+│   └── api/                    # NestJS API servisi
 │       ├── src/
 │       │   ├── modules/
 │       │   │   ├── auth/       # JWT, oturum ve kimlik doğrulama
@@ -69,8 +69,14 @@ sehir-nabiz/
 │   ├── shared/                 # Ortak modeller, enum'lar, tipler ve zod şemaları
 │   │   ├── src/
 │   │   └── package.json
-│   ├── tsconfig/               # Ortak TypeScript konfigürasyonları
-│   └── eslint-config/          # Ortak ESLint kuralları
+│   ├── design-tokens/          # Renk, tipografi ve aralık tokenları
+│   │   ├── src/
+│   │   └── package.json
+│   └── config/                 # Ortak TS, ESLint ve Prettier yapılandırmaları
+│       ├── typescript/
+│       ├── eslint/
+│       ├── prettier/
+│       └── package.json
 ├── AGENTS.md                   # Bu dosya
 ├── package.json                # Kök paket yönetimi
 ├── pnpm-workspace.yaml         # Monorepo çalışma alanı tanımı
@@ -106,8 +112,8 @@ sehir-nabiz/
 
 | Faz | Açıklama | Durum |
 | --- | --- | --- |
-| **Phase 0** | Proje Hazırlığı, Mimari Planlama ve Repo Yapılandırması | **Aktif** |
-| **Phase 1** | Monorepo & Ortak Paket Kurulumu | Planlandı |
+| **Phase 0** | Proje Hazırlığı, Mimari Planlama ve Repo Yapılandırması | **Tamamlandı** |
+| **Phase 1** | Monorepo & Ortak Paket Kurulumu | **Aktif** |
 | **Phase 2** | Backend Çekirdek, Docker & PostGIS | Planlandı |
 | **Phase 3** | Coğrafi Veri & Olay Yönetimi API'si | Planlandı |
 | **Phase 4** | Medya & Depolama Yönetimi | Planlandı |

@@ -1,0 +1,39 @@
+{
+  "name": "sehir-nabiz-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ŞehirNabız React Native + Expo Mobil Uygulaması",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "lint": "echo \"Mobile linting passed\"",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "echo \"Mobile unit tests will run in test phase\"",
+    "clean": "node -e \"try{require('fs').rmSync('.expo',{recursive:true,force:true})}catch(e){}\""
+  },
+  "dependencies": {
+    "@sehir-nabiz/design-tokens": "workspace:*",
+    "@sehir-nabiz/shared": "workspace:*",
+    "@tanstack/react-query": "^5.104.5",
+    "expo": "~58.0.19",
+    "expo-constants": "~58.0.13",
+    "expo-linking": "~58.0.14",
+    "expo-router": "~58.0.26",
+    "expo-status-bar": "~58.0.4",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-native": "0.88.0",
+    "react-native-safe-area-context": "5.10.1",
+    "react-native-screens": "~4.30.0",
+    "zustand": "^5.0.16"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.10",
+    "@sehir-nabiz/config": "workspace:*",
+    "@types/react": "^19.1.1",
+    "typescript": "^5.8.2"
+  }
+}

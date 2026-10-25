@@ -76,16 +76,16 @@ Mobil harita katmanı, uygulamanın çekirdek bileşenidir. Expo ekosistemindeki
 
 1. **Performans:** Şehir ölçeğinde aynı anda yüzlerce olayın (trafik, kaza, yol çalışması, etkinlik) haritada pinlenmesi gerekir. MapLibre, verileri GPU seviyesinde GeoJSON kaynağı ve `SymbolLayer` / `CircleLayer` olarak doğrudan ekrana çizer; React Native JS köprüsünü (bridge) meşgul etmez.
 2. **Maliyet ve Bağımsızlık:** Google Maps API, kullanıcı sayısı arttıkça yüksek harita yükleme ve geocoding faturalarına yol açar. MapLibre ile açık kaynak MapTiler, Stadia veya kendi sunucumuzda barındırılan OpenStreetMap vektör karo sunucuları (Martin / pg_tileserv) kullanılabilir.
-3. **Expo Prebuild Uyumu:** Projemiz profesyonel bir üretim (production) mimarisi hedeflediğinden Expo Go kısıtlamalarına bağımlı değildir; `expo-dev-client` ile tam optimize native derleme kullanılır.
+3. **Expo Prebuild & SDK 58 Uyumu:** Projemiz profesyonel bir üretim (production) mimarisi hedeflediğinden Expo Go kısıtlamalarına bağımlı değildir; Expo SDK 58 (`expo-dev-client`) ile React Native 0.88 New Architecture üzerinde derleme yapılandırılmıştır.
 
 ---
 
-## 3. Backend Mimarisi (NestJS + PostgreSQL/PostGIS)
+## 3. Backend Mimarisi (`apps/api`: NestJS 12 + PostgreSQL/PostGIS)
 
 ### 3.1 Neden NestJS?
-- **Katmanlı ve Modüler Yapı:** Controller, Service, Repository, DTO ve Entity ayrımı ile kurumsal kod kalitesi.
-- **Dependency Injection (DI):** Test edilebilirlik (unit/e2e) ve modüller arası gevşek bağlılık (loose coupling).
-- **TypeScript Strict Entegrasyonu:** Derleme zamanı tip güvenliği ve otomatik Swagger/OpenAPI dokümantasyonu.
+- **Katmanlı ve Modüler Yapı:** Controller, Service, Repository, DTO ve Entity ayrımı ile kurumsal kod kalitesi (`apps/api` modülü).
+- **Dependency Injection (DI):** Test edilebilirlik (Vitest / E2E) ve modüller arası gevşek bağlılık (loose coupling).
+- **TypeScript Strict Entegrasyonu:** Derleme zamanı tip güvenliği ve Zod tabanlı ortak DTO doğrulaması.
 - **WebSocket & Microservice Desteği:** İlerleyen fazlarda bildirim veya analitik servislerinin ayrılmasına hazır yapı.
 
 ### 3.2 PostgreSQL + PostGIS Uzamsal (Spatial) Stratejisi

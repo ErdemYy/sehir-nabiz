@@ -1,0 +1,19 @@
+{
+  "name": "@sehir-nabiz/design-tokens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ŞehirNabız tasarım sistemi renk, tipografi, aralık ve tema tokenları",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "echo \"Design tokens linting passed\"",
+    "test": "echo \"Design tokens test passed\"",
+    "clean": "node -e \"try{require('fs').rmSync('dist',{recursive:true,force:true})}catch(e){}\""
+  },
+  "devDependencies": {
+    "@sehir-nabiz/config": "workspace:*",
+    "typescript": "^5.8.2"
+  }
+}

@@ -6,13 +6,13 @@ Bu belge, projenin kontrollü, test edilebilir ve adım adım ilerleyen gelişti
 
 ## 1. Geliştirme Fazları
 
-### Phase 0: Proje Hazırlığı ve Mimari Planlama (ŞU ANKİ FAZ)
+### Phase 0: Proje Hazırlığı ve Mimari Planlama (TAMAMLANDI)
 - **Kapsam:** Mevcut durum tespiti, Graphify entegrasyonu, mimari dokümanların (`AGENTS.md`, `ARCHITECTURE.md`, `DATA_MODELS.md`, `SECURITY_PRIVACY.md`, `ROADMAP_PHASES.md`) oluşturulması. Harita, backend ve veri modeli kararlarının gerekçelendirilmesi.
 - **Başarı Kriteri:** Proje çalışma alanının ve dokümantasyonun eksiksiz hazır olması, Graphify grafının kurulması.
 
-### Phase 1: Monorepo & Ortak Paket Yapılandırması
-- **Kapsam:** pnpm workspace ve Turborepo altyapısı. `packages/shared`, `packages/tsconfig`, `packages/eslint-config` kurulumu. Zod şemaları ve ortak TypeScript tiplerinin tanımlanması.
-- **Doğrulama:** `pnpm turbo build` ve `pnpm turbo lint` komutlarının hatasız çalışması.
+### Phase 1: Monorepo & Ortak Paket Yapılandırması (AKTİF - TAMAMLANIYOR)
+- **Kapsam:** pnpm workspace ve Turborepo altyapısı. `packages/shared`, `packages/config`, `packages/design-tokens`, `apps/api` (NestJS) ve `apps/mobile` (Expo SDK 58) kurulumu. Zod şemaları, ortak TypeScript tipleri, health check, global exception filter ve temiz başlangıç ekranı.
+- **Doğrulama:** `pnpm turbo build`, `pnpm turbo typecheck`, `pnpm turbo test` ve API `/api/v1/health` kontrolü.
 
 ### Phase 2: Backend Çekirdek, Docker & Veritabanı
 - **Kapsam:** Docker Compose (PostgreSQL 16 + PostGIS, Redis). NestJS projesinin `apps/backend` altına kurulması. Prisma / Kysely or TypeORM konfigürasyonu, PostGIS spatial migration'ları, Auth modülü (JWT, bcrypt, Refresh Token).
