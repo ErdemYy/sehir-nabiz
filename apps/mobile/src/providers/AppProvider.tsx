@@ -1,6 +1,7 @@
 import type { ReactNode, ReactElement } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ThemeProvider } from '../theme';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,7 +20,9 @@ interface AppProviderProps {
 export function AppProvider({ children }: AppProviderProps): ReactElement {
   return (
     <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider initialMode="light">{children}</ThemeProvider>
+      </QueryClientProvider>
     </SafeAreaProvider>
   );
 }

@@ -124,9 +124,24 @@ curl http://localhost:3001/api/v1/health/ready
 
 ### 6.2 Mobil Uygulama (`apps/mobile`)
 ```bash
-# Expo geliştirme sunucusunu başlatma
+# Expo geliştirme sunucusunu başlatma (Metro bundler)
 pnpm --filter sehir-nabiz-mobile start
+
+# Android simülatör / bağlı cihazda çalıştırma
+pnpm --filter sehir-nabiz-mobile android
+
+# iOS simülatörde çalıştırma (macOS ortamında)
+pnpm --filter sehir-nabiz-mobile ios
+
+# Mobil navigasyon ve token testlerini çalıştırma
+pnpm --filter sehir-nabiz-mobile test
+
+# Tasarım sistemi token testlerini çalıştırma
+pnpm --filter @sehir-nabiz/design-tokens test
 ```
+
+#### UI Showcase Ekranına Erişim:
+Geliştirme ortamında (`__DEV__ = true`), tüm butonlar, tipografi ölçeği, kartlar, çipler, form elemanları ve koyu/açık tema geçişi Harita ekranındaki ışıltı (Sparkles) ikonundan veya Profil ekranındaki "Tasarım Sistemi UI Showcase" kartından incelenebilir. Üretim derlemelerinde bu ekrana erişim güvenlik kalkanı ile engellenmiştir.
 
 ---
 

@@ -1,53 +1,58 @@
 /**
- * ŞehirNabız Renk Paleti ve Tema Tokenları
- * Türkiye kentsel dinamizmini yansıtan modern, canlı ve erişilebilir renk paleti.
+ * ŞehirNabız Renk Paleti ve Semantic Tema Tokenları
+ * Tasarım Dili: ŞehirNabız — Urban Floating UI
+ *
+ * Light Theme:
+ * - Primary: #14B8A6 (Turkuaz)
+ * - PrimaryDark: #0F766E
+ * - AccentBlue: #2563EB
+ * - Background: #F6F8FB
+ * - Surface: #FFFFFF
+ * - TextPrimary: #0F172A
+ * - TextSecondary: #64748B
+ * - Border: #E2E8F0
+ * - Success: #16A34A
+ * - Warning: #F59E0B
+ * - Error: #DC2626
+ *
+ * Dark Theme:
+ * - Background: #0B1726
+ * - Surface: #152436
+ * - SurfaceElevated: #1C3044
+ * - TextPrimary: #F8FAFC
+ * - TextSecondary: #A9B8C8
+ * - Border: #304154
  */
 
 export const palette = {
-  // Marka Ana Renkleri (Nabız Kırmızısı & Şehir Mavisi)
-  crimson: {
-    50: '#FFF1F2',
-    100: '#FFE4E6',
-    200: '#FECDD3',
-    300: '#FDA4AF',
-    400: '#FB7185',
-    500: '#F43F5E',
-    600: '#E11D48', // Primary Pulse
-    700: '#BE123C',
-    800: '#9F1239',
-    900: '#881337',
+  // Teal / Turkuaz (Ana Marka Rengi)
+  teal: {
+    50: '#F0FDFA',
+    100: '#CCFBF1',
+    200: '#99F6E4',
+    300: '#5EEAD4',
+    400: '#2DD4BF',
+    500: '#14B8A6', // Primary Teal
+    600: '#0D9488',
+    700: '#0F766E', // Primary Dark
+    800: '#115E59',
+    900: '#134E4A',
+    950: '#042F2E',
   },
-  navy: {
-    50: '#F0F9FF',
-    100: '#E0F2FE',
-    200: '#BAE6FD',
-    300: '#7DD3FC',
-    400: '#38BDF8',
-    500: '#0EA5E9',
-    600: '#0284C7',
-    700: '#0369A1',
-    800: '#075985',
-    900: '#0C4A6E',
-    950: '#082F49',
+  // Accent Blue
+  blue: {
+    50: '#EFF6FF',
+    100: '#DBEAFE',
+    200: '#BFDBFE',
+    300: '#93C5FD',
+    400: '#60A5FA',
+    500: '#3B82F6',
+    600: '#2563EB', // Accent Blue
+    700: '#1D4ED8',
+    800: '#1E40AF',
+    900: '#1E3A8A',
   },
-  // Olay Şiddeti ve Durum Renkleri
-  severity: {
-    low: '#10B981', // Yeşil (Düşük aciliyet)
-    medium: '#F59E0B', // Kehribar (Orta)
-    high: '#F97316', // Turuncu (Yüksek)
-    critical: '#EF4444', // Kırmızı (Kritik / Acil)
-  },
-  // Kategori Renkleri
-  categories: {
-    traffic: '#EF4444',
-    roadwork: '#F59E0B',
-    accident: '#DC2626',
-    infrastructure: '#3B82F6',
-    event: '#8B5CF6',
-    safety: '#10B981',
-    other: '#6B7280',
-  },
-  // Nötr Renkler
+  // Nötr Slate (Metin, zemin ve kenarlıklar)
   slate: {
     50: '#F8FAFC',
     100: '#F1F5F9',
@@ -61,12 +66,46 @@ export const palette = {
     900: '#0F172A',
     950: '#020617',
   },
+  // Dark Theme Özel Arka Plan ve Yüzeyler
+  night: {
+    bg: '#0B1726',
+    surface: '#152436',
+    surfaceElevated: '#1C3044',
+    border: '#304154',
+    textSecondary: '#A9B8C8',
+  },
+  // Durum Renkleri
+  status: {
+    success: '#16A34A',
+    successLight: '#DCFCE7',
+    warning: '#F59E0B',
+    warningLight: '#FEF3C7',
+    error: '#DC2626',
+    errorLight: '#FEE2E2',
+    info: '#2563EB',
+    infoLight: '#DBEAFE',
+  },
+  // Backend ile 1:1 Uyumlu 11 Olay Kategorisi Renkleri
+  categories: {
+    TRAFFIC: '#EF4444',
+    ACCIDENT: '#DC2626',
+    ROAD_WORK: '#F59E0B',
+    WATER_OUTAGE: '#0284C7',
+    POWER_OUTAGE: '#EAB308',
+    INFRASTRUCTURE: '#6366F1',
+    PUBLIC_TRANSPORT: '#0D9488',
+    WEATHER: '#06B6D4',
+    DISASTER: '#B91C1C',
+    EVENT: '#8B5CF6',
+    OTHER: '#64748B',
+  },
 } as const;
 
 export interface ThemeColors {
   primary: string;
   primaryLight: string;
   primaryDark: string;
+  accentBlue: string;
   background: string;
   surface: string;
   surfaceElevated: string;
@@ -75,47 +114,73 @@ export interface ThemeColors {
   textMuted: string;
   border: string;
   borderFocus: string;
-  error: string;
   success: string;
+  successLight: string;
   warning: string;
+  warningLight: string;
+  error: string;
+  errorLight: string;
   info: string;
+  infoLight: string;
   card: string;
+  cardBorder: string;
+  tabBarBackground: string;
+  tabBarBorder: string;
+  overlay: string;
 }
 
 export const lightTheme: ThemeColors = {
-  primary: palette.crimson[600],
-  primaryLight: palette.crimson[100],
-  primaryDark: palette.crimson[800],
-  background: '#FFFFFF',
-  surface: palette.slate[50],
+  primary: '#14B8A6',
+  primaryLight: '#CCFBF1',
+  primaryDark: '#0F766E',
+  accentBlue: '#2563EB',
+  background: '#F6F8FB',
+  surface: '#FFFFFF',
   surfaceElevated: '#FFFFFF',
-  text: palette.slate[900],
-  textSecondary: palette.slate[600],
-  textMuted: palette.slate[400],
-  border: palette.slate[200],
-  borderFocus: palette.crimson[500],
-  error: palette.severity.critical,
-  success: palette.severity.low,
-  warning: palette.severity.medium,
-  info: palette.navy[500],
+  text: '#0F172A',
+  textSecondary: '#64748B',
+  textMuted: '#94A3B8',
+  border: '#E2E8F0',
+  borderFocus: '#14B8A6',
+  success: '#16A34A',
+  successLight: '#DCFCE7',
+  warning: '#F59E0B',
+  warningLight: '#FEF3C7',
+  error: '#DC2626',
+  errorLight: '#FEE2E2',
+  info: '#2563EB',
+  infoLight: '#DBEAFE',
   card: '#FFFFFF',
+  cardBorder: '#E2E8F0',
+  tabBarBackground: 'rgba(255, 255, 255, 0.94)',
+  tabBarBorder: 'rgba(226, 232, 240, 0.8)',
+  overlay: 'rgba(15, 23, 42, 0.4)',
 };
 
 export const darkTheme: ThemeColors = {
-  primary: palette.crimson[500],
-  primaryLight: palette.crimson[900],
-  primaryDark: palette.crimson[400],
-  background: palette.slate[950],
-  surface: palette.slate[900],
-  surfaceElevated: palette.slate[800],
-  text: palette.slate[50],
-  textSecondary: palette.slate[300],
-  textMuted: palette.slate[500],
-  border: palette.slate[800],
-  borderFocus: palette.crimson[400],
-  error: palette.severity.critical,
-  success: palette.severity.low,
-  warning: palette.severity.medium,
-  info: palette.navy[400],
-  card: palette.slate[900],
+  primary: '#2DD4BF', // Karanlık modda erişilebilir yüksek kontrast turkuaz
+  primaryLight: '#134E4A',
+  primaryDark: '#0F766E',
+  accentBlue: '#3B82F6',
+  background: '#0B1726',
+  surface: '#152436',
+  surfaceElevated: '#1C3044',
+  text: '#F8FAFC',
+  textSecondary: '#A9B8C8',
+  textMuted: '#64748B',
+  border: '#304154',
+  borderFocus: '#2DD4BF',
+  success: '#22C55E',
+  successLight: 'rgba(34, 197, 94, 0.15)',
+  warning: '#FBBF24',
+  warningLight: 'rgba(251, 191, 36, 0.15)',
+  error: '#EF4444',
+  errorLight: 'rgba(239, 68, 68, 0.15)',
+  info: '#3B82F6',
+  infoLight: 'rgba(59, 130, 246, 0.15)',
+  card: '#152436',
+  cardBorder: '#304154',
+  tabBarBackground: 'rgba(21, 36, 54, 0.94)',
+  tabBarBorder: 'rgba(48, 65, 84, 0.8)',
+  overlay: 'rgba(0, 0, 0, 0.65)',
 };

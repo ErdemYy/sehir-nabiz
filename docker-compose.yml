@@ -41,7 +41,8 @@ services:
       - sehir_nabiz_network
 
   minio:
-    image: elestio/minio:latest
+    # Belirli bir imaj sürümüne (RELEASE.2025-09-07T16-13-09Z) digest ile sabitlenmiştir
+    image: elestio/minio@sha256:25348a257f1ece1b192f25f6cd9854618fa86422ac87b494b5d4e629c556d4bd
     container_name: sehir_nabiz_minio
     restart: unless-stopped
     command: ["server", "/data", "--console-address", ":9001"]
