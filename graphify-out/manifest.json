@@ -1,0 +1,32 @@
+{
+  "AGENTS.md": {
+    "mtime": 1792932406.498093,
+    "seen": 1792932563.919217,
+    "ast_hash": "eaef045c6522e2375bb523731f317e51",
+    "semantic_hash": ""
+  },
+  "docs/architecture/ARCHITECTURE.md": {
+    "mtime": 1792932450.2322147,
+    "seen": 1792932563.919217,
+    "ast_hash": "ed14d2635dc529d2817d43254069962b",
+    "semantic_hash": ""
+  },
+  "docs/architecture/DATA_MODELS.md": {
+    "mtime": 1792932483.2057054,
+    "seen": 1792932563.919217,
+    "ast_hash": "2e75841fa08ed29841fd4f2a9345bad2",
+    "semantic_hash": ""
+  },
+  "docs/architecture/ROADMAP_PHASES.md": {
+    "mtime": 1792932551.922499,
+    "seen": 1792932563.919217,
+    "ast_hash": "cd7127d83f5ad5022dfa72fa13a92a9d",
+    "semantic_hash": ""
+  },
+  "docs/architecture/SECURITY_PRIVACY.md": {
+    "mtime": 1792932527.7543662,
+    "seen": 1792932563.919217,
+    "ast_hash": "4b47323602f0bdeaa1da5e2903157cd8",
+    "semantic_hash": ""
+  }
+}

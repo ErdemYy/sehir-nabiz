@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>graphify - graphify-out/graph.html</title>
+<script src="https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"
+        integrity="sha384-Ux6phic9PEHJ38YtrijhkzyJ8yQlH8i/+buBR8s3mAZOJrP1gwyvAcIYl3GWtpX1"
+        crossorigin="anonymous"></script>
+<style>
+  :root {
+    --bg: #0f0f1a; --panel: #1a1a2e; --border: #2a2a4e; --input-border: #3a3a5e;
+    --text: #e0e0e0; --text-2: #aaa; --text-3: #ccc; --muted: #555; --count: #666;
+    --neighbor-border: #333; --node-label: #ffffff;
+  }
+  [data-theme="light"] {
+    --bg: #ffffff; --panel: #f8f9fa; --border: #d9dee5; --input-border: #c3cad4;
+    --text: #222222; --text-2: #666666; --text-3: #333333; --muted: #888888; --count: #777777;
+    --neighbor-border: #ccc; --node-label: #222222;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display: flex; height: 100vh; overflow: hidden; }
+  #graph { flex: 1; }
+  #sidebar { width: 280px; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+  #search-wrap { padding: 12px; border-bottom: 1px solid var(--border); }
+  #search { width: 100%; background: var(--bg); border: 1px solid var(--input-border); color: var(--text); padding: 7px 10px; border-radius: 6px; font-size: 13px; outline: none; }
+  #search:focus { border-color: #4E79A7; }
+  #search-results { max-height: 140px; overflow-y: auto; padding: 4px 12px; border-bottom: 1px solid var(--border); display: none; }
+  .search-item { padding: 4px 6px; cursor: pointer; border-radius: 4px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .search-item:hover { background: var(--border); }
+  #info-panel { padding: 14px; border-bottom: 1px solid var(--border); min-height: 140px; }
+  #info-panel h3 { font-size: 13px; color: var(--text-2); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  #info-content { font-size: 13px; color: var(--text-3); line-height: 1.6; }
+  #info-content .field { margin-bottom: 5px; }
+  #info-content .field b { color: var(--text); }
+  #info-content .empty { color: var(--muted); font-style: italic; }
+  .neighbor-link { display: block; padding: 2px 6px; margin: 2px 0; border-radius: 3px; cursor: pointer; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 3px solid var(--neighbor-border); }
+  .neighbor-link:hover { background: var(--border); }
+  #neighbors-list { max-height: 160px; overflow-y: auto; margin-top: 4px; }
+  #legend-wrap { flex: 1; overflow-y: auto; padding: 12px; }
+  #legend-wrap h3 { font-size: 13px; color: var(--text-2); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .legend-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; border-radius: 4px; font-size: 12px; }
+  .legend-item:hover { background: var(--border); padding-left: 4px; }
+  .legend-item.dimmed { opacity: 0.35; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .legend-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .legend-count { color: var(--count); font-size: 11px; }
+  #stats { padding: 10px 14px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); }
+  #legend-controls { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 4px 0; }
+  #legend-controls label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; color: var(--text-2); user-select: none; }
+  #legend-controls label:hover { color: var(--text); }
+  .legend-cb, #select-all-cb { appearance: none; -webkit-appearance: none; width: 14px; height: 14px; border: 1.5px solid var(--input-border); border-radius: 3px; background: var(--bg); cursor: pointer; position: relative; flex-shrink: 0; }
+  .legend-cb:checked, #select-all-cb:checked { background: #4E79A7; border-color: #4E79A7; }
+  .legend-cb:checked::after, #select-all-cb:checked::after { content: ''; position: absolute; left: 3.5px; top: 1px; width: 4px; height: 7px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+  #select-all-cb:indeterminate { background: #4E79A7; border-color: #4E79A7; }
+  #select-all-cb:indeterminate::after { content: ''; position: absolute; left: 2px; top: 5px; width: 8px; height: 2px; background: #fff; border: none; transform: none; }
+  #theme-wrap { display: flex; gap: 4px; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  #theme-wrap button { flex: 1; background: var(--bg); color: var(--text-2); border: 1px solid var(--input-border); border-radius: 4px; padding: 3px 0; font-size: 11px; cursor: pointer; }
+  #theme-wrap button:hover { color: var(--text); }
+  #theme-wrap button[aria-pressed="true"] { background: #4E79A7; border-color: #4E79A7; color: #fff; }
+</style>
+<script id="graphify-theme-init">
+// Apply the saved theme before first paint (#3894). No saved choice keeps the
+// historical dark look; "system" follows prefers-color-scheme.
+(function () {
+  var pref = null;
+  try { pref = localStorage.getItem('graphify-theme'); } catch (e) {}
+  var t = pref === 'light' ? 'light'
+    : pref === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light'
+    : 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
+</head>
+<body>
+<div id="graph"></div>
+<div id="sidebar">
+  <div id="theme-wrap" role="group" aria-label="Theme">
+    <button type="button" data-theme-choice="light">Light</button>
+    <button type="button" data-theme-choice="dark">Dark</button>
+    <button type="button" data-theme-choice="system">System</button>
+  </div>
+  <div id="search-wrap">
+    <input id="search" type="text" placeholder="Search nodes..." autocomplete="off">
+    <div id="search-results"></div>
+  </div>
+  <div id="info-panel">
+    <h3>Node Info</h3>
+    <div id="info-content"><span class="empty">Click a node to inspect it</span></div>
+  </div>
+  <div id="legend-wrap">
+    <h3>Communities</h3>
+    <div id="legend-controls">
+      <label><input type="checkbox" id="select-all-cb" checked onchange="toggleAllCommunities(!this.checked)">Select All</label>
+    </div>
+    <div id="legend"></div>
+  </div>
+  <div id="stats">53 nodes &middot; 48 edges &middot; 6 communities</div>
+</div>
+<script>
+const RAW_NODES = [{"id": "docs_architecture_roadmap_phases_1_geli\u015ftirme_fazlar\u0131", "label": "1. Geli\u015ftirme Fazlar\u0131", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 40.0, "font": {"size": 12, "color": "#ffffff"}, "title": "1. Geli\u015ftirme Fazlar\u0131", "community": 0, "community_name": "1. Geli\u015ftirme Fazlar\u0131", "source_file": "docs/architecture/ROADMAP_PHASES.md", "file_type": "document", "degree": 12}, {"id": "docs_architecture_roadmap_phases_phase_0_proje_haz\u0131rl\u0131\u011f\u0131_ve_mimari_planlama_\u015fu_anki_faz", "label": "Phase 0: Proje Haz\u0131rl\u0131\u011f\u0131 ve Mimari Planlama (\u015eU ANK\u0130 FAZ)", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "Phase 0: Proje Haz\u0131rl\u0131\u011f\u0131 ve Mimari Planlama (\u015eU ANK\u0130 FAZ)", "community": 0, "community_name": "1. Geli\u015ftirme Fazlar\u0131", "source_file": "docs/architecture/ROADMAP_PHASES.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_roadmap_phases_phase_10_\u015fehir_i_statistikleri_test_raporu_mvp_lansman\u0131", "label": "Phase 10: \u015eehir \u0130statistikleri, Test Raporu & MVP Lansman\u0131", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "Phase 10: \u015eehir \u0130statistikleri, Test Raporu & MVP Lansman\u0131", "community": 0, "community_name": "1. Geli\u015ftirme Fazlar\u0131", "source_file": "docs/architecture/ROADMAP_PHASES.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_roadmap_phases_phase_1_monorepo_ortak_paket_yap\u0131land\u0131rmas\u0131", "label": "Phase 1: Monorepo & Ortak Paket Yap\u0131land\u0131rmas\u0131", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "Phase 1: Monorepo & Ortak Paket Yap\u0131land\u0131rmas\u0131", "community": 0, "community_name": "1. Geli\u015ftirme Fazlar\u0131", "source_file": "docs/architecture/ROADMAP_PHASES.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_roadmap_phases_phase_2_backend_\u00e7ekirdek_docker_veritaban\u0131", "label": "Phase 2: Backend \u00c7ekirdek, Docker & Veritaban\u0131", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "Phase 2: Backend \u00c7ekirdek, Docker & Veritaban\u0131", "community": 0, "community_name": "1. Geli\u015ftirme Fazlar\u0131", "source_file": "docs/architecture/ROADMAP_PHASES.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_roadmap_phases_phase_3_co\u011frafi_veri_olay_y\u00f6netimi_api_si", "label": "Phase 3: Co\u011frafi Veri & Olay Y\u00f6netimi API'si", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "Phase 3: Co\u011frafi Veri & Olay Y\u00f6netimi API'si", "community": 0, "community_name": "1. Geli\u015ftirme Fazlar\u0131", "source_file": "docs/architecture/ROADMAP_PHASES.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_roadmap_phases_phase_4_medya_g\u00fcvenli_depolama_altyap\u0131s\u0131", "label": "Phase 4: Medya & G\u00fcvenli Depolama Altyap\u0131s\u0131", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "Phase 4: Medya & G\u00fcvenli Depolama Altyap\u0131s\u0131", "community": 0, "community_name": "1. Geli\u015ftirme Fazlar\u0131", "source_file": "docs/architecture/ROADMAP_PHASES.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_roadmap_phases_phase_5_mobil_temel_navigasyon_durum_y\u00f6netimi", "label": "Phase 5: Mobil Temel, Navigasyon & Durum Y\u00f6netimi", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "Phase 5: Mobil Temel, Navigasyon & Durum Y\u00f6netimi", "community": 0, "community_name": "1. Geli\u015ftirme Fazlar\u0131", "source_file": "docs/architecture/ROADMAP_PHASES.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_roadmap_phases_phase_6_harita_katman\u0131_vekt\u00f6r_render_maplibre", "label": "Phase 6: Harita Katman\u0131 & Vekt\u00f6r Render (MapLibre)", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "Phase 6: Harita Katman\u0131 & Vekt\u00f6r Render (MapLibre)", "community": 0, "community_name": "1. Geli\u015ftirme Fazlar\u0131", "source_file": "docs/architecture/ROADMAP_PHASES.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_roadmap_phases_phase_7_olay_bildirim_ak\u0131\u015f\u0131_form_deneyimi", "label": "Phase 7: Olay Bildirim Ak\u0131\u015f\u0131 & Form Deneyimi", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "Phase 7: Olay Bildirim Ak\u0131\u015f\u0131 & Form Deneyimi", "community": 0, "community_name": "1. Geli\u015ftirme Fazlar\u0131", "source_file": "docs/architecture/ROADMAP_PHASES.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_roadmap_phases_phase_8_do\u011frulama_topluluk_oylamas\u0131_moderasyon", "label": "Phase 8: Do\u011frulama, Topluluk Oylamas\u0131 & Moderasyon", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "Phase 8: Do\u011frulama, Topluluk Oylamas\u0131 & Moderasyon", "community": 0, "community_name": "1. Geli\u015ftirme Fazlar\u0131", "source_file": "docs/architecture/ROADMAP_PHASES.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_roadmap_phases_phase_9_canl\u0131_olay_ak\u0131\u015f\u0131_bildirimler", "label": "Phase 9: Canl\u0131 Olay Ak\u0131\u015f\u0131 & Bildirimler", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "Phase 9: Canl\u0131 Olay Ak\u0131\u015f\u0131 & Bildirimler", "community": 0, "community_name": "1. Geli\u015ftirme Fazlar\u0131", "source_file": "docs/architecture/ROADMAP_PHASES.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_architecture", "label": "ARCHITECTURE.md", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "ARCHITECTURE.md", "community": 1, "community_name": "\u015eehirNab\u0131z \u2014 Teknik Mimari Belgesi (ARCHITECTURE.md)", "source_file": "docs/architecture/ARCHITECTURE.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_architecture_1_mimari_genel_bak\u0131\u015f", "label": "1. Mimari Genel Bak\u0131\u015f", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "1. Mimari Genel Bak\u0131\u015f", "community": 1, "community_name": "\u015eehirNab\u0131z \u2014 Teknik Mimari Belgesi (ARCHITECTURE.md)", "source_file": "docs/architecture/ARCHITECTURE.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_architecture_2_mobil_harita_k\u00fct\u00fcphanesi_se\u00e7imi_ve_analizi", "label": "2. Mobil Harita K\u00fct\u00fcphanesi Se\u00e7imi ve Analizi", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 15.0, "font": {"size": 12, "color": "#ffffff"}, "title": "2. Mobil Harita K\u00fct\u00fcphanesi Se\u00e7imi ve Analizi", "community": 1, "community_name": "\u015eehirNab\u0131z \u2014 Teknik Mimari Belgesi (ARCHITECTURE.md)", "source_file": "docs/architecture/ARCHITECTURE.md", "file_type": "document", "degree": 2}, {"id": "docs_architecture_architecture_3_1_neden_nestjs", "label": "3.1 Neden NestJS?", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "3.1 Neden NestJS?", "community": 1, "community_name": "\u015eehirNab\u0131z \u2014 Teknik Mimari Belgesi (ARCHITECTURE.md)", "source_file": "docs/architecture/ARCHITECTURE.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_architecture_3_2_postgresql_postgis_uzamsal_spatial_stratejisi", "label": "3.2 PostgreSQL + PostGIS Uzamsal (Spatial) Stratejisi", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "3.2 PostgreSQL + PostGIS Uzamsal (Spatial) Stratejisi", "community": 1, "community_name": "\u015eehirNab\u0131z \u2014 Teknik Mimari Belgesi (ARCHITECTURE.md)", "source_file": "docs/architecture/ARCHITECTURE.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_architecture_3_backend_mimarisi_nestjs_postgresql_postgis", "label": "3. Backend Mimarisi (NestJS + PostgreSQL/PostGIS)", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 17.5, "font": {"size": 12, "color": "#ffffff"}, "title": "3. Backend Mimarisi (NestJS + PostgreSQL/PostGIS)", "community": 1, "community_name": "\u015eehirNab\u0131z \u2014 Teknik Mimari Belgesi (ARCHITECTURE.md)", "source_file": "docs/architecture/ARCHITECTURE.md", "file_type": "document", "degree": 3}, {"id": "docs_architecture_architecture_4_durum_y\u00f6netimi_ve_veri_ak\u0131\u015f\u0131", "label": "4. Durum Y\u00f6netimi ve Veri Ak\u0131\u015f\u0131", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "4. Durum Y\u00f6netimi ve Veri Ak\u0131\u015f\u0131", "community": 1, "community_name": "\u015eehirNab\u0131z \u2014 Teknik Mimari Belgesi (ARCHITECTURE.md)", "source_file": "docs/architecture/ARCHITECTURE.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_architecture_5_ger\u00e7ek_zamanl\u0131_i_leti\u015fim_stratejisi", "label": "5. Ger\u00e7ek Zamanl\u0131 \u0130leti\u015fim Stratejisi", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "5. Ger\u00e7ek Zamanl\u0131 \u0130leti\u015fim Stratejisi", "community": 1, "community_name": "\u015eehirNab\u0131z \u2014 Teknik Mimari Belgesi (ARCHITECTURE.md)", "source_file": "docs/architecture/ARCHITECTURE.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_architecture_6_g\u00fcvenilirlik_ve_s\u00fcreklilik_garantisi", "label": "6. G\u00fcvenilirlik ve S\u00fcreklilik Garantisi", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "6. G\u00fcvenilirlik ve S\u00fcreklilik Garantisi", "community": 1, "community_name": "\u015eehirNab\u0131z \u2014 Teknik Mimari Belgesi (ARCHITECTURE.md)", "source_file": "docs/architecture/ARCHITECTURE.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_architecture_se\u00e7im_karar\u0131_ve_gerek\u00e7e_maplibre_maplibre_react_native", "label": "Se\u00e7im Karar\u0131 ve Gerek\u00e7e: `@maplibre/maplibre-react-native`", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "Se\u00e7im Karar\u0131 ve Gerek\u00e7e: `@maplibre/maplibre-react-native`", "community": 1, "community_name": "\u015eehirNab\u0131z \u2014 Teknik Mimari Belgesi (ARCHITECTURE.md)", "source_file": "docs/architecture/ARCHITECTURE.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_architecture_\u015fehirnab\u0131z_teknik_mimari_belgesi_architecture_md", "label": "\u015eehirNab\u0131z \u2014 Teknik Mimari Belgesi (ARCHITECTURE.md)", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 27.5, "font": {"size": 12, "color": "#ffffff"}, "title": "\u015eehirNab\u0131z \u2014 Teknik Mimari Belgesi (ARCHITECTURE.md)", "community": 1, "community_name": "\u015eehirNab\u0131z \u2014 Teknik Mimari Belgesi (ARCHITECTURE.md)", "source_file": "docs/architecture/ARCHITECTURE.md", "file_type": "document", "degree": 7}, {"id": "docs_architecture_security_privacy", "label": "SECURITY_PRIVACY.md", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "SECURITY_PRIVACY.md", "community": 2, "community_name": "\u015eehirNab\u0131z \u2014 G\u00fcvenlik, Gizlilik, Moderasyon ve Maliyet Analizi (SECURITY_PRIVACY.md)", "source_file": "docs/architecture/SECURITY_PRIVACY.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_security_privacy_1_1_konum_bulan\u0131kla\u015ft\u0131rma_fuzzy_location_noise_injection", "label": "1.1 Konum Bulan\u0131kla\u015ft\u0131rma (Fuzzy Location & Noise Injection)", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "1.1 Konum Bulan\u0131kla\u015ft\u0131rma (Fuzzy Location & Noise Injection)", "community": 2, "community_name": "\u015eehirNab\u0131z \u2014 G\u00fcvenlik, Gizlilik, Moderasyon ve Maliyet Analizi (SECURITY_PRIVACY.md)", "source_file": "docs/architecture/SECURITY_PRIVACY.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_security_privacy_1_2_medya_sanitizasyonu_exif_metadata_stripping", "label": "1.2 Medya Sanitizasyonu (EXIF / Metadata Stripping)", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "1.2 Medya Sanitizasyonu (EXIF / Metadata Stripping)", "community": 2, "community_name": "\u015eehirNab\u0131z \u2014 G\u00fcvenlik, Gizlilik, Moderasyon ve Maliyet Analizi (SECURITY_PRIVACY.md)", "source_file": "docs/architecture/SECURITY_PRIVACY.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_security_privacy_1_konum_gizlili\u011fi_ve_kvkk_gdpr_uyumu", "label": "1. Konum Gizlili\u011fi ve KVKK / GDPR Uyumu", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 17.5, "font": {"size": 12, "color": "#ffffff"}, "title": "1. Konum Gizlili\u011fi ve KVKK / GDPR Uyumu", "community": 2, "community_name": "\u015eehirNab\u0131z \u2014 G\u00fcvenlik, Gizlilik, Moderasyon ve Maliyet Analizi (SECURITY_PRIVACY.md)", "source_file": "docs/architecture/SECURITY_PRIVACY.md", "file_type": "document", "degree": 3}, {"id": "docs_architecture_security_privacy_2_1_i_tibar_reputation_karma_algoritmas\u0131", "label": "2.1 \u0130tibar (Reputation / Karma) Algoritmas\u0131", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "2.1 \u0130tibar (Reputation / Karma) Algoritmas\u0131", "community": 2, "community_name": "\u015eehirNab\u0131z \u2014 G\u00fcvenlik, Gizlilik, Moderasyon ve Maliyet Analizi (SECURITY_PRIVACY.md)", "source_file": "docs/architecture/SECURITY_PRIVACY.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_security_privacy_2_2_co\u011frafi_m\u00fckerrer_bildirim_engelleme_spatial_deduplication", "label": "2.2 Co\u011frafi M\u00fckerrer Bildirim Engelleme (Spatial Deduplication)", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "2.2 Co\u011frafi M\u00fckerrer Bildirim Engelleme (Spatial Deduplication)", "community": 2, "community_name": "\u015eehirNab\u0131z \u2014 G\u00fcvenlik, Gizlilik, Moderasyon ve Maliyet Analizi (SECURITY_PRIVACY.md)", "source_file": "docs/architecture/SECURITY_PRIVACY.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_security_privacy_2_sahte_bildirim_ve_spam_\u00f6nleme_mekanizmalar\u0131", "label": "2. Sahte Bildirim ve Spam \u00d6nleme Mekanizmalar\u0131", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 17.5, "font": {"size": 12, "color": "#ffffff"}, "title": "2. Sahte Bildirim ve Spam \u00d6nleme Mekanizmalar\u0131", "community": 2, "community_name": "\u015eehirNab\u0131z \u2014 G\u00fcvenlik, Gizlilik, Moderasyon ve Maliyet Analizi (SECURITY_PRIVACY.md)", "source_file": "docs/architecture/SECURITY_PRIVACY.md", "file_type": "document", "degree": 3}, {"id": "docs_architecture_security_privacy_3_topluluk_moderasyonu_ve_g\u00fcvenilirlik_skoru", "label": "3. Topluluk Moderasyonu ve G\u00fcvenilirlik Skoru", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "3. Topluluk Moderasyonu ve G\u00fcvenilirlik Skoru", "community": 2, "community_name": "\u015eehirNab\u0131z \u2014 G\u00fcvenlik, Gizlilik, Moderasyon ve Maliyet Analizi (SECURITY_PRIVACY.md)", "source_file": "docs/architecture/SECURITY_PRIVACY.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_security_privacy_4_kullan\u0131m_maliyetleri_ve_optimizasyon_projeksiyonu", "label": "4. Kullan\u0131m Maliyetleri ve Optimizasyon Projeksiyonu", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "4. Kullan\u0131m Maliyetleri ve Optimizasyon Projeksiyonu", "community": 2, "community_name": "\u015eehirNab\u0131z \u2014 G\u00fcvenlik, Gizlilik, Moderasyon ve Maliyet Analizi (SECURITY_PRIVACY.md)", "source_file": "docs/architecture/SECURITY_PRIVACY.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_security_privacy_\u015fehirnab\u0131z_g\u00fcvenlik_gizlilik_moderasyon_ve_maliyet_analizi_security_privacy_md", "label": "\u015eehirNab\u0131z \u2014 G\u00fcvenlik, Gizlilik, Moderasyon ve Maliyet Analizi (SECURITY_PRIVACY.md)", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 22.5, "font": {"size": 12, "color": "#ffffff"}, "title": "\u015eehirNab\u0131z \u2014 G\u00fcvenlik, Gizlilik, Moderasyon ve Maliyet Analizi (SECURITY_PRIVACY.md)", "community": 2, "community_name": "\u015eehirNab\u0131z \u2014 G\u00fcvenlik, Gizlilik, Moderasyon ve Maliyet Analizi (SECURITY_PRIVACY.md)", "source_file": "docs/architecture/SECURITY_PRIVACY.md", "file_type": "document", "degree": 5}, {"id": "agents", "label": "AGENTS.md", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "AGENTS.md", "community": 3, "community_name": "\u015eehirNab\u0131z \u2014 Yapay Zeka Ajanlar\u0131 ve Geli\u015ftirici Rehberi (AGENTS.md)", "source_file": "AGENTS.md", "file_type": "document", "degree": 1}, {"id": "agents_1_proje_\u00f6zeti_ve_vizyon", "label": "1. Proje \u00d6zeti ve Vizyon", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "1. Proje \u00d6zeti ve Vizyon", "community": 3, "community_name": "\u015eehirNab\u0131z \u2014 Yapay Zeka Ajanlar\u0131 ve Geli\u015ftirici Rehberi (AGENTS.md)", "source_file": "AGENTS.md", "file_type": "document", "degree": 1}, {"id": "agents_2_temel_\u00e7al\u0131\u015fma_kurallar\u0131", "label": "2. Temel \u00c7al\u0131\u015fma Kurallar\u0131", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "2. Temel \u00c7al\u0131\u015fma Kurallar\u0131", "community": 3, "community_name": "\u015eehirNab\u0131z \u2014 Yapay Zeka Ajanlar\u0131 ve Geli\u015ftirici Rehberi (AGENTS.md)", "source_file": "AGENTS.md", "file_type": "document", "degree": 1}, {"id": "agents_3_monorepo_yap\u0131_\u015femas\u0131", "label": "3. Monorepo Yap\u0131 \u015eemas\u0131", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "3. Monorepo Yap\u0131 \u015eemas\u0131", "community": 3, "community_name": "\u015eehirNab\u0131z \u2014 Yapay Zeka Ajanlar\u0131 ve Geli\u015ftirici Rehberi (AGENTS.md)", "source_file": "AGENTS.md", "file_type": "document", "degree": 1}, {"id": "agents_4_graphify_kurallar\u0131_ve_kullan\u0131m\u0131", "label": "4. Graphify Kurallar\u0131 ve Kullan\u0131m\u0131", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "4. Graphify Kurallar\u0131 ve Kullan\u0131m\u0131", "community": 3, "community_name": "\u015eehirNab\u0131z \u2014 Yapay Zeka Ajanlar\u0131 ve Geli\u015ftirici Rehberi (AGENTS.md)", "source_file": "AGENTS.md", "file_type": "document", "degree": 1}, {"id": "agents_5_g\u00fcvenlik_ve_gizlilik_standartlar\u0131", "label": "5. G\u00fcvenlik ve Gizlilik Standartlar\u0131", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "5. G\u00fcvenlik ve Gizlilik Standartlar\u0131", "community": 3, "community_name": "\u015eehirNab\u0131z \u2014 Yapay Zeka Ajanlar\u0131 ve Geli\u015ftirici Rehberi (AGENTS.md)", "source_file": "AGENTS.md", "file_type": "document", "degree": 1}, {"id": "agents_6_geli\u015ftirme_fazlar\u0131_\u00f6zeti", "label": "6. Geli\u015ftirme Fazlar\u0131 \u00d6zeti", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "6. Geli\u015ftirme Fazlar\u0131 \u00d6zeti", "community": 3, "community_name": "\u015eehirNab\u0131z \u2014 Yapay Zeka Ajanlar\u0131 ve Geli\u015ftirici Rehberi (AGENTS.md)", "source_file": "AGENTS.md", "file_type": "document", "degree": 1}, {"id": "agents_\u015fehirnab\u0131z_yapay_zeka_ajanlar\u0131_ve_geli\u015ftirici_rehberi_agents_md", "label": "\u015eehirNab\u0131z \u2014 Yapay Zeka Ajanlar\u0131 ve Geli\u015ftirici Rehberi (AGENTS.md)", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 27.5, "font": {"size": 12, "color": "#ffffff"}, "title": "\u015eehirNab\u0131z \u2014 Yapay Zeka Ajanlar\u0131 ve Geli\u015ftirici Rehberi (AGENTS.md)", "community": 3, "community_name": "\u015eehirNab\u0131z \u2014 Yapay Zeka Ajanlar\u0131 ve Geli\u015ftirici Rehberi (AGENTS.md)", "source_file": "AGENTS.md", "file_type": "document", "degree": 7}, {"id": "docs_architecture_data_models", "label": "DATA_MODELS.md", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "DATA_MODELS.md", "community": 4, "community_name": "\u015eehirNab\u0131z \u2014 Veri Modelleri ve \u015eema Belgesi (DATA_MODELS.md)", "source_file": "docs/architecture/DATA_MODELS.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_data_models_1_veritaban\u0131_varl\u0131k_i_li\u015fki_diyagram\u0131_erd", "label": "1. Veritaban\u0131 Varl\u0131k-\u0130li\u015fki Diyagram\u0131 (ERD)", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "1. Veritaban\u0131 Varl\u0131k-\u0130li\u015fki Diyagram\u0131 (ERD)", "community": 4, "community_name": "\u015eehirNab\u0131z \u2014 Veri Modelleri ve \u015eema Belgesi (DATA_MODELS.md)", "source_file": "docs/architecture/DATA_MODELS.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_data_models_2_postgresql_postgis_tablo_\u015femalar\u0131_sql", "label": "2. PostgreSQL + PostGIS Tablo \u015eemalar\u0131 (SQL)", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "2. PostgreSQL + PostGIS Tablo \u015eemalar\u0131 (SQL)", "community": 4, "community_name": "\u015eehirNab\u0131z \u2014 Veri Modelleri ve \u015eema Belgesi (DATA_MODELS.md)", "source_file": "docs/architecture/DATA_MODELS.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_data_models_3_i_ndeksleme_stratejileri", "label": "3. \u0130ndeksleme Stratejileri", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "3. \u0130ndeksleme Stratejileri", "community": 4, "community_name": "\u015eehirNab\u0131z \u2014 Veri Modelleri ve \u015eema Belgesi (DATA_MODELS.md)", "source_file": "docs/architecture/DATA_MODELS.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_data_models_4_1_zod_validasyon_\u015femas\u0131_olay_olu\u015fturma_\u00f6rne\u011fi", "label": "4.1 Zod Validasyon \u015eemas\u0131 (Olay Olu\u015fturma \u00d6rne\u011fi)", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "4.1 Zod Validasyon \u015eemas\u0131 (Olay Olu\u015fturma \u00d6rne\u011fi)", "community": 4, "community_name": "\u015eehirNab\u0131z \u2014 Veri Modelleri ve \u015eema Belgesi (DATA_MODELS.md)", "source_file": "docs/architecture/DATA_MODELS.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_data_models_4_ortak_tipler_ve_dto_lar_packages_shared", "label": "4. Ortak Tipler ve DTO'lar (`packages/shared`)", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 15.0, "font": {"size": 12, "color": "#ffffff"}, "title": "4. Ortak Tipler ve DTO'lar (`packages/shared`)", "community": 4, "community_name": "\u015eehirNab\u0131z \u2014 Veri Modelleri ve \u015eema Belgesi (DATA_MODELS.md)", "source_file": "docs/architecture/DATA_MODELS.md", "file_type": "document", "degree": 2}, {"id": "docs_architecture_data_models_\u015fehirnab\u0131z_veri_modelleri_ve_\u015fema_belgesi_data_models_md", "label": "\u015eehirNab\u0131z \u2014 Veri Modelleri ve \u015eema Belgesi (DATA_MODELS.md)", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 22.5, "font": {"size": 12, "color": "#ffffff"}, "title": "\u015eehirNab\u0131z \u2014 Veri Modelleri ve \u015eema Belgesi (DATA_MODELS.md)", "community": 4, "community_name": "\u015eehirNab\u0131z \u2014 Veri Modelleri ve \u015eema Belgesi (DATA_MODELS.md)", "source_file": "docs/architecture/DATA_MODELS.md", "file_type": "document", "degree": 5}, {"id": "docs_architecture_roadmap_phases", "label": "ROADMAP_PHASES.md", "color": {"background": "#EDC948", "border": "#EDC948", "highlight": {"background": "#ffffff", "border": "#EDC948"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "ROADMAP_PHASES.md", "community": 5, "community_name": "2. \u0130lk S\u00fcr\u00fcm \u0130\u00e7in MVP Kapsam\u0131", "source_file": "docs/architecture/ROADMAP_PHASES.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_roadmap_phases_2_i_lk_s\u00fcr\u00fcm_i_\u00e7in_mvp_kapsam\u0131", "label": "2. \u0130lk S\u00fcr\u00fcm \u0130\u00e7in MVP Kapsam\u0131", "color": {"background": "#EDC948", "border": "#EDC948", "highlight": {"background": "#ffffff", "border": "#EDC948"}}, "size": 17.5, "font": {"size": 12, "color": "#ffffff"}, "title": "2. \u0130lk S\u00fcr\u00fcm \u0130\u00e7in MVP Kapsam\u0131", "community": 5, "community_name": "2. \u0130lk S\u00fcr\u00fcm \u0130\u00e7in MVP Kapsam\u0131", "source_file": "docs/architecture/ROADMAP_PHASES.md", "file_type": "document", "degree": 3}, {"id": "docs_architecture_roadmap_phases_mvp_sonras\u0131na_b\u0131rak\u0131lan_\u00f6zellikler_post_mvp_out_of_scope", "label": "MVP Sonras\u0131na B\u0131rak\u0131lan \u00d6zellikler (Post-MVP / Out of Scope)", "color": {"background": "#EDC948", "border": "#EDC948", "highlight": {"background": "#ffffff", "border": "#EDC948"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "MVP Sonras\u0131na B\u0131rak\u0131lan \u00d6zellikler (Post-MVP / Out of Scope)", "community": 5, "community_name": "2. \u0130lk S\u00fcr\u00fcm \u0130\u00e7in MVP Kapsam\u0131", "source_file": "docs/architecture/ROADMAP_PHASES.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_roadmap_phases_mvp_ye_dahil_olan_\u00f6zellikler_in_scope", "label": "MVP'ye Dahil Olan \u00d6zellikler (In Scope)", "color": {"background": "#EDC948", "border": "#EDC948", "highlight": {"background": "#ffffff", "border": "#EDC948"}}, "size": 12.5, "font": {"size": 0, "color": "#ffffff"}, "title": "MVP'ye Dahil Olan \u00d6zellikler (In Scope)", "community": 5, "community_name": "2. \u0130lk S\u00fcr\u00fcm \u0130\u00e7in MVP Kapsam\u0131", "source_file": "docs/architecture/ROADMAP_PHASES.md", "file_type": "document", "degree": 1}, {"id": "docs_architecture_roadmap_phases_\u015fehirnab\u0131z_geli\u015ftirme_fazlar\u0131_ve_mvp_yol_haritas\u0131_roadmap_phases_md", "label": "\u015eehirNab\u0131z \u2014 Geli\u015ftirme Fazlar\u0131 ve MVP Yol Haritas\u0131 (ROADMAP_PHASES.md)", "color": {"background": "#EDC948", "border": "#EDC948", "highlight": {"background": "#ffffff", "border": "#EDC948"}}, "size": 17.5, "font": {"size": 12, "color": "#ffffff"}, "title": "\u015eehirNab\u0131z \u2014 Geli\u015ftirme Fazlar\u0131 ve MVP Yol Haritas\u0131 (ROADMAP_PHASES.md)", "community": 5, "community_name": "2. \u0130lk S\u00fcr\u00fcm \u0130\u00e7in MVP Kapsam\u0131", "source_file": "docs/architecture/ROADMAP_PHASES.md", "file_type": "document", "degree": 3}];
+const RAW_EDGES = [{"from": "docs_architecture_roadmap_phases_1_geli\u015ftirme_fazlar\u0131", "to": "docs_architecture_roadmap_phases_phase_1_monorepo_ortak_paket_yap\u0131land\u0131rmas\u0131", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_roadmap_phases_1_geli\u015ftirme_fazlar\u0131", "to": "docs_architecture_roadmap_phases_phase_2_backend_\u00e7ekirdek_docker_veritaban\u0131", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_roadmap_phases_1_geli\u015ftirme_fazlar\u0131", "to": "docs_architecture_roadmap_phases_phase_3_co\u011frafi_veri_olay_y\u00f6netimi_api_si", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_roadmap_phases_1_geli\u015ftirme_fazlar\u0131", "to": "docs_architecture_roadmap_phases_phase_4_medya_g\u00fcvenli_depolama_altyap\u0131s\u0131", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_roadmap_phases_1_geli\u015ftirme_fazlar\u0131", "to": "docs_architecture_roadmap_phases_phase_5_mobil_temel_navigasyon_durum_y\u00f6netimi", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_roadmap_phases_1_geli\u015ftirme_fazlar\u0131", "to": "docs_architecture_roadmap_phases_phase_6_harita_katman\u0131_vekt\u00f6r_render_maplibre", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_roadmap_phases_1_geli\u015ftirme_fazlar\u0131", "to": "docs_architecture_roadmap_phases_phase_7_olay_bildirim_ak\u0131\u015f\u0131_form_deneyimi", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_roadmap_phases_1_geli\u015ftirme_fazlar\u0131", "to": "docs_architecture_roadmap_phases_phase_8_do\u011frulama_topluluk_oylamas\u0131_moderasyon", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_roadmap_phases_1_geli\u015ftirme_fazlar\u0131", "to": "docs_architecture_roadmap_phases_phase_9_canl\u0131_olay_ak\u0131\u015f\u0131_bildirimler", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_roadmap_phases_1_geli\u015ftirme_fazlar\u0131", "to": "docs_architecture_roadmap_phases_phase_10_\u015fehir_i_statistikleri_test_raporu_mvp_lansman\u0131", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_roadmap_phases_1_geli\u015ftirme_fazlar\u0131", "to": "docs_architecture_roadmap_phases_phase_0_proje_haz\u0131rl\u0131\u011f\u0131_ve_mimari_planlama_\u015fu_anki_faz", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_roadmap_phases_\u015fehirnab\u0131z_geli\u015ftirme_fazlar\u0131_ve_mvp_yol_haritas\u0131_roadmap_phases_md", "to": "docs_architecture_roadmap_phases_1_geli\u015ftirme_fazlar\u0131", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_architecture", "to": "docs_architecture_architecture_\u015fehirnab\u0131z_teknik_mimari_belgesi_architecture_md", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_architecture_\u015fehirnab\u0131z_teknik_mimari_belgesi_architecture_md", "to": "docs_architecture_architecture_1_mimari_genel_bak\u0131\u015f", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_architecture_2_mobil_harita_k\u00fct\u00fcphanesi_se\u00e7imi_ve_analizi", "to": "docs_architecture_architecture_se\u00e7im_karar\u0131_ve_gerek\u00e7e_maplibre_maplibre_react_native", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_architecture_\u015fehirnab\u0131z_teknik_mimari_belgesi_architecture_md", "to": "docs_architecture_architecture_2_mobil_harita_k\u00fct\u00fcphanesi_se\u00e7imi_ve_analizi", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_architecture_3_backend_mimarisi_nestjs_postgresql_postgis", "to": "docs_architecture_architecture_3_1_neden_nestjs", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_architecture_3_backend_mimarisi_nestjs_postgresql_postgis", "to": "docs_architecture_architecture_3_2_postgresql_postgis_uzamsal_spatial_stratejisi", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_architecture_\u015fehirnab\u0131z_teknik_mimari_belgesi_architecture_md", "to": "docs_architecture_architecture_3_backend_mimarisi_nestjs_postgresql_postgis", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_architecture_\u015fehirnab\u0131z_teknik_mimari_belgesi_architecture_md", "to": "docs_architecture_architecture_4_durum_y\u00f6netimi_ve_veri_ak\u0131\u015f\u0131", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_architecture_\u015fehirnab\u0131z_teknik_mimari_belgesi_architecture_md", "to": "docs_architecture_architecture_5_ger\u00e7ek_zamanl\u0131_i_leti\u015fim_stratejisi", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_architecture_\u015fehirnab\u0131z_teknik_mimari_belgesi_architecture_md", "to": "docs_architecture_architecture_6_g\u00fcvenilirlik_ve_s\u00fcreklilik_garantisi", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_security_privacy", "to": "docs_architecture_security_privacy_\u015fehirnab\u0131z_g\u00fcvenlik_gizlilik_moderasyon_ve_maliyet_analizi_security_privacy_md", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_security_privacy_1_konum_gizlili\u011fi_ve_kvkk_gdpr_uyumu", "to": "docs_architecture_security_privacy_1_1_konum_bulan\u0131kla\u015ft\u0131rma_fuzzy_location_noise_injection", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_security_privacy_1_konum_gizlili\u011fi_ve_kvkk_gdpr_uyumu", "to": "docs_architecture_security_privacy_1_2_medya_sanitizasyonu_exif_metadata_stripping", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_security_privacy_\u015fehirnab\u0131z_g\u00fcvenlik_gizlilik_moderasyon_ve_maliyet_analizi_security_privacy_md", "to": "docs_architecture_security_privacy_1_konum_gizlili\u011fi_ve_kvkk_gdpr_uyumu", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_security_privacy_2_sahte_bildirim_ve_spam_\u00f6nleme_mekanizmalar\u0131", "to": "docs_architecture_security_privacy_2_1_i_tibar_reputation_karma_algoritmas\u0131", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_security_privacy_2_sahte_bildirim_ve_spam_\u00f6nleme_mekanizmalar\u0131", "to": "docs_architecture_security_privacy_2_2_co\u011frafi_m\u00fckerrer_bildirim_engelleme_spatial_deduplication", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_security_privacy_\u015fehirnab\u0131z_g\u00fcvenlik_gizlilik_moderasyon_ve_maliyet_analizi_security_privacy_md", "to": "docs_architecture_security_privacy_2_sahte_bildirim_ve_spam_\u00f6nleme_mekanizmalar\u0131", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_security_privacy_\u015fehirnab\u0131z_g\u00fcvenlik_gizlilik_moderasyon_ve_maliyet_analizi_security_privacy_md", "to": "docs_architecture_security_privacy_3_topluluk_moderasyonu_ve_g\u00fcvenilirlik_skoru", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_security_privacy_\u015fehirnab\u0131z_g\u00fcvenlik_gizlilik_moderasyon_ve_maliyet_analizi_security_privacy_md", "to": "docs_architecture_security_privacy_4_kullan\u0131m_maliyetleri_ve_optimizasyon_projeksiyonu", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "agents", "to": "agents_\u015fehirnab\u0131z_yapay_zeka_ajanlar\u0131_ve_geli\u015ftirici_rehberi_agents_md", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "agents_\u015fehirnab\u0131z_yapay_zeka_ajanlar\u0131_ve_geli\u015ftirici_rehberi_agents_md", "to": "agents_1_proje_\u00f6zeti_ve_vizyon", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "agents_\u015fehirnab\u0131z_yapay_zeka_ajanlar\u0131_ve_geli\u015ftirici_rehberi_agents_md", "to": "agents_2_temel_\u00e7al\u0131\u015fma_kurallar\u0131", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "agents_\u015fehirnab\u0131z_yapay_zeka_ajanlar\u0131_ve_geli\u015ftirici_rehberi_agents_md", "to": "agents_3_monorepo_yap\u0131_\u015femas\u0131", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "agents_\u015fehirnab\u0131z_yapay_zeka_ajanlar\u0131_ve_geli\u015ftirici_rehberi_agents_md", "to": "agents_4_graphify_kurallar\u0131_ve_kullan\u0131m\u0131", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "agents_\u015fehirnab\u0131z_yapay_zeka_ajanlar\u0131_ve_geli\u015ftirici_rehberi_agents_md", "to": "agents_5_g\u00fcvenlik_ve_gizlilik_standartlar\u0131", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "agents_\u015fehirnab\u0131z_yapay_zeka_ajanlar\u0131_ve_geli\u015ftirici_rehberi_agents_md", "to": "agents_6_geli\u015ftirme_fazlar\u0131_\u00f6zeti", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_data_models", "to": "docs_architecture_data_models_\u015fehirnab\u0131z_veri_modelleri_ve_\u015fema_belgesi_data_models_md", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_data_models_\u015fehirnab\u0131z_veri_modelleri_ve_\u015fema_belgesi_data_models_md", "to": "docs_architecture_data_models_1_veritaban\u0131_varl\u0131k_i_li\u015fki_diyagram\u0131_erd", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_data_models_\u015fehirnab\u0131z_veri_modelleri_ve_\u015fema_belgesi_data_models_md", "to": "docs_architecture_data_models_2_postgresql_postgis_tablo_\u015femalar\u0131_sql", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_data_models_\u015fehirnab\u0131z_veri_modelleri_ve_\u015fema_belgesi_data_models_md", "to": "docs_architecture_data_models_3_i_ndeksleme_stratejileri", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_data_models_4_ortak_tipler_ve_dto_lar_packages_shared", "to": "docs_architecture_data_models_4_1_zod_validasyon_\u015femas\u0131_olay_olu\u015fturma_\u00f6rne\u011fi", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_data_models_\u015fehirnab\u0131z_veri_modelleri_ve_\u015fema_belgesi_data_models_md", "to": "docs_architecture_data_models_4_ortak_tipler_ve_dto_lar_packages_shared", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_roadmap_phases", "to": "docs_architecture_roadmap_phases_\u015fehirnab\u0131z_geli\u015ftirme_fazlar\u0131_ve_mvp_yol_haritas\u0131_roadmap_phases_md", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_roadmap_phases_2_i_lk_s\u00fcr\u00fcm_i_\u00e7in_mvp_kapsam\u0131", "to": "docs_architecture_roadmap_phases_mvp_ye_dahil_olan_\u00f6zellikler_in_scope", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_roadmap_phases_2_i_lk_s\u00fcr\u00fcm_i_\u00e7in_mvp_kapsam\u0131", "to": "docs_architecture_roadmap_phases_mvp_sonras\u0131na_b\u0131rak\u0131lan_\u00f6zellikler_post_mvp_out_of_scope", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "docs_architecture_roadmap_phases_\u015fehirnab\u0131z_geli\u015ftirme_fazlar\u0131_ve_mvp_yol_haritas\u0131_roadmap_phases_md", "to": "docs_architecture_roadmap_phases_2_i_lk_s\u00fcr\u00fcm_i_\u00e7in_mvp_kapsam\u0131", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}];
+const LEGEND = [{"cid": 0, "color": "#4E79A7", "label": "1. Geli\u015ftirme Fazlar\u0131", "count": 12}, {"cid": 1, "color": "#F28E2B", "label": "\u015eehirNab\u0131z \u2014 Teknik Mimari Belgesi (ARCHITECTURE.md)", "count": 11}, {"cid": 2, "color": "#E15759", "label": "\u015eehirNab\u0131z \u2014 G\u00fcvenlik, Gizlilik, Moderasyon ve Maliyet Analizi (SECURITY_PRIVACY.md)", "count": 10}, {"cid": 3, "color": "#76B7B2", "label": "\u015eehirNab\u0131z \u2014 Yapay Zeka Ajanlar\u0131 ve Geli\u015ftirici Rehberi (AGENTS.md)", "count": 8}, {"cid": 4, "color": "#59A14F", "label": "\u015eehirNab\u0131z \u2014 Veri Modelleri ve \u015eema Belgesi (DATA_MODELS.md)", "count": 7}, {"cid": 5, "color": "#EDC948", "label": "2. \u0130lk S\u00fcr\u00fcm \u0130\u00e7in MVP Kapsam\u0131", "count": 5}];
+
+// HTML-escape helper — prevents XSS when injecting graph data into innerHTML
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// Build vis datasets
+const nodesDS = new vis.DataSet(RAW_NODES.map((n, i) => ({
+  id: n.id, label: n.label, color: n.color, size: n.size,
+  font: n.font, title: n.title,
+  // Fermat/golden-angle spiral seed positions (#3699): spreading nodes out
+  // before physics runs keeps avoidOverlap from computing near-zero-distance
+  // repulsion that blows the BarnesHut recursion into a stack overflow on large
+  // graphs. `i` is the map index — physics still settles small graphs identically.
+  x: 30 * Math.sqrt(i) * Math.cos(i * 2.4),
+  y: 30 * Math.sqrt(i) * Math.sin(i * 2.4),
+  community: n.community, community_name: n.community_name,
+  source_file: n.source_file, file_type: n.file_type, degree: n.degree,
+  member_count: n.member_count,
+})));
+
+const edgesDS = new vis.DataSet(RAW_EDGES.map((e, i) => ({
+  id: i, from: e.from, to: e.to,
+  label: '',
+  title: e.title,
+  dashes: e.dashes,
+  width: e.width,
+  color: e.color,
+  arrows: { to: { enabled: true, scaleFactor: 0.5 } },
+})));
+
+const container = document.getElementById('graph');
+const network = new vis.Network(container, { nodes: nodesDS, edges: edgesDS }, {
+  physics: {
+    enabled: true,
+    solver: 'forceAtlas2Based',
+    forceAtlas2Based: {
+      gravitationalConstant: -60,
+      centralGravity: 0.005,
+      springLength: 120,
+      springConstant: 0.08,
+      damping: 0.4,
+      avoidOverlap: 0.8,
+    },
+    stabilization: { iterations: 200, fit: true },
+  },
+  interaction: {
+    hover: true,
+    tooltipDelay: 100,
+    hideEdgesOnDrag: true,
+    navigationButtons: false,
+    keyboard: false,
+  },
+  nodes: { shape: 'dot', borderWidth: 1.5 },
+  edges: { smooth: { type: 'continuous', roundness: 0.2 }, selectionWidth: 3 },
+});
+
+// Theme toggle (#3894): Light / Dark / System, persisted in localStorage.
+const THEME_KEY = 'graphify-theme';
+const themeMQ = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+let themeLabelColor = '#ffffff';  // matches the per-node font color set in Python
+function themePref() {
+  let p = null;
+  try { p = localStorage.getItem(THEME_KEY); } catch (e) {}
+  return (p === 'light' || p === 'dark' || p === 'system') ? p : null;
+}
+function applyTheme(pref) {
+  const t = pref === 'light' ? 'light' : (pref === 'system' && themeMQ && themeMQ.matches) ? 'light' : 'dark';
+  const root = document.documentElement;
+  if (!root) return;
+  root.setAttribute('data-theme', t);
+  document.querySelectorAll('[data-theme-choice]').forEach(b => {
+    b.setAttribute('aria-pressed', String(b.dataset.themeChoice === (pref || 'dark')));
+  });
+  const labelColor = getComputedStyle(root).getPropertyValue('--node-label').trim();
+  if (labelColor && labelColor !== themeLabelColor) {
+    themeLabelColor = labelColor;
+    nodesDS.update(nodesDS.get().map(n => ({ id: n.id, font: Object.assign({}, n.font, { color: labelColor }) })));
+  }
+}
+document.querySelectorAll('[data-theme-choice]').forEach(b => {
+  b.addEventListener('click', () => {
+    const pref = b.dataset.themeChoice;
+    try { localStorage.setItem(THEME_KEY, pref); } catch (e) {}
+    applyTheme(pref);
+  });
+});
+if (themeMQ) {
+  const onSchemeChange = () => { if (themePref() === 'system') applyTheme('system'); };
+  if (themeMQ.addEventListener) themeMQ.addEventListener('change', onSchemeChange);
+  else if (themeMQ.addListener) themeMQ.addListener(onSchemeChange);
+}
+applyTheme(themePref());
+
+network.once('stabilizationIterationsDone', () => {
+  network.setOptions({ physics: { enabled: false } });
+});
+
+function showInfo(nodeId) {
+  const n = nodesDS.get(nodeId);
+  if (!n) return;
+  const neighborIds = network.getConnectedNodes(nodeId);
+  const neighborItems = neighborIds.map(nid => {
+    const nb = nodesDS.get(nid);
+    const color = nb ? nb.color.background : '#555';
+    return `<span class="neighbor-link" style="border-left-color:${esc(color)}" data-nid="${esc(nid)}">${esc(nb ? nb.label : nid)}</span>`;
+  }).join('');
+  const isMetaNode = !n.file_type && !n.source_file;
+  let html = `<div class="field"><b>${esc(n.label)}</b></div>`;
+  if (!isMetaNode) {
+    html += `<div class="field">Type: ${esc(n.file_type || 'unknown')}</div>`;
+  }
+  html += `<div class="field">Community: ${esc(n.community_name || '')}</div>`;
+  if (!isMetaNode) {
+    html += `<div class="field">Source: ${esc(n.source_file || '-')}</div>`;
+  } else if (n.member_count !== undefined && n.member_count !== null) {
+    html += `<div class="field">Members: ${esc(n.member_count)}</div>`;
+  }
+  html += `<div class="field">Degree: ${n.degree}</div>`;
+  if (neighborIds.length) {
+    html += `<div class="field" style="margin-top:8px;color:var(--text-2);font-size:11px">Neighbors (${neighborIds.length})</div><div id="neighbors-list">${neighborItems}</div>`;
+  }
+  document.getElementById('info-content').innerHTML = html;
+}
+
+function focusNode(nodeId) {
+  network.focus(nodeId, { scale: 1.4, animation: true });
+  network.selectNodes([nodeId]);
+  showInfo(nodeId);
+}
+
+// Neighbor links use a data attribute + one delegated listener rather than an
+// inline onclick. A node id/label sourced from a document or a scraped URL
+// (graphify add) can contain a double-quote; dropping the stringified id
+// unescaped into a quoted onclick both broke every link and allowed a hostile
+// source to inject an event handler into the local report (stored XSS, #1838).
+// esc() on data-nid keeps the value inside the attribute; the listener reads it
+// back verbatim. Bound to document so it survives the innerHTML rebuild that
+// recreates #neighbors-list on each showInfo().
+document.addEventListener('click', e => {
+  const el = e.target.closest('.neighbor-link');
+  if (el && el.dataset.nid !== undefined) focusNode(el.dataset.nid);
+});
+
+// Sidebar tooltips reuse vis-network's .vis-tooltip style and 100ms tooltipDelay.
+// Names get one only when CSS ellipsis truncates them (the full text is still in
+// the DOM); counts always get one, to say what the number is. Text is set with
+// textContent only (labels are untrusted). Delegated on document so rows rebuilt
+// later (search results, showInfo()) are covered.
+const sidebarTip = document.createElement('div');
+sidebarTip.className = 'vis-tooltip';
+sidebarTip.style.cssText = 'white-space: normal; max-width: 360px; overflow-wrap: break-word;';
+document.body.appendChild(sidebarTip);
+let sidebarTipTimer = null;
+let sidebarTipEl = null;    // element whose text the tooltip shows
+let sidebarTipZone = null;  // element the pointer must leave to hide it
+function hideSidebarTip() {
+  clearTimeout(sidebarTipTimer);
+  sidebarTip.style.visibility = 'hidden';
+  sidebarTip.textContent = '';
+  sidebarTipEl = sidebarTipZone = null;
+}
+document.addEventListener('mouseover', e => {
+  const zone = e.target.closest && e.target.closest('.legend-count, .legend-item, .search-item, .neighbor-link');
+  // Anywhere on a legend row except its count (dot, checkbox, gaps, padding)
+  // stands for the row's name, so moving within the row never re-triggers it.
+  const el = zone && zone.classList.contains('legend-item') ? zone.querySelector('.legend-label') : zone;
+  if (!el || el === sidebarTipEl) return;
+  hideSidebarTip();
+  const isCount = el.classList.contains('legend-count');
+  if (!isCount && el.scrollWidth <= el.clientWidth) return;
+  const text = isCount ? `${el.textContent} ${el.textContent === '1' ? 'node' : 'nodes'}` : el.textContent;
+  sidebarTipEl = el;
+  sidebarTipZone = zone;
+  const x = e.clientX, y = e.clientY;
+  sidebarTipTimer = setTimeout(() => {
+    sidebarTip.textContent = text;
+    sidebarTip.style.left = sidebarTip.style.top = '0px';  // measure at full max-width
+    sidebarTip.style.visibility = 'visible';
+    const w = sidebarTip.offsetWidth, h = sidebarTip.offsetHeight;
+    sidebarTip.style.left = Math.max(4, Math.min(x + 12, window.innerWidth - w - 4)) + 'px';
+    sidebarTip.style.top = (y + 16 + h > window.innerHeight ? Math.max(4, y - h - 8) : y + 16) + 'px';
+  }, 100);
+});
+document.addEventListener('mouseout', e => {
+  if (sidebarTipZone && !sidebarTipZone.contains(e.relatedTarget)) hideSidebarTip();
+});
+// A click rebuilds or hides the row (showInfo(), search pick) without a mouseout.
+document.addEventListener('mousedown', hideSidebarTip);
+
+// Track hovered node — hover detection is more reliable than click params
+let hoveredNodeId = null;
+network.on('hoverNode', params => {
+  hoveredNodeId = params.node;
+  container.style.cursor = 'pointer';
+});
+network.on('blurNode', () => {
+  hoveredNodeId = null;
+  container.style.cursor = 'default';
+});
+container.addEventListener('click', () => {
+  if (hoveredNodeId !== null) {
+    showInfo(hoveredNodeId);
+    network.selectNodes([hoveredNodeId]);
+  }
+});
+network.on('click', params => {
+  if (params.nodes.length > 0) {
+    showInfo(params.nodes[0]);
+  } else if (hoveredNodeId === null) {
+    document.getElementById('info-content').innerHTML = '<span class="empty">Click a node to inspect it</span>';
+  }
+});
+
+const searchInput = document.getElementById('search');
+const searchResults = document.getElementById('search-results');
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.toLowerCase().trim();
+  searchResults.innerHTML = '';
+  if (!q) { searchResults.style.display = 'none'; return; }
+  const matches = RAW_NODES.filter(n => n.label.toLowerCase().includes(q)).slice(0, 20);
+  if (!matches.length) { searchResults.style.display = 'none'; return; }
+  searchResults.style.display = 'block';
+  matches.forEach(n => {
+    const el = document.createElement('div');
+    el.className = 'search-item';
+    el.textContent = n.label;
+    el.style.borderLeft = `3px solid ${n.color.background}`;
+    el.style.paddingLeft = '8px';
+    el.onclick = () => {
+      network.focus(n.id, { scale: 1.5, animation: true });
+      network.selectNodes([n.id]);
+      showInfo(n.id);
+      searchResults.style.display = 'none';
+      searchInput.value = '';
+    };
+    searchResults.appendChild(el);
+  });
+});
+document.addEventListener('click', e => {
+  if (!searchResults.contains(e.target) && e.target !== searchInput)
+    searchResults.style.display = 'none';
+});
+
+const hiddenCommunities = new Set();
+
+const selectAllCb = document.getElementById('select-all-cb');
+
+function updateSelectAllState() {
+  const total = LEGEND.length;
+  const hidden = hiddenCommunities.size;
+  selectAllCb.checked = hidden === 0;
+  selectAllCb.indeterminate = hidden > 0 && hidden < total;
+}
+
+function toggleAllCommunities(hide) {
+  document.querySelectorAll('.legend-item').forEach(item => {
+    hide ? item.classList.add('dimmed') : item.classList.remove('dimmed');
+  });
+  document.querySelectorAll('.legend-cb').forEach(cb => {
+    cb.checked = !hide;
+  });
+  LEGEND.forEach(c => {
+    if (hide) hiddenCommunities.add(c.cid); else hiddenCommunities.delete(c.cid);
+  });
+  const updates = RAW_NODES.map(n => ({ id: n.id, hidden: hide }));
+  nodesDS.update(updates);
+  updateSelectAllState();
+}
+
+const legendEl = document.getElementById('legend');
+LEGEND.forEach(c => {
+  const item = document.createElement('div');
+  item.className = 'legend-item';
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.className = 'legend-cb';
+  cb.checked = true;
+  cb.addEventListener('change', (e) => {
+    e.stopPropagation();
+    if (cb.checked) {
+      hiddenCommunities.delete(c.cid);
+      item.classList.remove('dimmed');
+    } else {
+      hiddenCommunities.add(c.cid);
+      item.classList.add('dimmed');
+    }
+    const updates = RAW_NODES
+      .filter(n => n.community === c.cid)
+      .map(n => ({ id: n.id, hidden: !cb.checked }));
+    nodesDS.update(updates);
+    updateSelectAllState();
+  });
+  item.innerHTML = `<div class="legend-dot" style="background:${c.color}"></div>
+    <span class="legend-label">${c.label}</span>
+    <span class="legend-count">${c.count}</span>`;
+  item.prepend(cb);
+  item.onclick = (e) => {
+    if (e.target === cb) return;
+    cb.checked = !cb.checked;
+    cb.dispatchEvent(new Event('change'));
+  };
+  legendEl.appendChild(item);
+});
+</script>
+<script>
+// Render hyperedges as shaded regions
+const hyperedges = [];
+// afterDrawing passes ctx already transformed to network coordinate space.
+// Draw node positions raw — no manual pan/zoom/DPR math needed.
+
+// Andrew's monotone chain. Returns the hull in counter-clockwise order, which
+// is what the perimeter must be traced in. Collinear and duplicate points
+// collapse to the extremes, so degenerate member sets render as a segment
+// rather than a zero-area crossed path.
+function convexHull(pts) {
+    const p = pts.slice().sort((a, b) => (a.x - b.x) || (a.y - b.y));
+    if (p.length < 3) return p;
+    const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+    const build = seq => {
+        const out = [];
+        for (const q of seq) {
+            while (out.length >= 2 && cross(out[out.length - 2], out[out.length - 1], q) <= 0) out.pop();
+            out.push(q);
+        }
+        out.pop();
+        return out;
+    };
+    const hull = build(p).concat(build(p.slice().reverse()));
+    return hull.length >= 3 ? hull : p;
+}
+network.on('afterDrawing', function(ctx) {
+    hyperedges.forEach(h => {
+        const positions = h.nodes
+            .map(nid => network.getPositions([nid])[nid])
+            .filter(p => p !== undefined);
+        if (positions.length < 2) return;
+        ctx.save();
+        ctx.globalAlpha = 0.12;
+        ctx.fillStyle = '#6366f1';
+        ctx.strokeStyle = '#6366f1';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        // Centroid and expanded hull in network coordinates.
+        // The perimeter must follow hull order, not h.nodes order: tracing the
+        // raw member order self-intersects whenever the layout does not happen
+        // to place members in angular order, filling as crossed wedges.
+        const cx = positions.reduce((s, p) => s + p.x, 0) / positions.length;
+        const cy = positions.reduce((s, p) => s + p.y, 0) / positions.length;
+        const hull = convexHull(positions);
+        const expanded = hull.map(p => ({
+            x: cx + (p.x - cx) * 1.15,
+            y: cy + (p.y - cy) * 1.15
+        }));
+        ctx.moveTo(expanded[0].x, expanded[0].y);
+        expanded.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 0.4;
+        ctx.stroke();
+        // Label
+        ctx.globalAlpha = 0.8;
+        ctx.fillStyle = '#4f46e5';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(h.label, cx, cy - 5);
+        ctx.restore();
+    });
+});
+</script>
+</body>
+</html>
