@@ -1,5 +1,79 @@
-import { EventCategory, EventSeverity, EventStatus } from '../enums';
+import { EventCategory, EventSeverity, EventStatus, CategoryCode } from '../enums';
 import { GeoCoordinate } from './geo.types';
+
+/**
+ * Kategori DTO
+ */
+export interface CategoryDto {
+  id: string;
+  code: CategoryCode | string;
+  nameTr: string;
+  descriptionTr: string;
+  icon: string;
+  colorHex: string;
+  defaultDurationHours: number;
+  isActive: boolean;
+}
+
+/**
+ * Genel Olay Yanıtında Yazar Profili (Hassas Bilgilerden Arındırılmış)
+ */
+export interface PublicAuthorDto {
+  id: string;
+  displayName: string;
+  reputationScore: number;
+}
+
+/**
+ * Mükerrer Olay Uyarı Bilgisi
+ */
+export interface DuplicateWarningDto {
+  isDuplicateSuspected: boolean;
+  candidateId?: string;
+  candidateTitle?: string;
+  distanceMeters?: number;
+  createdAt?: string;
+}
+
+/**
+ * Tam Olay Yanıt DTO'su
+ */
+export interface EventResponseDto {
+  id: string;
+  title: string;
+  description: string;
+  severity: EventSeverity;
+  status: EventStatus;
+  category: CategoryDto;
+  location: {
+    latitude: number;
+    longitude: number;
+  };
+  addressText?: string;
+  city?: string;
+  district?: string;
+  distanceMeters?: number;
+  confirmationCount: number;
+  denialCount: number;
+  reliabilityScore: number;
+  author: PublicAuthorDto;
+  isDemo?: boolean;
+  createdAt: string;
+  updatedAt: string;
+  expiresAt: string;
+  resolvedAt?: string;
+  duplicateWarning?: DuplicateWarningDto;
+}
+
+/**
+ * Sayfalanmış Olay Listesi Yanıtı (Cursor-based)
+ */
+export interface PaginatedEventsResponse {
+  items: EventResponseDto[];
+  nextCursor: string | null;
+  hasMore: boolean;
+  total?: number;
+}
 
 /**
  * Harita ve Liste Görünümü İçin Optimize Edilmiş Olay Özeti (EventSummary)

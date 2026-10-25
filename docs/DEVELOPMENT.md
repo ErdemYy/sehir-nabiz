@@ -66,20 +66,26 @@ Bu anahtarları `JWT_ACCESS_SECRET` ve `JWT_REFRESH_SECRET` değişkenlerine ata
 
 ---
 
-## 4. Veritabanı ve Migration Yönetimi (TypeORM)
+## 4. Veritabanı, Migration ve Seed Yönetimi (TypeORM)
 
-PostGIS uzamsal tabloları ve Auth kayıtları TypeORM migration dosyaları ile sürüm kontrolünde tutulur:
+PostGIS uzamsal tabloları, kategoriler ve Auth kayıtları TypeORM migration dosyaları ile sürüm kontrolünde tutulur:
 
 ```bash
 # Migration'ları çalıştırma
-pnpm --filter sehir-nabiz-api typeorm migration:run -- -d dist/database/data-source.js
+pnpm --filter sehir-nabiz-api migration:run
 
 # Son migration'ı geri alma (Revert)
-pnpm --filter sehir-nabiz-api typeorm migration:revert -- -d dist/database/data-source.js
+pnpm --filter sehir-nabiz-api migration:revert
 
-# Yeni migration üretme (Entity değişikliklerinden sonra)
-pnpm --filter sehir-nabiz-api typeorm migration:generate src/database/migrations/NewMigrationName -- -d dist/database/data-source.js
+# Migration geçmişini görüntüleme
+pnpm --filter sehir-nabiz-api migration:show
+
+# Geliştirme ortamı için Kayseri demo olaylarını ekleme (Seed)
+pnpm --filter sehir-nabiz-api seed
 ```
+
+> [!IMPORTANT]
+> `pnpm seed` komutu yalnızca `NODE_ENV=development` veya `NODE_ENV=test` ortamında çalışır. Üretim ortamında (`production`) güvenlik kalkanı sayesinde kesinlikle engellenir ve tüm demo veriler `[DEMO]` başlığı ile `isDemo: true` bayrağı taşır.
 
 ---
 

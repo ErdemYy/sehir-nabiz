@@ -22,11 +22,11 @@ Bu belge, projenin kontrollü, test edilebilir ve adım adım ilerleyen gelişti
 - **Kapsam:** Canlı Docker PostGIS & Redis entegrasyonu, port izolasyonu (Postgres 5434, Redis 6380), gerçek TypeORM migration ve rollback testleri, PostGIS coğrafi mesafe/yarıçap (`ST_Distance`, `ST_DWithin`) doğrulaması, canlı Auth uç noktaları (Register, Login, Me, Refresh, Reuse Detection, Logout), eşzamanlı istek yarış durumu (Race Condition) CAS koruması, çift katmanlı DTO validasyon zırhı.
 - **Doğrulama:** 33 testin tamamı canlı veritabanı ve Redis üzerinde geçti. Detaylı rapor: [PHASE_2_5_VERIFICATION.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/PHASE_2_5_VERIFICATION.md).
 
-### Phase 3: Coğrafi Veri & Olay Yönetimi API'si (PLANLANDI)
-- **Kapsam:** Kategori yönetimi, Olay oluşturma (`POST /events`), Bounding Box ve Yarıçap sorguları (`GET /events/nearby`, `GET /events/bbox`), PostGIS `ST_DWithin` ve `ST_MakeEnvelope` filtreleri.
-- **Doğrulama:** Postman/Supertest ile coğrafi koordinat sorgularının doğrulanması, milisaniyelik yanıt süreleri.
+### Phase 3: Coğrafi Veri & Olay Yönetimi API'si (TAMAMLANDI)
+- **Kapsam:** 11 temel kategori (`TRAFFIC`, `ACCIDENT`, `ROAD_WORK`, `WATER_OUTAGE`, `POWER_OUTAGE`, `INFRASTRUCTURE`, `PUBLIC_TRANSPORT`, `WEATHER`, `DISASTER`, `EVENT`, `OTHER`), `EventEntity` (PostGIS `geometry(Point, 4326)`), GiST uzamsal indeksi (`idx_events_location_gist`), `POST /api/v1/events` (PENDING_REVIEW başlangıç durumu, sanitizasyon), `GET /api/v1/events/nearby` (`ST_DWithin` & `ST_Distance` metre bazlı), `GET /api/v1/events/bbox` (`ST_MakeEnvelope` ve antimeridian desteği), `GET /api/v1/events/:id` (gizlilik korumalı tekil detay), `PATCH /api/v1/events/:id/status` (moderatör & yazar yetki matrisi, `event_moderation_logs` audit trail), 150m/45dk mükerrerlik uyarısı (Duplicate Detection), Kayseri demo seed altyapısı.
+- **Doğrulama:** 64 testin tamamı (8 test paketi) canlı PostgreSQL/PostGIS üzerinde başarıyla geçti. Rapor: [PHASE_3_REPORT.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/PHASE_3_REPORT.md).
 
-### Phase 4: Medya & Güvenli Depolama Altyapısı
+### Phase 4: Medya & Güvenli Depolama Altyapısı (PLANLANDI)
 - **Kapsam:** Cloudflare R2 / AWS S3 uyumlu presigned URL servisi. İstemci taraflı görsel sıkıştırma ve EXIF temizleme stratejisinin backend entegrasyonu.
 - **Doğrulama:** Örnek görsel yükleme akışı ve yüklenen görsellerin GPS meta verilerinin silindiğinin doğrulanması.
 
