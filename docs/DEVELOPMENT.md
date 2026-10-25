@@ -151,3 +151,36 @@ Mobil istemci için:
 - **Access Token:** Asla diske (AsyncStorage) yazılmaz. Yalnızca çalışma zamanı belleğinde (`Zustand`) saklanır.
 - **Refresh Token:** iOS Keychain ve Android Keystore donanım tabanlı şifreleme motorunu kullanan `expo-secure-store` içine yazılır.
 - **Reuse Detection:** İptal edilmiş veya çalınmış bir refresh token sunucuya gönderildiğinde, sunucu otomatik olarak o kullanıcının tüm oturumlarını sonlandırır.
+
+---
+
+## 8. MapLibre Yerel Geliştirme, Expo Dev Client ve Vektör Harita Katmanları (Phase 6)
+
+### 8.1 Geliştirme Derlemesi (Expo Development Client)
+`@maplibre/maplibre-react-native` C++ yerel çekirdeği içerdiğinden standart Expo Go istemcisi ile çalışmaz. Geliştirme build'i kullanılır:
+
+```bash
+# 1. Expo Prebuild (android ve ios dizinlerini oluşturur/günceller)
+npx expo prebuild --no-install
+
+# 2. Android cihazda veya emülatörde yerel derleme (Android SDK ve JDK 17+ gereklidir)
+pnpm --filter sehir-nabiz-mobile android
+
+# 3. Metro sunucusunu dev-client modunda başlatma
+pnpm --filter sehir-nabiz-mobile start
+```
+
+### 8.2 Vektör Harita Stilleri
+Varsayılan olarak OpenFreeMap ve MapLibre açık kaynak karo sağlayıcıları kullanılır:
+- **Standart Stil:** `https://tiles.openfreemap.org/styles/liberty`
+- **Gece Stili:** `https://tiles.openfreemap.org/styles/dark`
+- **Uydu Stili:** `https://demotiles.maplibre.org/style.json`
+
+Stil URL'leri `apps/mobile/.env` üzerinden `EXPO_PUBLIC_MAP_STYLE_LIGHT` vb. değişkenler ile özelleştirilebilir.
+
+### 8.3 Harita ve Mobil Testleri
+```bash
+# Harita hesaplamaları, BBox doğrulama, 5k clustering ve entegrasyon testleri
+pnpm --filter sehir-nabiz-mobile test
+```
+

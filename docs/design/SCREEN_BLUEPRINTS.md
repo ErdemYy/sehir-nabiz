@@ -7,40 +7,50 @@ Bu doküman, ŞehirNabız mobil uygulamasındaki ana ekranların amacını, bile
 ## 1. Harita Ekranı (`/` veya `/(tabs)/index`)
 
 ### Ekran Amacı:
-Kullanıcının şehirdeki aktif olayları (kaza, yol çalışması, arıza vb.) coğrafi konumları ve kümelenmiş (clustered) pinler üzerinden interaktif olarak keşfetmesini sağlamak.
+Kullanıcının şehirdeki aktif olayları (kaza, yol çalışması, arıza vb.) coğrafi konumları ve MapLibre GPU tabanlı kümelenmiş (clustered) pinler üzerinden interaktif olarak keşfetmesini sağlamak.
 
 ### Bileşen Hiyerarşisi:
 ```text
 MapScreenLayout
-├── mapCanvas (Phase 6 MapLibre Vektör Haritası / Şimdilik Placeholder)
+├── mapCanvas -> PulseMapView (@maplibre/maplibre-react-native v11.5.0)
+│   ├── Camera (Varsayılan merkez: Kayseri [35.4853, 38.7225], animasyonlu uçuş)
+│   ├── UserLocation (GPS puls noktası ve doğrultu oku)
+│   └── GeoJSONSource (Kümelenmiş kaynak, clusterMaxZoom: 14)
+│       ├── CircleLayer (Kümeler: <10, 10-50, >50 eşikleri)
+│       ├── SymbolLayer (Küme olay sayısı)
+│       ├── CircleLayer (Tekil pinler: Kategori renkleri)
+│       └── CircleLayer (Seçili pin turkuaz vurgu halkası)
 ├── searchBarSlot
-│   └── SearchBar (Cadde/İlçe arama ve UI Showcase kısayolu)
+│   └── SearchBar ("Şehirde ara...", dinamik başlık/açıklama filtreleme, UI Showcase kısayolu)
 ├── categoryFilterSlot
-│   └── Horizontal ScrollView > CategoryChip x 11
+│   └── Horizontal ScrollView > CategoryChip x 11 (TRAFFIC, ACCIDENT, ROAD_WORK, WATER_OUTAGE, ...)
 ├── mapActionControlsSlot
-│   ├── FloatingIconButton (Mevcut Konuma Git)
-│   ├── FloatingIconButton (Harita Katmanları: Trafik/Uydu)
-│   └── FloatingIconButton (Gelişmiş Mesafe & Güvenilirlik Filtreleri)
+│   ├── FloatingIconButton (Mevcut Konuma Git - useUserLocation & flyTo)
+│   ├── FloatingIconButton (Harita Katmanları: Standart Liberty / Gece Dark / Uydu)
+│   └── FloatingIconButton (Verileri Yenile - refetchEvents)
 ├── bottomSheetSlot
-│   └── BottomSheet (Pin tıklandığında açılan olay hızlı önizleme kartı)
+│   └── BottomSheet (Pin tıklandığında açılan olay hızlı önizleme kartı, teyit/detay butonları)
 └── bottomNavigationSlot
     └── FloatingTabBar (5 Ana Sekme)
 ```
 
 ### Kullanıcı Etkileşimleri:
-- Haritayı kaydırma ve yaklaştırma (Pan & Pinch to zoom).
-- Kategori çipine dokunarak haritadaki olayları filtreleme.
-- Olay pinine dokunulduğunda `BottomSheet` açılarak hızlı özetin gösterilmesi.
-- `BottomSheet` üzerindeki "Detayları Gör" butonu ile olay sayfasına gitme, "Teyit Et" butonu ile oylama başlatma.
+- Haritayı kaydırma ve yaklaştırma (Pan & Pinch to zoom). Kamera hareket ettikçe `onRegionDidChange` ile görünür bounding box hesaplanır ve `useEventsBbox` (TanStack Query) tetiklenir.
+- Kümeye tıklandığında kamera otomatik olarak küme koordinatlarına yakınlaşır (zoom-in).
+- Kategori çipine dokunarak haritadaki olayları filtreleme (backend parametreli veya istemci taraflı).
+- Arama çubuğuna yazıldığında olaylar başlık ve açıklamalarına göre anında süzülür.
+- Olay pinine dokunulduğunda `BottomSheet` açılarak kategori rengi, başlık, teyit sayıları, mesafe ve butonlar görüntülenir.
+- Sağ taraftaki "Konumuma Git" butonu ile GPS izni talep edilir ve harita yumuşak bir kamera uçuşu ile kullanıcının konumuna gider.
+- Katmanlar butonuna basıldığında `MapLayerSheet` açılarak harita stili değiştirilir.
 
 ### Durum Yönetimi:
-- **Loading:** Harita karoları arka planda yüklenirken hafif parıltı; pinler gelene kadar FloatingIconButton'lar aktif.
-- **Empty:** Seçilen kategoride o bölgede olay yoksa harita merkezinde FloatingCard ile "Bu bölgede bildirilen aktif olay bulunmuyor" bilgisi.
-- **Error:** GPS konumu alınamazsa varsayılan şehir merkezine (örn. Kayseri Cumhuriyet Meydanı) odaklanma ve kullanıcıya konum izin uyarısı.
+- **Loading:** Bounding box verileri çekilirken harita etkileşimi kesilmez; hafif ağ göstergesi çalışır.
+- **Empty:** Seçilen filtrede bölgede olay yoksa haritada pin gösterilmez.
+- **Error / Offline:** Canlı backend'e ulaşılamazsa `FALLBACK_DEMO_EVENTS` verileri devreye girer; harita boş kalmaz. GPS izni reddedilirse ekranın üstünde bilgilendirici uyarı banner'ı belirir.
 
 ### Auth Gereksinimi:
-- **Anonim:** Herkese açık. Olayları görüntüleyebilir, haritada gezinebilir.
-- **Giriş Gerekli:** Olay teyit etme veya yeni olay bildirme tıklandığında AuthBottomSheet açılır.
+- **Anonim:** Herkese açık. Olayları görüntüleyebilir, haritada gezinebilir, arama yapabilir.
+- **Giriş Gerekli:** Olay teyit etme veya yeni olay bildirme tıklandığında Auth paneline yönlendirilir.
 
 ---
 

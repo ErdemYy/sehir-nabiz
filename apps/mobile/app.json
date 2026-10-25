@@ -14,20 +14,41 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.sehirnabiz.app"
+      "bundleIdentifier": "com.sehirnabiz.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "ŞehirNabız, harita üzerinde çevrenizdeki olayları göstermek ve konumunuza yakın bildirimlerde bulunmanızı sağlamak için konum izni gerektirir."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#14B8A6"
       },
-      "package": "com.sehirnabiz.app"
+      "package": "com.sehirnabiz.app",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
       "output": "static"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "ŞehirNabız, harita üzerinde çevrenizdeki olayları göstermek ve konumunuza yakın bildirimlerde bulunmanızı sağlamak için konum izni gerektirir."
+        }
+      ],
+      [
+        "@maplibre/maplibre-react-native",
+        {
+          "android": {
+            "version": "11.5.0"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

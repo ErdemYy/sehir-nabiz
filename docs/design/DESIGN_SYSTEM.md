@@ -143,3 +143,29 @@ Tüm bileşenler `apps/mobile/src/components/ui/` altında yer alır:
 ## 8. Canlı İnceleme: UI Showcase
 
 Geliştiriciler ve tasarımcılar tüm bileşenleri yerel geliştirme modunda `app/showcase.tsx` ekranında inceleyebilir. Bu ekrana Harita ekranındaki ışıltı ikonundan veya Profil sayfasındaki bağlantıdan erişilir; üretim (`__DEV__ = false`) derlemelerinde güvenlik kalkanı ile otomatik engellenir.
+
+---
+
+## 9. Harita Görsel Dili ve Vektör Katman Entegrasyonu (Phase 6)
+
+Phase 6 ile birlikte harita tuvali (`PulseMapView`), Urban Floating UI tasarım diliyle entegre edilmiştir:
+
+1. **Katman Seçici (`MapLayerSheet`):**
+   - Standart (Liberty - Açık Kentsel), Gece (Dark - Olay Kontrastlı Gece Teması) ve Uydu (Satellite - Hibrit Ortofoto) seçenekleri.
+   - Seçili stil kartında turkuaz çerçeve, aktif rozet ve anında geçiş.
+
+2. **Dinamik Kümeleme Görsel Hiyerarşisi:**
+   - **Küçük Kümeler (<10 olay):** 18px yarıçap, `%92` opaklıkta `#0D9488` (Turkuaz-Mavi) zemin ve 2px beyaz dış halka.
+   - **Orta Kümeler (10-50 olay):** 24px yarıçap, `%92` opaklıkta `#F59E0B` (Amber) zemin ve 2px beyaz dış halka.
+   - **Büyük Kümeler (>50 olay):** 30px yarıçap, `%92` opaklıkta `#EF4444` (Kırmızı/Tehlike) zemin ve 3px beyaz dış halka.
+   - **Küme Sayısı Etiketi:** 13-14px Plus Jakarta Sans Bold, beyaz metin.
+
+3. **Tekil Olay İşaretçileri (Event Pins):**
+   - 8px yarıçapında kategori renkli daire (`categoryColor`).
+   - 2.5px beyaz dış sınır (`#FFFFFF`) ile harita arka planından ayrışma.
+   - Seçili olayda 14px yarıçaplı turkuaz seçim halkası (`#0D9488`).
+
+4. **Kullanıcı Konumu Göstergesi:**
+   - Native GPS mavi nokta ve doğrultu oku (`showsUserHeadingIndicator`).
+   - Doğruluk dairesi ile hassasiyet görselleştirmesi.
+
