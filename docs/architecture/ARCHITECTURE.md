@@ -127,7 +127,7 @@ sequenceDiagram
     end
 ```
 
-### 3.2 PostgreSQL + PostGIS Uzamsal (Spatial) Stratejisi
+### 3.4 PostgreSQL + PostGIS Uzamsal (Spatial) Stratejisi
 Tüm coğrafi veriler WGS 84 (`SRID 4326`) projeksiyon sisteminde tutulur.
 
 - **Veri Tipi:** `geometry(Point, 4326)` (Hassas mesafe hesaplamaları için gerektiğinde `geography(Point, 4326)` fonksiyonları veya `ST_Transform` kullanılır).
@@ -150,6 +150,12 @@ Tüm coğrafi veriler WGS 84 (`SRID 4326`) projeksiyon sisteminde tutulur.
      WHERE location && ST_MakeEnvelope(:minLon, :minLat, :maxLon, :maxLat, 4326);
      ```
   3. **Mükerrer Bildirim Tespiti:** Yeni bildirilen bir olayın 150 metre yakınında son 30 dakikada benzer kategoride açılmış olay var mı kontrolü.
+
+### 3.5 Medya Depolama ve Güvenlik Mimarisi (`StorageModule` & `MediaModule`)
+- **Direct-to-Storage Presigned Uploads:** Mobil cihazlar fotoğrafları doğrudan S3 uyumlu nesne deposuna (Yerelde MinIO, Üretimde Cloudflare R2) yükler. NestJS API bellek darboğazına girmez.
+- **Güvenlik Doğrulamaları:** Magic bytes denetimi, dekompresyon bombası kalkanı (`limitInputPixels`), EXIF/GPS meta verisi sıfırlama, Full HD WebP dönüştürme ve SHA-256 bütünlük özeti.
+- **Eşzamanlılık ve Kota:** Olay başına en fazla 3 aktif/bekleyen fotoğraf; veritabanı düzeyinde pessimistic lock (`SELECT ... FOR UPDATE`) ile korunur.
+- Detaylı inceleme için: [docs/architecture/MEDIA_SECURITY.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/architecture/MEDIA_SECURITY.md).
 
 ---
 

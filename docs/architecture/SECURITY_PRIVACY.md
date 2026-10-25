@@ -98,3 +98,27 @@ Phase 2'de geliştirilen kimlik doğrulama mimarisi mobil istemci güvenlik stan
    - Yeni gelen token çifti belleğe ve SecureStore'a güncellenir.
 4. **Token Çalınma Koruması (Reuse Detection):**
    - Bir saldırgan eski bir refresh token'ı ele geçirip kullanmaya çalışırsa sunucu durumu algılar ve kullanıcının meşru cihazı dahil tüm oturumlarını anında iptal eder. Kullanıcıdan yeniden şifre ile giriş yapması istenir.
+
+---
+
+## 6. Medya Güvenliği ve EXIF/GPS Sanitizasyonu (Phase 4 Uygulaması)
+
+Kullanıcıların olaylara yüklediği görsellerin güvenliği ve kişisel verilerin korunması aşağıdaki ilkelerle garanti altına alınmıştır:
+
+### 6.1 Presigned URL ile Doğrudan Yükleme (Direct-to-Storage)
+- Mobil istemciler fotoğrafı doğrudan S3 nesne deposuna (MinIO / Cloudflare R2) yükler. Sunucu RAM darboğazı yaşamaz.
+- Presigned URL süresi 15 dakika (900 saniye) ile sınırlıdır ve sadece yetkilendirilmiş istek sahibi tarafından kullanılabilir.
+
+### 6.2 Dosya Tipi ve İçerik Doğrulama
+- **İzin Verilen Türler:** Sadece `image/jpeg`, `image/png`, `image/webp`. SVG veya çalıştırılabilir dosyalar engellenir.
+- **Sihirli Bayt (Magic Bytes) İncelemesi:** İstemcinin uzantı veya `Content-Type` beyanı dikkate alınmaz; dosyanın ikili başlığı (binary header) doğrulanır. Uyuşmazlık durumunda dosya anında karantinaya alınıp silinir.
+- **Dekompresyon Bombası Koruması:** `sharp` motorunda piksel sınırı `limitInputPixels: 268402689` ve maksimum dosya boyutu 8 MB olarak sınırlandırılmıştır.
+
+### 6.3 EXIF / GPS Konum Bilgisi Temizleme (Sanitization)
+- Mobil kameralar fotoğraflara enlem/boylam, cihaz seri no, lens ve zaman damgası gömer.
+- Sunucu arka planda görseli WebP formatına dönüştürürken tüm EXIF/XMP/IPTC meta verilerini tamamen sıfırlar (`sanitizedMeta.exif === undefined`).
+- Temizlenmiş dosya yeni bir hash ve storage key ile kaydedilir; ham dosya depolamadan yok edilir.
+
+### 6.4 Erişim Denetimi ve Olay Gizliliği
+- İncelenmekte olan (`PENDING_REVIEW`) veya reddedilen (`REJECTED`) olayların fotoğrafları genel kullanıcılar tarafından görüntülenemez (`404 Not Found`). Sadece olay sahibi veya moderatörler erişebilir.
+- Olay başına en fazla 3 aktif/bekleyen fotoğraf kuralı pessimistic locking (`SELECT ... FOR UPDATE`) ile garanti edilir.

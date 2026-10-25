@@ -40,10 +40,36 @@ services:
     networks:
       - sehir_nabiz_network
 
+  minio:
+    image: elestio/minio:latest
+    container_name: sehir_nabiz_minio
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY:-minio_admin_user}
+      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY:-minio_secure_dev_password}
+    ports:
+      # S3 API portu (127.0.0.1:9000)
+      - "127.0.0.1:${STORAGE_PORT:-9000}:9000"
+      # MinIO Web Konsol portu (127.0.0.1:9001)
+      - "127.0.0.1:${STORAGE_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - sehir_nabiz_network
+
 volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  minio_data:
     driver: local
 
 networks:

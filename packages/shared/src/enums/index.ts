@@ -94,3 +94,14 @@ export enum AccountStatus {
   SUSPENDED = 'SUSPENDED',
   PENDING_VERIFICATION = 'PENDING_VERIFICATION',
 }
+
+/**
+ * Medya / Fotoğraf Yaşam Döngüsü Durumu
+ */
+export enum MediaStatus {
+  PENDING_UPLOAD = 'PENDING_UPLOAD',
+  PROCESSING = 'PROCESSING',
+  READY = 'READY',
+  REJECTED = 'REJECTED',
+  DELETED = 'DELETED',
+}

@@ -39,6 +39,16 @@ export const EnvironmentSchema = z.object({
   // Rate Limiting
   THROTTLE_TTL: z.coerce.number().default(60),
   THROTTLE_LIMIT: z.coerce.number().default(20),
+
+  // Object Storage (MinIO / Cloudflare R2)
+  STORAGE_PROVIDER: z.enum(['minio', 'r2', 's3']).default('minio'),
+  STORAGE_ENDPOINT: z.string().default('http://127.0.0.1:9000'),
+  STORAGE_REGION: z.string().default('auto'),
+  STORAGE_ACCESS_KEY: z.string().default('minio_admin_user'),
+  STORAGE_SECRET_KEY: z.string().default('minio_secure_dev_password'),
+  STORAGE_BUCKET: z.string().default('sehir-nabiz-media'),
+  STORAGE_PUBLIC_URL: z.string().optional().default('http://127.0.0.1:9000/sehir-nabiz-media'),
+  STORAGE_FORCE_PATH_STYLE: z.coerce.boolean().default(true),
 });
 
 export type Environment = z.infer<typeof EnvironmentSchema>;

@@ -18,7 +18,12 @@ Projeyi çalıştırmadan önce sisteminizde aşağıdaki araçların kurulu old
 
 ## 2. Docker Servislerinin Başlatılması
 
-Veritabanı ve Redis servisleri Docker Compose ile yönetilir. Portlar güvenlik amacıyla yalnızca yerel makineye (`127.0.0.1`) bağlanmıştır.
+Veritabanı, Redis ve MinIO nesne depolama servisleri Docker Compose ile yönetilir. Portlar güvenlik amacıyla yalnızca yerel makineye (`127.0.0.1`) bağlanmıştır.
+
+- **PostgreSQL 16 + PostGIS 3.4:** `127.0.0.1:5434`
+- **Redis 7 Alpine:** `127.0.0.1:6380`
+- **MinIO S3 API:** `127.0.0.1:9000`
+- **MinIO Web Konsolu:** `http://127.0.0.1:9001` (Kullanıcı: `minioadmin`, Şifre: `minioadmin123`)
 
 ```bash
 # Servisleri arka planda başlatma
@@ -30,6 +35,7 @@ docker compose ps
 # Servis loglarını takip etme
 docker compose logs -f postgres
 docker compose logs -f redis
+docker compose logs -f minio
 
 # Servisleri durdurma
 docker compose down

@@ -117,7 +117,7 @@ sehir-nabiz/
 | **Phase 2** | Backend Çekirdek, Docker, PostGIS & Auth | **Tamamlandı** |
 | **Phase 2.5**| Canlı Entegrasyon, PostGIS Mesafe & Güvenlik Denetimi | **Tamamlandı** |
 | **Phase 3** | Coğrafi Veri & Olay Yönetimi API'si | **Tamamlandı** |
-| **Phase 4** | Medya & Depolama Yönetimi | Planlandı |
+| **Phase 4** | Medya & Depolama Yönetimi | **Tamamlandı** |
 | **Phase 5** | Mobil Temel, Navigasyon & Durum Yönetimi | Planlandı |
 | **Phase 6** | Harita Motoru & Vektör Katmanları (MapLibre) | Planlandı |
 | **Phase 7** | Olay Bildirim Akışı & Formlar | Planlandı |

@@ -8,6 +8,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { EventsModule } from './modules/events/events.module';
+import { StorageModule } from './modules/storage/storage.module';
+import { MediaModule } from './modules/media/media.module';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 
 @Module({
@@ -28,9 +30,11 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     }),
     DatabaseModule,
     RedisModule,
+    StorageModule,
     AuthModule,
     CategoriesModule,
     EventsModule,
+    MediaModule,
     HealthModule,
   ],
 })

@@ -4,8 +4,10 @@ import { RefreshTokenEntity } from './entities/refresh-token.entity';
 import { CategoryEntity } from './entities/category.entity';
 import { EventEntity } from './entities/event.entity';
 import { EventModerationLogEntity } from './entities/event-moderation-log.entity';
+import { EventMediaEntity } from './entities/event-media.entity';
 import { InitialAuthAndPostGis1740000000000 } from './migrations/1740000000000-InitialAuthAndPostGis';
 import { CreateCategoriesAndEvents1740000001000 } from './migrations/1740000001000-CreateCategoriesAndEvents';
+import { CreateEventMedia1740000002000 } from './migrations/1740000002000-CreateEventMedia';
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
@@ -14,8 +16,19 @@ export const dataSourceOptions: DataSourceOptions = {
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres_secure_dev_password',
   database: process.env.DB_DATABASE || 'sehir_nabiz',
-  entities: [UserEntity, RefreshTokenEntity, CategoryEntity, EventEntity, EventModerationLogEntity],
-  migrations: [InitialAuthAndPostGis1740000000000, CreateCategoriesAndEvents1740000001000],
+  entities: [
+    UserEntity,
+    RefreshTokenEntity,
+    CategoryEntity,
+    EventEntity,
+    EventModerationLogEntity,
+    EventMediaEntity,
+  ],
+  migrations: [
+    InitialAuthAndPostGis1740000000000,
+    CreateCategoriesAndEvents1740000001000,
+    CreateEventMedia1740000002000,
+  ],
   synchronize: false,
   logging: process.env.DB_LOGGING === 'true',
 };

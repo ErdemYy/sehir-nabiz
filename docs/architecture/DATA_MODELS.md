@@ -165,16 +165,26 @@ CREATE TABLE events (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 5. Olay Medyası (Event Media) Tablosu
+-- 5. Olay Medyası (Event Media) Tablosu (Phase 4 Uygulaması)
+CREATE TYPE media_status AS ENUM ('PENDING_UPLOAD', 'PROCESSING', 'READY', 'REJECTED', 'DELETED');
+
 CREATE TABLE event_media (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
-    url VARCHAR(500) NOT NULL,
-    thumbnail_url VARCHAR(500),
-    media_type VARCHAR(20) NOT NULL DEFAULT 'IMAGE', -- 'IMAGE', 'VIDEO'
-    sort_order INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    storage_key VARCHAR(500) UNIQUE NOT NULL,
+    original_name VARCHAR(255) NOT NULL,
+    mime_type VARCHAR(100) NOT NULL,
+    byte_size INT NOT NULL,
+    width INT,
+    height INT,
+    status media_status NOT NULL DEFAULT 'PENDING_UPLOAD',
+    checksum VARCHAR(64),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX idx_event_media_event_id ON event_media(event_id);
+CREATE INDEX idx_event_media_status ON event_media(status);
 
 -- 6. Olay Doğrulama / Oylama (Event Verification) Tablosu
 CREATE TABLE event_verifications (
