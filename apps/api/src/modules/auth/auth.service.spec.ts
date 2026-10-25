@@ -8,6 +8,7 @@ describe('AuthService (Unit Tests)', () => {
   let authService: AuthService;
   let mockUserRepo: any;
   let mockRefreshTokenRepo: any;
+  let mockDataSource: any;
   let mockJwtService: any;
   let mockConfigService: any;
 
@@ -42,6 +43,35 @@ describe('AuthService (Unit Tests)', () => {
       update: vi.fn().mockResolvedValue({ affected: 1 }),
     };
 
+    mockDataSource = {
+      transaction: vi.fn(async (cb: (manager: any) => Promise<any>) => {
+        const mockManager = {
+          create: vi.fn((entityClass: any, dto: any) => ({
+            ...dto,
+            id: entityClass === UserEntity ? mockUser.id : 'token-uuid-1',
+          })),
+          save: vi.fn((entity: any) => Promise.resolve(entity)),
+          findOne: vi.fn((entityClass: any, opts: any) => {
+            if (entityClass === RefreshTokenEntity) {
+              return mockRefreshTokenRepo.findOne(opts);
+            }
+            if (entityClass === UserEntity) {
+              return mockUserRepo.findOne(opts);
+            }
+            return null;
+          }),
+          update: vi.fn().mockResolvedValue({ affected: 1 }),
+          createQueryBuilder: vi.fn(() => ({
+            update: vi.fn().mockReturnThis(),
+            set: vi.fn().mockReturnThis(),
+            where: vi.fn().mockReturnThis(),
+            execute: vi.fn().mockResolvedValue({ affected: 1 }),
+          })),
+        };
+        return cb(mockManager);
+      }),
+    };
+
     mockJwtService = {
       signAsync: vi.fn().mockResolvedValue('mocked-jwt-token'),
       verify: vi.fn(),
@@ -58,6 +88,7 @@ describe('AuthService (Unit Tests)', () => {
     authService = new AuthService(
       mockUserRepo,
       mockRefreshTokenRepo,
+      mockDataSource,
       mockJwtService,
       mockConfigService,
     );
@@ -98,7 +129,7 @@ describe('AuthService (Unit Tests)', () => {
       expect((result.user as any).passwordHash).toBeUndefined();
       expect(result.tokens.accessToken).toBe('mocked-jwt-token');
       expect(result.tokens.refreshToken).toBe('mocked-jwt-token');
-      expect(mockRefreshTokenRepo.save).toHaveBeenCalled();
+      expect(mockDataSource.transaction).toHaveBeenCalled();
     });
 
     it('mükerrer e-posta durumunda ConflictException fırlatmalı', async () => {
@@ -163,7 +194,7 @@ describe('AuthService (Unit Tests)', () => {
   });
 
   describe('Token Rotation & Reuse Detection', () => {
-    it('geçerli refresh token ile yeni token çifti üretmeli ve eskiyi iptal etmeli', async () => {
+    it('geçerli refresh token ile yeni token çifti üretmeli ve eskiyi atomik iptal etmeli', async () => {
       const rawRefreshToken = 'valid-refresh-token';
       mockJwtService.verify.mockReturnValue({ sub: mockUser.id, email: mockUser.email });
 
@@ -171,7 +202,7 @@ describe('AuthService (Unit Tests)', () => {
         id: 'token-1',
         userId: mockUser.id,
         tokenHash: authService.hashToken(rawRefreshToken),
-        expiresAt: new Date(Date.now() + 1000 * 60 * 60), // 1 saat sonra
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60),
         isRevoked: false,
         createdAt: new Date(),
       };
@@ -183,9 +214,7 @@ describe('AuthService (Unit Tests)', () => {
 
       expect(newTokens.accessToken).toBe('mocked-jwt-token');
       expect(newTokens.refreshToken).toBe('mocked-jwt-token');
-      expect(activeTokenRecord.isRevoked).toBe(true);
-      expect(activeTokenRecord.replacedByTokenHash).toBeDefined();
-      expect(mockRefreshTokenRepo.save).toHaveBeenCalledWith(activeTokenRecord);
+      expect(mockDataSource.transaction).toHaveBeenCalled();
     });
 
     it('KRİTİK GÜVENLİK: İptal edilmiş token tekrar sunulursa (Reuse Detection) kullanıcının tüm oturumlarını sonlandırmalı', async () => {
@@ -197,7 +226,7 @@ describe('AuthService (Unit Tests)', () => {
         userId: mockUser.id,
         tokenHash: authService.hashToken(compromisedToken),
         expiresAt: new Date(Date.now() + 1000 * 60 * 60),
-        isRevoked: true, // Zaten kullanılmış / iptal edilmiş
+        isRevoked: true,
         createdAt: new Date(),
       };
 
@@ -206,11 +235,45 @@ describe('AuthService (Unit Tests)', () => {
       await expect(authService.refreshTokens(compromisedToken)).rejects.toThrow(
         UnauthorizedException,
       );
+    });
 
-      // Kullanıcının TÜM aktif oturumlarının iptal edildiğini doğrula
-      expect(mockRefreshTokenRepo.update).toHaveBeenCalledWith(
-        { userId: mockUser.id, isRevoked: false },
-        { isRevoked: true },
+    it('GÜVENLİK: Eşzamanlı iki refresh isteğinde (race condition) atomic update affected=0 olunca tüm oturumları iptal etmeli', async () => {
+      const rawRefreshToken = 'concurrent-refresh-token';
+      mockJwtService.verify.mockReturnValue({ sub: mockUser.id, email: mockUser.email });
+
+      const activeTokenRecord: RefreshTokenEntity = {
+        id: 'token-race-1',
+        userId: mockUser.id,
+        tokenHash: authService.hashToken(rawRefreshToken),
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60),
+        isRevoked: false,
+        createdAt: new Date(),
+      };
+
+      mockRefreshTokenRepo.findOne.mockResolvedValue(activeTokenRecord);
+      mockUserRepo.findOne.mockResolvedValue(mockUser);
+
+      // Eşzamanlı istek simulasyonu: update etkilenen satır 0 (çünkü başka istek az önce güncelledi)
+      mockDataSource.transaction = vi.fn(async (cb: (manager: any) => Promise<any>) => {
+        const mockManager = {
+          findOne: vi.fn((entityClass: any) => {
+            if (entityClass === RefreshTokenEntity) return activeTokenRecord;
+            if (entityClass === UserEntity) return mockUser;
+            return null;
+          }),
+          update: vi.fn().mockResolvedValue({ affected: 1 }),
+          createQueryBuilder: vi.fn(() => ({
+            update: vi.fn().mockReturnThis(),
+            set: vi.fn().mockReturnThis(),
+            where: vi.fn().mockReturnThis(),
+            execute: vi.fn().mockResolvedValue({ affected: 0 }), // YARIŞ KAYBEDİLDİ!
+          })),
+        };
+        return cb(mockManager);
+      });
+
+      await expect(authService.refreshTokens(rawRefreshToken)).rejects.toThrow(
+        UnauthorizedException,
       );
     });
   });

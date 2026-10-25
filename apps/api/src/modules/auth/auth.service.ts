@@ -6,7 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
@@ -33,12 +33,13 @@ export class AuthService {
     private readonly userRepository: Repository<UserEntity>,
     @InjectRepository(RefreshTokenEntity)
     private readonly refreshTokenRepository: Repository<RefreshTokenEntity>,
+    private readonly dataSource: DataSource,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
 
   /**
-   * Yeni Kullanıcı Kaydı
+   * Yeni Kullanıcı Kaydı (Atomik Transaction ile)
    */
   async register(input: RegisterInput): Promise<AuthResponse> {
     const normalizedEmail = input.email.trim().toLowerCase();
@@ -55,26 +56,39 @@ export class AuthService {
     // 2. Güvenli Şifre Hashleme
     const passwordHash = await this.hashPassword(input.password);
 
-    // 3. Kullanıcıyı Kaydet
-    const newUser = this.userRepository.create({
-      email: normalizedEmail,
-      displayName: input.displayName.trim(),
-      passwordHash,
-      role: UserRole.CITIZEN,
-      accountStatus: AccountStatus.ACTIVE,
-      reputationScore: 10,
+    // 3. Kullanıcı ve Token'ı Transaction ile Bütüncül Kaydet
+    return await this.dataSource.transaction(async manager => {
+      const newUser = manager.create(UserEntity, {
+        email: normalizedEmail,
+        displayName: input.displayName.trim(),
+        passwordHash,
+        role: UserRole.CITIZEN,
+        accountStatus: AccountStatus.ACTIVE,
+        reputationScore: 10,
+      });
+
+      const savedUser = await manager.save(newUser);
+
+      // 4. Token Üretimi ve Oturum Başlatma
+      const tokens = await this.generateTokens(savedUser);
+      const tokenHash = this.hashToken(tokens.refreshToken);
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+
+      const tokenEntity = manager.create(RefreshTokenEntity, {
+        userId: savedUser.id,
+        tokenHash,
+        expiresAt,
+        isRevoked: false,
+      });
+
+      await manager.save(tokenEntity);
+
+      return {
+        user: this.toUserResponse(savedUser),
+        tokens,
+      };
     });
-
-    const savedUser = await this.userRepository.save(newUser);
-
-    // 4. Token Üretimi ve Oturum Başlatma
-    const tokens = await this.generateTokens(savedUser);
-    await this.persistRefreshToken(savedUser.id, tokens.refreshToken);
-
-    return {
-      user: this.toUserResponse(savedUser),
-      tokens,
-    };
   }
 
   /**
@@ -97,7 +111,9 @@ export class AuthService {
 
     // Hesap Durumu Kontrolü
     if (user.accountStatus === AccountStatus.SUSPENDED) {
-      throw new UnauthorizedException('Hesabınız askıya alınmıştır. Destek ekibiyle iletişime geçiniz.');
+      throw new UnauthorizedException(
+        'Hesabınız askıya alınmıştır. Destek ekibiyle iletişime geçiniz.',
+      );
     }
 
     // Şifre Doğrulama
@@ -117,7 +133,7 @@ export class AuthService {
   }
 
   /**
-   * Rotasyonlu Refresh Token & Token Reuse Detection
+   * Rotasyonlu Refresh Token & Eşzamanlı İstek (Race Condition) Koruması ile Token Reuse Tespiti
    */
   async refreshTokens(refreshTokenStr: string): Promise<AuthTokens> {
     // 1. JWT Doğrulaması
@@ -132,56 +148,91 @@ export class AuthService {
 
     const tokenHash = this.hashToken(refreshTokenStr);
 
-    // 2. Veritabanında Token Ara
-    const tokenRecord = await this.refreshTokenRepository.findOne({
-      where: { tokenHash },
+    // 2. Transaction ile Atomik Token Değişimi ve Eşzamanlılık Koruması
+    return await this.dataSource.transaction(async manager => {
+      // Token kaydını getir
+      const tokenRecord = await manager.findOne(RefreshTokenEntity, {
+        where: { tokenHash },
+      });
+
+      // 3. KRİTİK GÜVENLİK: Daha önce iptal edilmiş/harcanmış token tekrar gelirse (Compromise Recovery)
+      if (tokenRecord && tokenRecord.isRevoked) {
+        this.logger.warn(
+          `[SECURITY] Token Reuse Tespit Edildi! Kullanıcı ID: ${payload.sub}. Tüm aktif oturumlar iptal ediliyor.`,
+        );
+        await manager.update(
+          RefreshTokenEntity,
+          { userId: payload.sub, isRevoked: false },
+          { isRevoked: true },
+        );
+        throw new UnauthorizedException(
+          'Güvenlik ihlali tespit edildi: Oturum sonlandırıldı. Lütfen tekrar giriş yapınız.',
+        );
+      }
+
+      if (!tokenRecord) {
+        throw new UnauthorizedException('Geçersiz veya tanınmayan oturum kaydı.');
+      }
+
+      if (new Date() > tokenRecord.expiresAt) {
+        throw new UnauthorizedException('Oturum süresi dolmuş. Lütfen tekrar giriş yapınız.');
+      }
+
+      // 4. Kullanıcıyı Getir
+      const user = await manager.findOne(UserEntity, {
+        where: { id: payload.sub },
+      });
+
+      if (!user || user.accountStatus === AccountStatus.SUSPENDED) {
+        throw new UnauthorizedException('Kullanıcı hesabı aktif değil.');
+      }
+
+      // 5. Yeni Token Çifti Üret (Rotation)
+      const newTokens = await this.generateTokens(user);
+      const newTokenHash = this.hashToken(newTokens.refreshToken);
+
+      // 6. ATOMİK COMPARE-AND-SET: Yalnızca isRevoked = false ise güncelle (Eşzamanlı istekleri engeller)
+      const updateResult = await manager
+        .createQueryBuilder()
+        .update(RefreshTokenEntity)
+        .set({
+          isRevoked: true,
+          replacedByTokenHash: newTokenHash,
+        })
+        .where('id = :id AND isRevoked = false', { id: tokenRecord.id })
+        .execute();
+
+      if (updateResult.affected === 0) {
+        // Eşzamanlı başka bir istek bu token'ı tam bu milisaniyede kullandı!
+        this.logger.warn(
+          `[SECURITY] Eşzamanlı Token Yenileme (Race Condition) Algılandı! Token ID: ${tokenRecord.id}`,
+        );
+        // Güvenlik ihlali sayarak tüm oturumları iptal et
+        await manager.update(
+          RefreshTokenEntity,
+          { userId: payload.sub, isRevoked: false },
+          { isRevoked: true },
+        );
+        throw new UnauthorizedException(
+          'Güvenlik ihlali tespit edildi: Eşzamanlı veya mükerrer oturum yenileme denemesi engellendi.',
+        );
+      }
+
+      // 7. Yeni Refresh Token'ı Kaydet
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+
+      const newTokenEntity = manager.create(RefreshTokenEntity, {
+        userId: user.id,
+        tokenHash: newTokenHash,
+        expiresAt,
+        isRevoked: false,
+      });
+
+      await manager.save(newTokenEntity);
+
+      return newTokens;
     });
-
-    // 3. KRİTİK GÜVENLİK: Token Reuse Tespiti
-    if (tokenRecord && tokenRecord.isRevoked) {
-      this.logger.warn(
-        `[SECURITY] Token Reuse Tespit Edildi! Kullanıcı ID: ${payload.sub}. Tüm aktif oturumlar iptal ediliyor.`,
-      );
-      // Bu kullanıcının tüm aktif oturumlarını iptal et (Compromise Recovery)
-      await this.refreshTokenRepository.update(
-        { userId: payload.sub, isRevoked: false },
-        { isRevoked: true },
-      );
-      throw new UnauthorizedException(
-        'Güvenlik ihlali tespit edildi: Oturum sonlandırıldı. Lütfen tekrar giriş yapınız.',
-      );
-    }
-
-    if (!tokenRecord) {
-      throw new UnauthorizedException('Geçersiz veya tanınmayan oturum kaydı.');
-    }
-
-    if (new Date() > tokenRecord.expiresAt) {
-      throw new UnauthorizedException('Oturum süresi dolmuş. Lütfen tekrar giriş yapınız.');
-    }
-
-    // 4. Kullanıcıyı Getir
-    const user = await this.userRepository.findOne({
-      where: { id: payload.sub },
-    });
-
-    if (!user || user.accountStatus === AccountStatus.SUSPENDED) {
-      throw new UnauthorizedException('Kullanıcı hesabı aktif değil.');
-    }
-
-    // 5. Yeni Token Çifti Üret (Rotation)
-    const newTokens = await this.generateTokens(user);
-    const newTokenHash = this.hashToken(newTokens.refreshToken);
-
-    // 6. Eski Token'ı İptal Et ve Değişim Zincirini Kaydet
-    tokenRecord.isRevoked = true;
-    tokenRecord.replacedByTokenHash = newTokenHash;
-    await this.refreshTokenRepository.save(tokenRecord);
-
-    // 7. Yeni Token'ı Kaydet
-    await this.persistRefreshToken(user.id, newTokens.refreshToken);
-
-    return newTokens;
   }
 
   /**
@@ -247,7 +298,6 @@ export class AuthService {
     const accessExpiresIn = this.configService.get<string>('JWT_ACCESS_EXPIRES_IN', '15m');
     const refreshExpiresIn = this.configService.get<string>('JWT_REFRESH_EXPIRES_IN', '7d');
 
-    // Benzersiz jti ile her refresh token'ın tekil olmasını sağla
     const jti = randomBytes(16).toString('hex');
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -267,14 +317,14 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      expiresIn: 900, // 15 dakika (saniye cinsinden)
+      expiresIn: 900,
     };
   }
 
   private async persistRefreshToken(userId: string, refreshTokenStr: string): Promise<void> {
     const tokenHash = this.hashToken(refreshTokenStr);
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // 7 gün geçerli
+    expiresAt.setDate(expiresAt.getDate() + 7);
 
     const tokenEntity = this.refreshTokenRepository.create({
       userId,

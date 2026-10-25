@@ -53,5 +53,18 @@ export function validateEnvironment(config: Record<string, unknown>): Environmen
     throw new Error(`[EnvValidationError] Çevre değişkenleri doğrulanamadı: ${errorMessages}`);
   }
 
+  // Üretim Ortamı Güvenlik Denetimi: Varsayılan JWT Secret'ların Engellenmesi
+  if (parsed.data.NODE_ENV === 'production') {
+    const defaultSecretPrefix = 'sehir_nabiz_default_';
+    if (
+      parsed.data.JWT_ACCESS_SECRET.startsWith(defaultSecretPrefix) ||
+      parsed.data.JWT_REFRESH_SECRET.startsWith(defaultSecretPrefix)
+    ) {
+      throw new Error(
+        '[SecurityError] Üretim (production) ortamında varsayılan JWT gizli anahtarları kullanılamaz! Lütfen en az 48 baytlık rastgele bir anahtar belirleyin.',
+      );
+    }
+  }
+
   return parsed.data;
 }

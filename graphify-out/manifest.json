@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "apps/api/src/config/env.validation.ts": {
-    "mtime": 1792934437.4220622,
-    "seen": 1792935030.672979,
-    "ast_hash": "0a29c13d1c5c36d7723e45f23a25760e",
+    "mtime": 1792936105.1424346,
+    "seen": 1792936281.7167182,
+    "ast_hash": "752ffbc8df9e73316570746b4c007084",
     "semantic_hash": ""
   },
   "apps/api/src/main.ts": {
@@ -342,9 +342,9 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1792934987.0017543,
-    "seen": 1792935030.672979,
-    "ast_hash": "c7d4107816286c8936d8900edff75329",
+    "mtime": 1792936271.6041121,
+    "seen": 1792936281.7167182,
+    "ast_hash": "f2162de700c6a9659b4af9a1a1cd476a",
     "semantic_hash": ""
   },
   "docs/DEVELOPMENT.md": {
@@ -432,15 +432,15 @@
     "semantic_hash": ""
   },
   "apps/api/src/modules/auth/auth.service.spec.ts": {
-    "mtime": 1792934645.966576,
-    "seen": 1792935030.672979,
-    "ast_hash": "b8768f436ba2cec9617d66e9fd466018",
+    "mtime": 1792936159.8081212,
+    "seen": 1792936281.7167182,
+    "ast_hash": "130251a7905a850571a8ed80fb53a3c9",
     "semantic_hash": ""
   },
   "apps/api/src/modules/auth/auth.service.ts": {
-    "mtime": 1792934587.6474373,
-    "seen": 1792935030.672979,
-    "ast_hash": "b1bff646543aa71a4b64039a16baee82",
+    "mtime": 1792936135.422624,
+    "seen": 1792936281.7167182,
+    "ast_hash": "ebe032edd29f34546c8f19d728d287aa",
     "semantic_hash": ""
   },
   "apps/api/src/modules/auth/dto/login.dto.ts": {
@@ -525,6 +525,30 @@
     "mtime": 1792935021.5758884,
     "seen": 1792935030.672979,
     "ast_hash": "616fa752a3a21b1a4dbf5de5c4ef97ed",
+    "semantic_hash": ""
+  },
+  "apps/api/src/common/decorators/roles.decorator.ts": {
+    "mtime": 1792936174.7409322,
+    "seen": 1792936281.7167182,
+    "ast_hash": "f0f3c9d72d315c22faba27c5d28a9cb4",
+    "semantic_hash": ""
+  },
+  "apps/api/src/common/guards/roles.guard.spec.ts": {
+    "mtime": 1792936195.9914658,
+    "seen": 1792936281.7167182,
+    "ast_hash": "964184e82551840c69015bf7a3f1e4e8",
+    "semantic_hash": ""
+  },
+  "apps/api/src/common/guards/roles.guard.ts": {
+    "mtime": 1792936185.4154093,
+    "seen": 1792936281.7167182,
+    "ast_hash": "bdb58d81859fd6e4f75d97e920077363",
+    "semantic_hash": ""
+  },
+  "docs/PHASE_2_5_VERIFICATION.md": {
+    "mtime": 1792936265.8108397,
+    "seen": 1792936281.7167182,
+    "ast_hash": "12436cad538da4dc5582a5bc323451bf",
     "semantic_hash": ""
   }
 }

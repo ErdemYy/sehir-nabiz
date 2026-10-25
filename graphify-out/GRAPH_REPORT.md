@@ -1,17 +1,17 @@
 # Graph Report - ŞehirNabız  (2026-10-25)
 
 ## Corpus Check
-- 86 files · ~16,207 words
+- 90 files · ~17,812 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 3 file(s) not represented in the graph (top: .example 2, (none) 1)
 
 ## Summary
-- 800 nodes · 1086 edges · 57 communities (51 shown, 6 thin omitted)
-- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 18 edges (avg confidence: 0.91)
+- 823 nodes · 1130 edges · 57 communities (51 shown, 6 thin omitted)
+- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 24 edges (avg confidence: 0.92)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `7a7b0b69`
+- Built from commit: `4202fd44`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -23,7 +23,7 @@
 - ŞehirNabız — Veri Modelleri ve Şema Belgesi (DATA_MODELS.md)
 - mobile/package.json
 - api/package.json
-- all-exceptions.filter.ts
+- ŞehirNabız — Phase 1 Doğrulama ve Tamamlanma Raporu (PHASE_1_REPORT.md)
 - expo
 - package.json
 - compilerOptions
@@ -31,7 +31,7 @@
 - theme/index.ts
 - devDependencies
 - design-tokens/package.json
-- event.schema.ts
+- geo.schema.ts
 - tasks
 - dependencies
 - scripts
@@ -45,7 +45,7 @@
 - config/package.json
 - event.types.ts
 - ŞehirNabız — Geliştirici Çalışma Rehberi (DEVELOPMENT.md)
-- auth.controller.ts
+- AuthService
 - compilerOptions
 - ŞehirNabız (Pulse of the City) 🏙️⚡
 - api/tsconfig.json
@@ -53,45 +53,45 @@
 - mobile/tsconfig.json
 - nest-cli.json
 - EventStatus
-- shared/src/index.ts
+- event.schema.ts
 - EventSeverity
 - app.module.ts
 - tsconfig.build.json
 - env.ts
-- auth.service.ts
+- UserEntity
 - ŞehirNabız — Phase 2 Tamamlanma ve Doğrulama Raporu (PHASE_2_REPORT.md)
-- @nestjs/common
+- auth.controller.ts
 - RedisService
-- health.controller.ts
-- ErrorBoundary
-- jest
-- jwt.strategy.ts
+- ŞehirNabız — Phase 2.5: Entegrasyon Doğrulaması ve Güvenlik Denetimi Raporu (PHASE_2_5_VERIFICATION.md)
 - _layout.tsx
+- jest
+- main.ts
+- all-exceptions.filter.ts
 - useAppTheme
 - index.tsx
 - devDependencies
 
 ## God Nodes (most connected - your core abstractions)
-1. `compilerOptions` - 22 edges
-2. `UserEntity` - 20 edges
-3. `@nestjs/common` - 19 edges
-4. `AuthService` - 18 edges
-5. `RefreshTokenEntity` - 16 edges
-6. `RedisService` - 15 edges
-7. `expo` - 15 edges
-8. `EventCategory` - 15 edges
-9. `UserRole` - 14 edges
+1. `@nestjs/common` - 22 edges
+2. `compilerOptions` - 22 edges
+3. `UserEntity` - 20 edges
+4. `AuthService` - 19 edges
+5. `UserRole` - 17 edges
+6. `RefreshTokenEntity` - 16 edges
+7. `RedisService` - 15 edges
+8. `expo` - 15 edges
+9. `EventCategory` - 15 edges
 10. `ŞehirNabız — Phase 2 Tamamlanma ve Doğrulama Raporu (PHASE_2_REPORT.md)` - 13 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `5. Kimlik Doğrulama Uç Noktaları (Auth Endpoints)` --references--> `ZodValidationPipe`  [INFERRED]
-  docs/PHASE_2_REPORT.md → apps/api/src/common/pipes/zod-validation.pipe.ts
-- `1. Oluşturulan Modüller ve Mimari Bileşenler` --references--> `RedisModule`  [INFERRED]
-  docs/PHASE_2_REPORT.md → apps/api/src/modules/redis/redis.module.ts
-- `9. Graphify Bilgi Grafı Metrikleri` --references--> `RedisModule`  [INFERRED]
-  docs/PHASE_2_REPORT.md → apps/api/src/modules/redis/redis.module.ts
 - `5. Backend Mimarisi (`apps/api`)` --references--> `AllExceptionsFilter`  [INFERRED]
   docs/PHASE_1_REPORT.md → apps/api/src/common/filters/all-exceptions.filter.ts
+- `6. Yapılan Düzeltmelerin Özeti` --references--> `RolesGuard`  [INFERRED]
+  docs/PHASE_2_5_VERIFICATION.md → apps/api/src/common/guards/roles.guard.ts
+- `7. Graphify Bilgi Grafı Metrikleri` --references--> `RolesGuard`  [INFERRED]
+  docs/PHASE_2_5_VERIFICATION.md → apps/api/src/common/guards/roles.guard.ts
+- `5. Kimlik Doğrulama Uç Noktaları (Auth Endpoints)` --references--> `ZodValidationPipe`  [INFERRED]
+  docs/PHASE_2_REPORT.md → apps/api/src/common/pipes/zod-validation.pipe.ts
 - `1. Oluşturulan Modüller ve Mimari Bileşenler` --references--> `DatabaseModule`  [INFERRED]
   docs/PHASE_2_REPORT.md → apps/api/src/database/database.module.ts
 
@@ -126,11 +126,11 @@ Nodes (16): description, @sehir-nabiz/config, @sehir-nabiz/shared, typescript, m
 
 ### Community 6 - "api/package.json"
 Cohesion: 0.06
-Nodes (33): description, @sehir-nabiz/config, @sehir-nabiz/shared, @types/node, typescript, zod, name, private (+25 more)
+Nodes (34): description, @sehir-nabiz/config, @sehir-nabiz/shared, @types/node, typescript, zod, name, private (+26 more)
 
-### Community 7 - "all-exceptions.filter.ts"
-Cohesion: 0.08
-Nodes (17): AppModule, AllExceptionsFilter, CORRELATION_ID_HEADER, CorrelationIdMiddleware, bootstrap(), 1. Genel Özet ve Mimari Kazanımlar, 2. Oluşturulan Dizin ve Paket Yapısı, 3. Kurulan Paketler ve Sürümleri (+9 more)
+### Community 7 - "ŞehirNabız — Phase 1 Doğrulama ve Tamamlanma Raporu (PHASE_1_REPORT.md)"
+Cohesion: 0.18
+Nodes (10): 1. Genel Özet ve Mimari Kazanımlar, 2. Oluşturulan Dizin ve Paket Yapısı, 3. Kurulan Paketler ve Sürümleri, 4. Expo SDK 58 ve MapLibre Uyumluluk Analizi, 5. Backend Mimarisi (`apps/api`), 6. Kalite ve Test Doğrulama Sonuçları, 7. Graphify Bilgi Grafı Durumu, 8. Eksik Kalanlar ve Phase 2 Önerileri (+2 more)
 
 ### Community 8 - "expo"
 Cohesion: 0.08
@@ -160,9 +160,9 @@ Nodes (22): devDependencies, jest, @nestjs/cli, @nestjs/schematics, @nestjs/test
 Cohesion: 0.11
 Nodes (17): description, devDependencies, @sehir-nabiz/config, typescript, @sehir-nabiz/config, typescript, main, name (+9 more)
 
-### Community 15 - "event.schema.ts"
-Cohesion: 0.15
-Nodes (12): ApiErrorResponseSchema, HealthCheckResponseSchema, CreateEventInput, EventCategorySchema, EventSeveritySchema, EventStatusSchema, VerificationTypeSchema, VerifyEventInput (+4 more)
+### Community 15 - "geo.schema.ts"
+Cohesion: 0.17
+Nodes (8): Environment, EnvironmentSchema, validateEnvironment(), ApiErrorResponseSchema, HealthCheckResponseSchema, BoundingBoxSchema, GeoCoordinateSchema, GeoRadiusQuerySchema
 
 ### Community 16 - "tasks"
 Cohesion: 0.12
@@ -177,8 +177,8 @@ Cohesion: 0.22
 Nodes (9): scripts, android, clean, ios, lint, start, test, typecheck (+1 more)
 
 ### Community 19 - "EventCategory"
-Cohesion: 0.17
-Nodes (11): AppState, EventCategory, CULTURAL_EVENT, FIRE_OR_NATURAL_HAZARD, INFRASTRUCTURE_FAILURE, OTHER, PUBLIC_SAFETY, ROAD_WORK (+3 more)
+Cohesion: 0.20
+Nodes (10): AppState, EventCategory, CULTURAL_EVENT, FIRE_OR_NATURAL_HAZARD, INFRASTRUCTURE_FAILURE, OTHER, PUBLIC_SAFETY, ROAD_WORK (+2 more)
 
 ### Community 20 - "dependencies"
 Cohesion: 0.09
@@ -209,16 +209,16 @@ Cohesion: 0.20
 Nodes (9): dependencies, prettier, description, files, prettier, main, name, private (+1 more)
 
 ### Community 27 - "event.types.ts"
-Cohesion: 0.31
-Nodes (6): ApiResponse, EventDetail, EventSummary, BoundingBox, GeoCoordinate, GeoRadiusQuery
+Cohesion: 0.43
+Nodes (5): EventDetail, EventSummary, BoundingBox, GeoCoordinate, GeoRadiusQuery
 
 ### Community 28 - "ŞehirNabız — Geliştirici Çalışma Rehberi (DEVELOPMENT.md)"
 Cohesion: 0.15
 Nodes (12): 1. Ortam Hazırlığı, 2. Docker Servislerinin Başlatılması, 3.1 Geliştirme Ortamı Dosyaları, 3.2 Güvenli JWT Secret Üretimi (Geliştirme vs Üretim Ayrımı), 3. Güvenli Secret ve Ortam Değişkeni Yönetimi, 4. Veritabanı ve Migration Yönetimi (TypeORM), 5. Temel Turborepo Komutları, 6.1 Backend API (`apps/api`) (+4 more)
 
-### Community 29 - "auth.controller.ts"
-Cohesion: 0.07
-Nodes (17): ZodValidationPipe, AuthController, AuthService, LoginDto, RefreshTokenDto, RegisterDto, AccountStatusSchema, LoginInput (+9 more)
+### Community 29 - "AuthService"
+Cohesion: 0.11
+Nodes (8): RolesGuard, AuthController, AuthService, 6. Yapılan Düzeltmelerin Özeti, 7. Graphify Bilgi Grafı Metrikleri, AuthResponse, AuthTokens, UserResponse
 
 ### Community 30 - "compilerOptions"
 Cohesion: 0.22
@@ -244,61 +244,61 @@ Nodes (5): collection, compilerOptions, deleteOutDir, $schema, sourceRoot
 Cohesion: 0.33
 Nodes (6): EventStatus, ACTIVE, EXPIRED, PENDING_VERIFICATION, REJECTED_SPAM, RESOLVED
 
-### Community 37 - "shared/src/index.ts"
-Cohesion: 0.33
-Nodes (4): VerificationType, CONFIRM, DENY, RESOLVED
+### Community 37 - "event.schema.ts"
+Cohesion: 0.17
+Nodes (11): VerificationType, CONFIRM, DENY, RESOLVED, CreateEventInput, EventCategorySchema, EventSeveritySchema, EventStatusSchema (+3 more)
 
 ### Community 38 - "EventSeverity"
 Cohesion: 0.40
 Nodes (5): EventSeverity, CRITICAL, HIGH, LOW, MEDIUM
 
 ### Community 39 - "app.module.ts"
-Cohesion: 0.19
-Nodes (6): Environment, EnvironmentSchema, validateEnvironment(), HealthModule, RedisModule, @nestjs/throttler
+Cohesion: 0.22
+Nodes (6): DatabaseModule, AuthModule, RedisModule, 1. Oluşturulan Modüller ve Mimari Bileşenler, 9. Graphify Bilgi Grafı Metrikleri, @nestjs/throttler
 
 ### Community 40 - "tsconfig.build.json"
 Cohesion: 0.50
 Nodes (3): exclude, extends, ./tsconfig.json
 
-### Community 45 - "auth.service.ts"
-Cohesion: 0.06
-Nodes (19): AppDataSource, dataSourceOptions, RefreshTokenEntity, UserEntity, InitialAuthAndPostGis1740000000000, AccountStatus, ACTIVE, PENDING_VERIFICATION (+11 more)
+### Community 45 - "UserEntity"
+Cohesion: 0.09
+Nodes (10): AppDataSource, dataSourceOptions, RefreshTokenEntity, UserEntity, InitialAuthAndPostGis1740000000000, AccountStatus, ACTIVE, PENDING_VERIFICATION (+2 more)
 
 ### Community 46 - "ŞehirNabız — Phase 2 Tamamlanma ve Doğrulama Raporu (PHASE_2_REPORT.md)"
-Cohesion: 0.12
-Nodes (14): DatabaseModule, AuthModule, 10. Git ve Faz Kapanışı, 11. Teknik Borçlar, 12. Phase 3 İçin Öneriler, 1. Oluşturulan Modüller ve Mimari Bileşenler, 2. Veritabanı Tabloları ve Şema Yapısı, 3. PostGIS ve Docker Durumu (+6 more)
-
-### Community 47 - "@nestjs/common"
-Cohesion: 0.21
-Nodes (5): JwtAuthGuard, AuthRateLimitGuard, 5. Kimlik Doğrulama Uç Noktaları (Auth Endpoints), ioredis, @nestjs/common
-
-### Community 49 - "health.controller.ts"
-Cohesion: 0.21
-Nodes (4): HealthController, ReadinessResponse, HealthCheckResponse, vitest
-
-### Community 50 - "ErrorBoundary"
 Cohesion: 0.18
-Nodes (5): ErrorBoundary, Props, State, styles, react-native
+Nodes (10): 10. Git ve Faz Kapanışı, 11. Teknik Borçlar, 12. Phase 3 İçin Öneriler, 2. Veritabanı Tabloları ve Şema Yapısı, 3. PostGIS ve Docker Durumu, 4. Redis Durumu ve Güvenlik Davranışı, 6. Kullanılan Güvenlik Önlemleri, 7. Test Sonuçları (+2 more)
+
+### Community 47 - "auth.controller.ts"
+Cohesion: 0.05
+Nodes (32): ROLES_KEY, ZodValidationPipe, LoginDto, RefreshTokenDto, RegisterDto, JwtAuthGuard, AuthRateLimitGuard, JwtStrategy (+24 more)
+
+### Community 48 - "RedisService"
+Cohesion: 0.08
+Nodes (6): HealthController, ReadinessResponse, HealthModule, RedisService, ApiResponse, HealthCheckResponse
+
+### Community 49 - "ŞehirNabız — Phase 2.5: Entegrasyon Doğrulaması ve Güvenlik Denetimi Raporu (PHASE_2_5_VERIFICATION.md)"
+Cohesion: 0.15
+Nodes (11): 1. Docker ve Altyapı Servisleri Durumu, 2. PostgreSQL / PostGIS ve Redis Bağlantı Sonuçları, 3. Migration ve Veritabanı Şeması Analizi, 4. Auth E2E ve Birim Test Sonuçları, 5.1 Kritik Bulgu ve Düzeltme: Eşzamanlı Refresh İsteği (Race Condition), 5.2 Üretim Ortamında Varsayılan JWT Secret Engeli, 5.3 Rol Tabanlı Erişim Kontrolü (RBAC), 5.4 Redis Kesintisinde In-Memory Fallback Risk Değerlendirmesi (+3 more)
+
+### Community 50 - "_layout.tsx"
+Cohesion: 0.13
+Nodes (13): RootLayout(), RootLayoutNav(), ErrorBoundary, Props, State, styles, AppProvider(), AppProviderProps (+5 more)
 
 ### Community 51 - "jest"
 Cohesion: 0.20
 Nodes (10): jest, collectCoverageFrom, coverageDirectory, moduleFileExtensions, rootDir, testEnvironment, testRegex, transform (+2 more)
 
-### Community 52 - "jwt.strategy.ts"
+### Community 52 - "main.ts"
 Cohesion: 0.22
-Nodes (5): JwtStrategy, JwtPayload, @nestjs/config, @nestjs/passport, passport-jwt
-
-### Community 53 - "_layout.tsx"
-Cohesion: 0.29
-Nodes (8): RootLayout(), RootLayoutNav(), AppProvider(), AppProviderProps, queryClient, expo-status-bar, react, @tanstack/react-query
+Nodes (5): AppModule, AllExceptionsFilter, bootstrap(), helmet, @nestjs/core
 
 ### Community 54 - "useAppTheme"
-Cohesion: 0.28
-Nodes (7): NotFoundScreen(), styles, LoadingIndicator(), LoadingIndicatorProps, styles, useAppTheme(), expo-router
+Cohesion: 0.27
+Nodes (8): NotFoundScreen(), styles, LoadingIndicator(), LoadingIndicatorProps, styles, useAppTheme(), expo-router, react-native
 
 ### Community 55 - "index.tsx"
-Cohesion: 0.50
-Nodes (4): HomeScreen(), styles, useAppStore, react-native-safe-area-context
+Cohesion: 0.47
+Nodes (4): HomeScreen(), styles, useAppStore, zustand
 
 ### Community 56 - "devDependencies"
 Cohesion: 0.40
@@ -306,23 +306,23 @@ Nodes (5): devDependencies, @babel/core, @sehir-nabiz/config, @types/react, type
 
 ## Knowledge Gaps
 - **85 isolated node(s):** `@nestjs/platform-express`, `@sehir-nabiz/shared`, `class-transformer`, `class-validator`, `passport` (+80 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 531 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 543 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **6 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `@nestjs/common` connect `@nestjs/common` to `api/package.json`, `all-exceptions.filter.ts`, `app.module.ts`, `auth.service.ts`, `health.controller.ts`, `jwt.strategy.ts`, `auth.controller.ts`?**
-  _High betweenness centrality (0.064) - this node is a cross-community bridge._
+- **Why does `@nestjs/common` connect `auth.controller.ts` to `api/package.json`, `app.module.ts`, `UserEntity`, `RedisService`, `main.ts`, `all-exceptions.filter.ts`?**
+  _High betweenness centrality (0.070) - this node is a cross-community bridge._
 - **What connects `@nestjs/platform-express`, `@sehir-nabiz/shared`, `class-transformer` to the rest of the system?**
   _85 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `1. Geliştirme Fazları` be split into smaller, more focused modules?**
   _Cohesion score 0.11764705882352941 - nodes in this community are weakly interconnected._
-- **Why does `zustand` connect `EventCategory` to `mobile/package.json`?**
+- **Why does `zustand` connect `index.tsx` to `mobile/package.json`?**
   _High betweenness centrality (0.060) - this node is a cross-community bridge._
 - **Should `mobile/package.json` be split into smaller, more focused modules?**
   _Cohesion score 0.11764705882352941 - nodes in this community are weakly interconnected._
 - **Why does `dependencies` connect `dependencies` to `api/package.json`?**
-  _High betweenness centrality (0.032) - this node is a cross-community bridge._
+  _High betweenness centrality (0.031) - this node is a cross-community bridge._
 - **Should `api/package.json` be split into smaller, more focused modules?**
-  _Cohesion score 0.058823529411764705 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05714285714285714 - nodes in this community are weakly interconnected._
