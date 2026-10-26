@@ -1,8 +1,8 @@
 {
   "AGENTS.md": {
-    "mtime": 1792942077.2314382,
-    "seen": 1792942093.6707883,
-    "ast_hash": "175a819c40f96963276b9c35435ca3fe",
+    "mtime": 1792944337.56007,
+    "seen": 1793023812.1168976,
+    "ast_hash": "4b5d270b559245016c1b1cedd6ed8048",
     "semantic_hash": ""
   },
   "docs/architecture/ARCHITECTURE.md": {
@@ -18,9 +18,9 @@
     "semantic_hash": ""
   },
   "docs/architecture/ROADMAP_PHASES.md": {
-    "mtime": 1792942068.9467611,
-    "seen": 1792942093.6707883,
-    "ast_hash": "272f938c2ff7192370b55fe2f85a3285",
+    "mtime": 1792944324.8072393,
+    "seen": 1793023812.1168976,
+    "ast_hash": "f84582457992bce112c27aada57816fc",
     "semantic_hash": ""
   },
   "docs/architecture/SECURITY_PRIVACY.md": {
@@ -126,9 +126,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/package.json": {
-    "mtime": 1792944183.017231,
-    "seen": 1792944238.2175329,
-    "ast_hash": "16fbfb14410716e05cc4a2347ec46265",
+    "mtime": 1793023760.7251983,
+    "seen": 1793023812.1168976,
+    "ast_hash": "8458ee977492c909d638add2db968904",
     "semantic_hash": ""
   },
   "apps/mobile/src/components/ErrorBoundary.tsx": {
@@ -348,9 +348,9 @@
     "semantic_hash": ""
   },
   "docs/DEVELOPMENT.md": {
-    "mtime": 1792942057.4962895,
-    "seen": 1792942093.6707883,
-    "ast_hash": "09ae5fe0275c1d9549761a52812a19af",
+    "mtime": 1792944306.148009,
+    "seen": 1793023812.1168976,
+    "ast_hash": "7ff619bf7f1722283b3752f5f689ea16",
     "semantic_hash": ""
   },
   "docs/PHASE_1_REPORT.md": {
@@ -360,9 +360,9 @@
     "semantic_hash": ""
   },
   "docs/guides/MAPLIBRE_INTEGRATION_GUIDE.md": {
-    "mtime": 1792933245.3514094,
-    "seen": 1792933949.8174255,
-    "ast_hash": "63e6a514d6768533834862157884beee",
+    "mtime": 1792944262.350564,
+    "seen": 1793023812.1168976,
+    "ast_hash": "2879f82895e91ba0bcda5fe12dffe5d8",
     "semantic_hash": ""
   },
   "pnpm-workspace.yaml": {
@@ -786,9 +786,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/app/(tabs)/index.tsx": {
-    "mtime": 1792944082.1209965,
-    "seen": 1792944238.2175329,
-    "ast_hash": "8a76e6f4036d8506a82ce6dfeaf98c5c",
+    "mtime": 1793023707.6243608,
+    "seen": 1793023812.1168976,
+    "ast_hash": "2923d22d7dd31489a1eb1629e0f1902d",
     "semantic_hash": ""
   },
   "apps/mobile/app/(tabs)/notifications.tsx": {
@@ -1002,15 +1002,15 @@
     "semantic_hash": ""
   },
   "docs/design/DESIGN_SYSTEM.md": {
-    "mtime": 1792942026.469251,
-    "seen": 1792942093.6707883,
-    "ast_hash": "4d9725dc10da998380ca9b6dc0b6611c",
+    "mtime": 1792944277.1248505,
+    "seen": 1793023812.1168976,
+    "ast_hash": "12e9d10766189e59f0627d9402646f95",
     "semantic_hash": ""
   },
   "docs/design/SCREEN_BLUEPRINTS.md": {
-    "mtime": 1792942046.3106532,
-    "seen": 1792942093.6707883,
-    "ast_hash": "3a41ac3095c8ea5c6a919a14f4fac20e",
+    "mtime": 1792944293.179302,
+    "seen": 1793023812.1168976,
+    "ast_hash": "950ab8c23613d2f8ee7031deb4a06496",
     "semantic_hash": ""
   },
   "apps/mobile/android/app/build.gradle": {
@@ -1068,9 +1068,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/src/features/map/hooks/useEventsBbox.ts": {
-    "mtime": 1792943771.7621918,
-    "seen": 1792944238.2175329,
-    "ast_hash": "856abaffa4a4ec00e8093da778abc095",
+    "mtime": 1793023644.798249,
+    "seen": 1793023812.1168976,
+    "ast_hash": "8169803e8f33f3aa0dc0fcf4f92ec8e4",
     "semantic_hash": ""
   },
   "apps/mobile/src/features/map/hooks/useUserLocation.ts": {
@@ -1086,9 +1086,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/src/features/map/services/eventsApi.ts": {
-    "mtime": 1792944009.796214,
-    "seen": 1792944238.2175329,
-    "ast_hash": "3f5bc0283da0c171e6fec10055f6ad80",
+    "mtime": 1793023631.7815912,
+    "seen": 1793023812.1168976,
+    "ast_hash": "79b1b642354bc4931722be6d6f48de06",
     "semantic_hash": ""
   },
   "apps/mobile/src/features/map/types/map.types.ts": {
@@ -1257,6 +1257,30 @@
     "mtime": 1792943626.463,
     "seen": 1792944238.2175329,
     "ast_hash": "97a5b2bf0b8292db9983747e33e83a74",
+    "semantic_hash": ""
+  },
+  "apps/mobile/eas.json": {
+    "mtime": 1793023604.154083,
+    "seen": 1793023812.1168976,
+    "ast_hash": "23f53f914851291db4fa8c0ca396bc24",
+    "semantic_hash": ""
+  },
+  "apps/mobile/test/phase_6_5.test.js": {
+    "mtime": 1793023754.8571682,
+    "seen": 1793023812.1168976,
+    "ast_hash": "b8291b75741021a140520c05d2d7d7db",
+    "semantic_hash": ""
+  },
+  "eas.json": {
+    "mtime": 1793023609.9741387,
+    "seen": 1793023812.1168976,
+    "ast_hash": "23f53f914851291db4fa8c0ca396bc24",
+    "semantic_hash": ""
+  },
+  "docs/PHASE_6_REPORT.md": {
+    "mtime": 1792944389.0168552,
+    "seen": 1793023812.1168976,
+    "ast_hash": "5e70b61862b9e388d88db076ccaa4fba",
     "semantic_hash": ""
   }
 }

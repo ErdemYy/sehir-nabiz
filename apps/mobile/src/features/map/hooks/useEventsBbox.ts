@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
+import type { EventResponseDto } from '@sehir-nabiz/shared';
 import type { BBoxCoordinates, EventGeoJsonCollection } from '../types/map.types';
 import { fetchEventsBbox } from '../services/eventsApi';
 import { convertEventsToGeoJson, validateBBox } from '../utils/geoUtils';
@@ -11,12 +12,27 @@ export interface UseEventsBboxOptions {
   enabled?: boolean;
 }
 
+export interface UseEventsBboxResult {
+  events: EventResponseDto[];
+  geoJson: EventGeoJsonCollection;
+  totalCount: number;
+  isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
+  isRefetching: boolean;
+  refetch: () => Promise<unknown>;
+  // Çevrimdışı ve demo durumu kontrolleri
+  isDemoData: boolean;
+  isOfflineCache: boolean;
+  lastUpdatedAt: Date | null;
+}
+
 export function useEventsBbox({
   bbox,
   category,
   searchQuery = '',
   enabled = true,
-}: UseEventsBboxOptions) {
+}: UseEventsBboxOptions): UseEventsBboxResult {
   const isValid = Boolean(bbox && validateBBox(bbox));
 
   const queryKey = useMemo(() => {
@@ -41,11 +57,13 @@ export function useEventsBbox({
     enabled: enabled && isValid,
     staleTime: 1000 * 45, // 45 saniye önbellek
     gcTime: 1000 * 60 * 5, // 5 dakika önbellekte tutma
+    retry: 1,
   });
+
+  const rawEvents = query.data || [];
 
   // Olayları istemci tarafında arama terimine göre filtrele ve GeoJSON'a dönüştür
   const geoJson: EventGeoJsonCollection = useMemo(() => {
-    const rawEvents = query.data || [];
     const filtered = searchQuery.trim()
       ? rawEvents.filter(
           (e) =>
@@ -58,12 +76,39 @@ export function useEventsBbox({
       : rawEvents;
 
     return convertEventsToGeoJson(filtered);
-  }, [query.data, searchQuery]);
+  }, [rawEvents, searchQuery]);
+
+  // Demo verisi mi kontrolü
+  const isDemoData = useMemo(() => {
+    return rawEvents.length > 0 && rawEvents.some((e) => Boolean(e.isDemo));
+  }, [rawEvents]);
+
+  // Çevrimdışı önbellek durumu:
+  // Önbellekte gerçek veri mevcut, ancak son API sorgusu başarısız oldu veya duraklatıldı
+  const isOfflineCache = useMemo(() => {
+    return (
+      rawEvents.length > 0 &&
+      !isDemoData &&
+      (Boolean(query.isError) || query.fetchStatus === 'paused')
+    );
+  }, [rawEvents.length, isDemoData, query.isError, query.fetchStatus]);
+
+  // Son başarılı önbellek zaman damgası
+  const lastUpdatedAt = useMemo(() => {
+    return query.dataUpdatedAt ? new Date(query.dataUpdatedAt) : null;
+  }, [query.dataUpdatedAt]);
 
   return {
-    ...query,
-    events: query.data || [],
+    events: rawEvents,
     geoJson,
     totalCount: geoJson.features.length,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error as Error | null,
+    isRefetching: query.isRefetching,
+    refetch: query.refetch,
+    isDemoData,
+    isOfflineCache,
+    lastUpdatedAt,
   };
 }

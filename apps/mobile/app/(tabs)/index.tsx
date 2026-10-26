@@ -1,6 +1,7 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { View, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { View, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Navigation2,
   Layers,
@@ -11,6 +12,8 @@ import {
   Shield,
   ThumbsUp,
   AlertTriangle,
+  CloudOff,
+  AlertCircle,
 } from 'lucide-react-native';
 import type { CameraRef } from '@maplibre/maplibre-react-native';
 import { MapScreenLayout } from '../../src/components/layout/MapScreenLayout';
@@ -56,6 +59,7 @@ const CATEGORIES_LIST: { code: string; name: string }[] = [
 export default function MapScreen(): React.ReactElement {
   const router = useRouter();
   const { theme, spacing, radii } = useAppTheme();
+  const insets = useSafeAreaInsets();
   const cameraRef = useRef<CameraRef>(null);
 
   // Harita Görünüm ve Filtre Durumları
@@ -85,19 +89,38 @@ export default function MapScreen(): React.ReactElement {
 
   // BBox Olayları Kancası (Backend Events API + Önbellek + GeoJSON)
   const {
+    events,
     geoJson,
     totalCount,
     refetch: refetchEvents,
     isRefetching,
+    isError: isEventsError,
+    isDemoData,
+    isOfflineCache,
+    lastUpdatedAt,
   } = useEventsBbox({
     bbox: currentBBox,
     category: selectedCategory === 'ALL' ? null : selectedCategory,
     searchQuery,
   });
 
-  // Kamera hareketi sonrasında BBox güncellemesi (Debounced)
+  // Kamera hareketi sonrasında BBox güncellemesi (Debounced - 350ms)
+  const bboxDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleBBoxChange = useCallback((bbox: BBoxCoordinates) => {
-    setCurrentBBox(bbox);
+    if (bboxDebounceTimer.current) {
+      clearTimeout(bboxDebounceTimer.current);
+    }
+    bboxDebounceTimer.current = setTimeout(() => {
+      setCurrentBBox(bbox);
+    }, 350);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (bboxDebounceTimer.current) {
+        clearTimeout(bboxDebounceTimer.current);
+      }
+    };
   }, []);
 
   // Olay seçildiğinde tetiklenir
@@ -116,6 +139,11 @@ export default function MapScreen(): React.ReactElement {
       });
     }
   }, [requestLocation]);
+
+  // Bildirim banner'larının dikey konumu (Kategori çiplerinin hemen altı)
+  const bannerTop = useMemo(() => {
+    return Math.max(insets.top + 120, 134);
+  }, [insets.top]);
 
   return (
     <>
@@ -219,15 +247,114 @@ export default function MapScreen(): React.ReactElement {
         }
       />
 
-      {/* Konum Hatası Bildirimi */}
+      {/* 5. Geliştirici Demo Modu Bilgilendirme Banner'ı */}
+      {isDemoData ? (
+        <View
+          style={{
+            position: 'absolute',
+            top: bannerTop,
+            left: spacing.lg,
+            right: spacing.lg,
+            zIndex: 14,
+            backgroundColor: '#FFFBEB',
+            paddingVertical: spacing.xs,
+            paddingHorizontal: spacing.sm,
+            borderRadius: radii.medium,
+            borderWidth: 1,
+            borderColor: '#F59E0B',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.xs,
+          }}
+        >
+          <AlertTriangle size={16} color="#D97706" />
+          <AppText variant="caption" weight="semibold" color="#B45309" style={{ flex: 1 }}>
+            DEMO MODU: API bağlantısı yok. Yalnızca test amaçlı sentetik olaylar gösterilmektedir (Resmî değildir).
+          </AppText>
+        </View>
+      ) : null}
+
+      {/* 6. Çevrimdışı Önbellek Durumu Bildirimi */}
+      {isOfflineCache ? (
+        <View
+          style={{
+            position: 'absolute',
+            top: bannerTop,
+            left: spacing.lg,
+            right: spacing.lg,
+            zIndex: 13,
+            backgroundColor: theme.surface,
+            paddingVertical: spacing.xs,
+            paddingHorizontal: spacing.sm,
+            borderRadius: radii.medium,
+            borderWidth: 1,
+            borderColor: theme.border,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: spacing.xs,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flex: 1 }}>
+            <CloudOff size={16} color={theme.textSecondary} />
+            <AppText variant="caption" color={theme.textSecondary} style={{ flex: 1 }}>
+              Çevrimdışı mod — Gösterilen veriler önbellekten (Son güncelleme:{' '}
+              {lastUpdatedAt
+                ? lastUpdatedAt.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+                : 'Bilinmiyor'}
+              )
+            </AppText>
+          </View>
+          <TouchableOpacity onPress={() => refetchEvents()}>
+            <AppText variant="caption" weight="bold" color={theme.primary}>
+              Tekrar Dene
+            </AppText>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
+      {/* 7. API Bağlantı Hatası Bildirimi (Önbellekte hiç veri yoksa) */}
+      {isEventsError && events.length === 0 ? (
+        <View
+          style={{
+            position: 'absolute',
+            top: bannerTop,
+            left: spacing.lg,
+            right: spacing.lg,
+            zIndex: 12,
+            backgroundColor: theme.errorLight,
+            paddingVertical: spacing.sm,
+            paddingHorizontal: spacing.md,
+            borderRadius: radii.medium,
+            borderWidth: 1,
+            borderColor: theme.error,
+            alignItems: 'center',
+            gap: spacing.xs,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+            <AlertCircle size={18} color={theme.error} />
+            <AppText variant="caption" weight="semibold" color={theme.error}>
+              Olay verileri yüklenemedi. Lütfen internet bağlantınızı kontrol edin.
+            </AppText>
+          </View>
+          <TouchableOpacity onPress={() => refetchEvents()}>
+            <AppText variant="caption" weight="bold" color={theme.primary}>
+              Yeniden Bağlan
+            </AppText>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
+      {/* 8. Konum Hatası Bildirimi */}
       {locationError ? (
         <View
           style={{
             position: 'absolute',
-            top: 130,
+            top: bannerTop + (isDemoData || isOfflineCache || (isEventsError && events.length === 0) ? 44 : 0),
             left: spacing.lg,
             right: spacing.lg,
-            zIndex: 12,
+            zIndex: 11,
             backgroundColor: theme.errorLight,
             padding: spacing.sm,
             borderRadius: radii.medium,
@@ -277,7 +404,7 @@ export default function MapScreen(): React.ReactElement {
                 />
                 <StatusBadge status={selectedEvent.status} size="sm" />
                 {selectedEvent.isDemo ? (
-                  <AppBadge label="DEMO" variant="warning" size="sm" />
+                  <AppBadge label="DEMO TEST" variant="warning" size="sm" />
                 ) : null}
               </View>
 
@@ -332,39 +459,55 @@ export default function MapScreen(): React.ReactElement {
             ) : null}
 
             {/* Güvenilirlik & Teyit Kartı */}
-            <AppCard style={{ marginBottom: spacing.lg, padding: spacing.md }}>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
+            {selectedEvent.isDemo ? (
+              <AppCard style={{ marginBottom: spacing.lg, padding: spacing.md, backgroundColor: '#FFFBEB', borderColor: '#FDE68A' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                  <Shield size={18} color={theme.primary} />
-                  <View>
-                    <AppText variant="caption" color={theme.textSecondary}>
-                      Güvenilirlik Puanı
+                  <AlertTriangle size={18} color="#D97706" />
+                  <View style={{ flex: 1 }}>
+                    <AppText variant="caption" weight="bold" color="#B45309">
+                      Doğrulanmamış Test Verisi
                     </AppText>
-                    <AppText variant="bodyM" weight="bold" color={theme.primary}>
-                      %{Math.round(selectedEvent.reliabilityScore * 100)}
+                    <AppText variant="caption" color="#92400E">
+                      Bu kayıt geliştirme/test amaçlıdır. Resmî veya doğrulanmış olay niteliği taşımaz.
                     </AppText>
                   </View>
                 </View>
+              </AppCard>
+            ) : (
+              <AppCard style={{ marginBottom: spacing.lg, padding: spacing.md }}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                    <Shield size={18} color={theme.primary} />
+                    <View>
+                      <AppText variant="caption" color={theme.textSecondary}>
+                        Güvenilirlik Puanı
+                      </AppText>
+                      <AppText variant="bodyM" weight="bold" color={theme.primary}>
+                        %{Math.round(selectedEvent.reliabilityScore * 100)}
+                      </AppText>
+                    </View>
+                  </View>
 
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                  <ThumbsUp size={18} color={theme.primary} />
-                  <View>
-                    <AppText variant="caption" color={theme.textSecondary}>
-                      Topluluk Teyidi
-                    </AppText>
-                    <AppText variant="bodyM" weight="bold">
-                      {selectedEvent.upvotesCount} Onay
-                    </AppText>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                    <ThumbsUp size={18} color={theme.primary} />
+                    <View>
+                      <AppText variant="caption" color={theme.textSecondary}>
+                        Topluluk Teyidi
+                      </AppText>
+                      <AppText variant="bodyM" weight="bold">
+                        {selectedEvent.upvotesCount} Onay
+                      </AppText>
+                    </View>
                   </View>
                 </View>
-              </View>
-            </AppCard>
+              </AppCard>
+            )}
 
             {/* Eylem Butonları */}
             <View style={{ flexDirection: 'row', gap: spacing.md }}>
@@ -374,12 +517,22 @@ export default function MapScreen(): React.ReactElement {
                 onPress={() => setSelectedEvent(null)}
                 style={{ flex: 1 }}
               />
-              <AppButton
-                title="Teyit Et"
-                variant="primary"
-                onPress={() => setSelectedEvent(null)}
-                style={{ flex: 1 }}
-              />
+              {selectedEvent.isDemo ? (
+                <AppButton
+                  title="Demo Teyit Edilemez"
+                  variant="secondary"
+                  disabled
+                  onPress={() => {}}
+                  style={{ flex: 1, opacity: 0.6 }}
+                />
+              ) : (
+                <AppButton
+                  title="Teyit Et"
+                  variant="primary"
+                  onPress={() => setSelectedEvent(null)}
+                  style={{ flex: 1 }}
+                />
+              )}
             </View>
           </View>
         ) : null}
