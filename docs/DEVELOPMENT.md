@@ -184,3 +184,27 @@ Stil URL'leri `apps/mobile/.env` üzerinden `EXPO_PUBLIC_MAP_STYLE_LIGHT` vb. de
 pnpm --filter sehir-nabiz-mobile test
 ```
 
+---
+
+## 9. Olay Bildirme Akışı, Konum ve Medya Servisleri (Phase 7)
+
+### 9.1 Çok Adımlı Olay Bildirme Mimarisi
+Mobil uygulamadaki "Bildir" sekmesi (`/(tabs)/create`), 3 adımlı profesyonel bir akış üzerinden çalışır:
+- **Adım 1 (Olay Bilgileri):** Kategori seçimi (11 backend kategorisi dinamik olarak `GET /api/v1/categories` üzerinden çekilir), başlık, açıklama ve önem seviyesi.
+- **Adım 2 (Konum ve Fotoğraflar):** MapLibre tabanlı `LocationPickerModal` ile harita üzerinde interaktif merkez pin seçimi veya GPS ile konum alma; `expo-image-picker` ile kamera/galeriden en fazla 3 fotoğraf (maks 8MB, JPEG/PNG/WebP).
+- **Adım 3 (Önizleme ve Gönderim):** Tüm bilgilerin özeti, gizlilik uyarısı (150m fuzzing), gönderim kilidi koruması (`submittingLock`), mükerrer bildirim kontrolü ve yükleme durumu.
+
+### 9.2 Medya Yükleme Pipeline'ı
+1. `POST /api/v1/events` ile olay kaydı oluşturulur (`PENDING_REVIEW` durumunda).
+2. Her fotoğraf için `POST /api/v1/events/:id/media/upload-url` çağrılarak presigned S3 PUT URL'i ve `mediaId` alınır.
+3. Fotoğraf ikili verisi `FileSystem.uploadAsync` (yerel cihazlarda) veya `fetch` (web üzerinde) ile doğrudan S3/MinIO'ya yüklenir.
+4. Yükleme tamamlandığında `POST /api/v1/events/:id/media/:mediaId/complete` çağrılarak medya kaydı `READY` durumuna geçirilir.
+5. Herhangi bir fotoğraf yüklemesi başarısız olursa oluşturulan olay silinmez; kullanıcıya başarısız görseller için "Tekrar Dene" imkânı sunulur.
+
+### 9.3 Yerel Taslak Yönetimi
+Form verileri kullanıcı yazarken `draftService` aracılığıyla otomatik kaydedilir. Fotoğraflar geçici önbellekten uygulamanın kalıcı doküman dizinine (`FileSystem.documentDirectory`) kopyalanarak uygulamanın kapanıp açılması durumunda kaybolmaları engellenir. Olay başarıyla gönderildiğinde taslak otomatik olarak temizlenir.
+
+### 9.4 Kimlik Doğrulama ve Eşzamanlı Yenileme Koruması (Mutex)
+Oturum açmamış kullanıcılar bildirim oluşturabilir; gönderim butonuna basıldığında `AuthModal` açılarak güvenli giriş veya kayıt yapılması sağlanır. `useAuthStore` içinde eşzamanlı isteklerde birden fazla refresh token çağrısının sunucuya giderek reuse detection'ı tetiklemesini engellemek için Promise-tabanlı bir refresh mutex kilidi bulunmaktadır.
+
+

@@ -86,28 +86,52 @@ AppScreen (scrollable)
 ## 3. Olay Bildir Ekranı (`/(tabs)/create`)
 
 ### Ekran Amacı:
-Kullanıcının sahada gördüğü olayı 60 saniye içinde fotoğraf, konum ve kategori bilgileriyle sisteme bildirmesi.
+Kullanıcının sahada gördüğü olayı 60 saniye içinde fotoğraf, konum ve kategori bilgileriyle sisteme bildirmesini sağlayan profesyonel 3 adımlı sihirbaz (wizard).
 
-### Bileşen Hiyerarşisi:
+### Çok Adımlı Akış Mimarisi:
 ```text
-AppScreen (scrollable, keyboardAvoiding)
-├── AppHeader ("Olay Bildir", "Şehrinizdeki aksaklığı paylaşın")
-├── Location Verification Card (Otomatik GPS konumu ve 150m fuzzing rozeti)
-├── Category Selector (Horizontal CategoryChip listesi)
-├── AppInput (Olay Başlığı, min 5 karakter)
-├── AppTextArea (Ayrıntılı Açıklama, min 10 karakter, 500 karakter sayacı)
-├── Severity Selector (Düşük / Orta / Yüksek / Kritik FilterChip'leri)
-├── Media Upload Slot (Phase 4 MinIO/S3 entegrasyonlu 3 fotoğraf yuvası)
-└── AppButton (Primary 52px, "Olayı Bildir", validasyon tamamlanmadan disabled)
+CreateEventScreen (CreateEventFlow)
+├── StepperHeader (3 Adımlı İlerleme Göstergesi)
+│   ├── Step 1: Olay Bilgileri
+│   ├── Step 2: Konum ve Fotoğraflar
+│   └── Step 3: Önizleme ve Gönderim
+├── Step 1 İçeriği (KeyboardAvoidingView)
+│   ├── Kategori Seçim Izgarası (GET /categories - 11 Kategori Kartı)
+│   ├── AppInput (Olay Başlığı, min 5 - maks 100 karakter)
+│   ├── AppTextArea (Açıklama, min 10 - maks 1000 karakter, karakter sayacı)
+│   ├── Önem Derecesi Seçici (Düşük / Orta / Yüksek / Kritik)
+│   └── İlerle Butonu (Adım 2'ye Geç)
+├── Step 2 İçeriği
+│   ├── Konum Seçim Kartı
+│   │   ├── Seçili Koordinat Rozeti (Enlem/Boylam, 5 ondalık hassasiyet)
+│   │   ├── "Haritadan Seç" Butonu -> LocationPickerModal (MapLibre tuvali, merkez pin, GPS)
+│   │   └── "Konumumu Kullan" Hızlı GPS Butonu
+│   ├── Fotoğraf Seçim Bölümü (PhotoPickerSection)
+│   │   ├── Eylem Butonları: "Galeriden Seç", "Fotoğraf Çek" (maks 3 adet, maks 8MB)
+│   │   ├── Fotoğraf Önizleme Kartları (Görsel, dosya boyutu, silme butonu)
+│   │   └── Yükleme Durum Göstergesi (Beklemede, Yükleniyor, Başarılı, Hata & Tekrar Dene)
+│   └── Navigasyon: "Geri" ve "Önizlemeye Geç"
+├── Step 3 İçeriği (Önizleme & Gönderim)
+│   ├── Özet Kartı (Kategori, Renk Rozeti, Önem Seviyesi, Başlık, Açıklama)
+│   ├── Konum Bilgisi (Seçilen koordinatlar, 150m fuzzing gizlilik uyarısı)
+│   ├── Fotoğraf Galerisi Önizlemesi
+│   ├── Gönderim Kilidi Korumalı "Olayı Bildir" Butonu (Double-click engeli)
+│   └── Sonuç Durumu: PENDING_REVIEW Bilgilendirmesi ve Haritaya Dönüş
+├── Yardımcı Modallar
+│   ├── LocationPickerModal (MapLibre interaktif harita, merkez artı göstergesi, hareketli koordinat göstergesi)
+│   ├── AuthModal (Anonim kullanıcılar için Giriş/Kayıt sihirbazı, güvenli token saklama)
+│   └── DuplicateWarningModal (150m/45dk mükerrer olay sezgisi durumunda kullanıcıya devam veya iptal seçeneği sunar)
 ```
 
 ### Güvenlik ve Gizlilik:
-- EXIF temizleme motoru arka planda GPS ve kamera verilerini tamamen siler.
-- Kullanıcı ev/iş adresindeyse konum otomatik olarak 150-300m rastgele ötelenir.
-- 150m yarıçapta son 45 dakikada benzer olay varsa "Mükerrer Bildirim Uyarısı" verilir.
+- İstemci tarafında EXIF temizleme için backend presigned S3 pipeline'ı kullanılır; backend EXIF verilerini sanitize eder.
+- Fotoğraflar için dosya boyutu (8MB), MIME türü (image/jpeg, image/png, image/webp) ve adet sınırı (maks 3) hem istemcide hem backend'de denetlenir.
+- 150m yarıçapta son 45 dakikada benzer olay varsa backend `duplicateWarning` döner; kullanıcı `DuplicateWarningModal` ile bilgilendirilir.
+- Çift tıklama ve mükerrer istek yarış durumları `submittingLock` ile engellenir.
+- Oturum yenileme işlemlerinde yarış durumunu (Race Condition) önleyen mutex kilit mekanizması kullanılır.
 
 ### Auth Gereksinimi:
-- **Zorunlu Giriş:** Anonim kullanıcılar bildirim yapamaz. Butona tıklandığında giriş modalı açılır.
+- **Zorunlu Giriş:** Anonim kullanıcılar taslak oluşturabilir ve formu doldurabilir; ancak gönderim (Submit) anında `AuthModal` açılarak kullanıcının giriş yapması veya kayıt olması istenir. Başarılı giriş sonrası form durumu kaybolmaz.
 
 ---
 

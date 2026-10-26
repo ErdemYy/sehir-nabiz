@@ -169,3 +169,41 @@ Phase 6 ile birlikte harita tuvali (`PulseMapView`), Urban Floating UI tasarım 
    - Native GPS mavi nokta ve doğrultu oku (`showsUserHeadingIndicator`).
    - Doğruluk dairesi ile hassasiyet görselleştirmesi.
 
+---
+
+## 10. Olay Bildirme ve Medya Arayüzü (Phase 7)
+
+Phase 7 ile birlikte kullanıcının kentsel aksaklıkları bildirmesini sağlayan profesyonel çok adımlı akış entegre edilmiştir:
+
+1. **Çok Adımlı İlerleme Göstergesi (Stepper):**
+   - 3 adımlı gösterge: `1: Olay Bilgileri`, `2: Konum ve Fotoğraflar`, `3: Önizleme ve Gönderim`.
+   - Tamamlanan adımlar turkuaz dolu daire ve onay ikonu, aktif adım turkuaz çerçeveli numara, bekleyen adımlar soluk gri numara ile gösterilir. Adımlar arası bağlantı çizgileri durumu dinamik olarak yansıtır.
+
+2. **Kategori Seçim Kartları:**
+   - 11 kategori 2 sütunlu ızgara kartları halinde sunulur.
+   - Her kartta sol tarafta kategori renk rozeti, kategori adı ve Türkçe açıklayıcı alt etiket yer alır. Seçili kart 2px turkuaz çerçeve ve hafif renklendirilmiş zemin kazanır.
+
+3. **Önem Derecesi Seçici:**
+   - Düşük (Mavi), Orta (Sarı), Yüksek (Turuncu), Kritik (Kırmızı) renk kodlarıyla hap (pill) şeklinde tasarlanmıştır.
+
+4. **Harita Konum Seçici (`LocationPickerModal`):**
+   - Tam ekran MapLibre tuvali üzerinde merkezde sabit konum iğnesi (pin) ve artı işareti.
+   - Harita sürüklendikçe anlık koordinat göstergesi güncellenir.
+   - "Konumumu Kullan" butonu ile GPS izni talep edilerek kullanıcının gerçek koordinatlarına anında uçuş (`flyTo`) sağlanır.
+   - Seçimi tamamla butonu ile koordinatlar 5 basamaklı hassasiyetle forma aktarılır.
+
+5. **Fotoğraf Seçim ve Önizleme Kartları (`PhotoPickerSection`):**
+   - Galeriden seçme ve Kamerayla çekme için 48px yükseklikte yan yana eylem butonları.
+   - Seçilen fotoğraflar (en fazla 3 adet, maksimum 8MB) 80x80px yuvarlatılmış (12px radius) kartlar halinde yatay listede dizilir.
+   - Her fotoğraf kartı üzerinde sağ üstte silme ikonu, sol altta dosya boyutu etiketi yer alır.
+   - Yükleme esnasında yükleme animasyonu (spinner), hata durumunda kırmızı uyarı ve "Tekrar Dene" butonu bulunur.
+
+6. **Mükerrer Bildirim Uyarı Modalı (`DuplicateWarningModal`):**
+   - 150m yarıçapta 45 dakika içinde benzer olay sezildiğinde beliren uyarı kartı.
+   - Kullanıcıya mevcut olayı inceleme veya kendi bildirimini sürdürme şansı sunar.
+
+7. **Kimlik Doğrulama Modalı (`AuthModal`):**
+   - Misafir kullanıcının gönderim anında oturum açabilmesi için Giriş / Kayıt Ol sekmeli yüzer modal.
+   - Zod doğrulamalı e-posta ve şifre giriş alanları, hata mesajları ve güvenli token saklama (`expo-secure-store`).
+
+

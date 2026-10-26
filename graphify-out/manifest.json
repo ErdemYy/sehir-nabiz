@@ -1,8 +1,8 @@
 {
   "AGENTS.md": {
-    "mtime": 1792944337.56007,
-    "seen": 1793023812.1168976,
-    "ast_hash": "4b5d270b559245016c1b1cedd6ed8048",
+    "mtime": 1793023890.912967,
+    "seen": 1793025972.176625,
+    "ast_hash": "63b736ba94d2bb8f29f872ae2e20baee",
     "semantic_hash": ""
   },
   "docs/architecture/ARCHITECTURE.md": {
@@ -18,9 +18,9 @@
     "semantic_hash": ""
   },
   "docs/architecture/ROADMAP_PHASES.md": {
-    "mtime": 1792944324.8072393,
-    "seen": 1793023812.1168976,
-    "ast_hash": "f84582457992bce112c27aada57816fc",
+    "mtime": 1793023905.585051,
+    "seen": 1793025972.176625,
+    "ast_hash": "365152054833c63087102ef1ba954b70",
     "semantic_hash": ""
   },
   "docs/architecture/SECURITY_PRIVACY.md": {
@@ -102,9 +102,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/app.json": {
-    "mtime": 1792943581.2211556,
-    "seen": 1792944238.2175329,
-    "ast_hash": "0e9c38fffa9e5e7a5b013d453973afbf",
+    "mtime": 1793024482.3925414,
+    "seen": 1793025972.1761065,
+    "ast_hash": "7d2b3dc0b77fecc0010a8a03b7a4faf9",
     "semantic_hash": ""
   },
   "apps/mobile/app/+not-found.tsx": {
@@ -126,9 +126,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/package.json": {
-    "mtime": 1793023760.7251983,
-    "seen": 1793023812.1168976,
-    "ast_hash": "8458ee977492c909d638add2db968904",
+    "mtime": 1793025916.4228578,
+    "seen": 1793025972.1761065,
+    "ast_hash": "a93754b60e824a42edbcad25b51e2619",
     "semantic_hash": ""
   },
   "apps/mobile/src/components/ErrorBoundary.tsx": {
@@ -144,9 +144,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/src/config/env.ts": {
-    "mtime": 1792933185.429558,
-    "seen": 1792933949.8174255,
-    "ast_hash": "78dd0e72592d2b256618318ee31f8da2",
+    "mtime": 1793024735.15027,
+    "seen": 1793025972.1761065,
+    "ast_hash": "daccbaf1a48c6e8005acdedc62f1bd46",
     "semantic_hash": ""
   },
   "apps/mobile/src/providers/AppProvider.tsx": {
@@ -774,9 +774,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/app/(tabs)/create.tsx": {
-    "mtime": 1792941643.2748318,
-    "seen": 1792942093.6707883,
-    "ast_hash": "18a221491e5fe5c1580360e66a222fea",
+    "mtime": 1793024992.4796906,
+    "seen": 1793025972.1761065,
+    "ast_hash": "df54b54f5f35a2478a06fe5f13beb6b2",
     "semantic_hash": ""
   },
   "apps/mobile/app/(tabs)/feed.tsx": {
@@ -1281,6 +1281,108 @@
     "mtime": 1792944389.0168552,
     "seen": 1793023812.1168976,
     "ast_hash": "5e70b61862b9e388d88db076ccaa4fba",
+    "semantic_hash": ""
+  },
+  "apps/mobile/src/features/auth/components/AuthModal.tsx": {
+    "mtime": 1793025808.761611,
+    "seen": 1793025972.1761065,
+    "ast_hash": "dbfc4f548b99bf56671fecd0db0d6860",
+    "semantic_hash": ""
+  },
+  "apps/mobile/src/features/auth/index.ts": {
+    "mtime": 1793024790.2249923,
+    "seen": 1793025972.1761065,
+    "ast_hash": "0f0c9cf071043a337ce95878c694361a",
+    "semantic_hash": ""
+  },
+  "apps/mobile/src/features/auth/services/authApi.ts": {
+    "mtime": 1793024753.8972585,
+    "seen": 1793025972.1761065,
+    "ast_hash": "83d488be1fe02903ef44e4e40bd3fc5d",
+    "semantic_hash": ""
+  },
+  "apps/mobile/src/features/auth/services/secureTokenStorage.ts": {
+    "mtime": 1793024743.7059474,
+    "seen": 1793025972.1761065,
+    "ast_hash": "510c31e3915061af9deb54db5fd931f8",
+    "semantic_hash": ""
+  },
+  "apps/mobile/src/features/auth/store/useAuthStore.ts": {
+    "mtime": 1793024767.7710032,
+    "seen": 1793025972.1761065,
+    "ast_hash": "5ce6f25f07f37acff09630eec34abcf0",
+    "semantic_hash": ""
+  },
+  "apps/mobile/src/features/events/components/CreateEventFlow.tsx": {
+    "mtime": 1793025649.5607996,
+    "seen": 1793025972.1761065,
+    "ast_hash": "8c49989ba89ffdfb44f4527f6d76766e",
+    "semantic_hash": ""
+  },
+  "apps/mobile/src/features/events/components/DuplicateWarningModal.tsx": {
+    "mtime": 1793024919.065411,
+    "seen": 1793025972.1761065,
+    "ast_hash": "54ee5821032620a8143f9e364e89dcc4",
+    "semantic_hash": ""
+  },
+  "apps/mobile/src/features/events/components/LocationPickerModal.tsx": {
+    "mtime": 1793025800.6895432,
+    "seen": 1793025972.1761065,
+    "ast_hash": "ca43b219d9f4ec49f4049799071447d7",
+    "semantic_hash": ""
+  },
+  "apps/mobile/src/features/events/components/PhotoPickerSection.tsx": {
+    "mtime": 1793025401.2596762,
+    "seen": 1793025972.1761065,
+    "ast_hash": "4dadc86265fe214dc979bca16d1a4161",
+    "semantic_hash": ""
+  },
+  "apps/mobile/src/features/events/index.ts": {
+    "mtime": 1793024986.5123913,
+    "seen": 1793025972.1761065,
+    "ast_hash": "c899bf5fc724c56b652f925475cc0f78",
+    "semantic_hash": ""
+  },
+  "apps/mobile/src/features/events/services/categoriesApi.ts": {
+    "mtime": 1793024812.248073,
+    "seen": 1793025972.1761065,
+    "ast_hash": "bcbaf6c8db5c28b0310595280598d4ed",
+    "semantic_hash": ""
+  },
+  "apps/mobile/src/features/events/services/draftService.ts": {
+    "mtime": 1793025268.2064652,
+    "seen": 1793025972.1761065,
+    "ast_hash": "a8c2b0a8714d613b1c196aac3354b3f6",
+    "semantic_hash": ""
+  },
+  "apps/mobile/src/features/events/services/eventsCreateApi.ts": {
+    "mtime": 1793024823.1362581,
+    "seen": 1793025972.1761065,
+    "ast_hash": "4f8839b679f9abcd7a615c7b1ef65610",
+    "semantic_hash": ""
+  },
+  "apps/mobile/src/features/events/services/mediaUploadService.ts": {
+    "mtime": 1793025311.2509506,
+    "seen": 1793025972.1761065,
+    "ast_hash": "ae8dc3c838b2c5dc72bdec16f02642fa",
+    "semantic_hash": ""
+  },
+  "apps/mobile/src/features/events/types/events.types.ts": {
+    "mtime": 1793024797.2034798,
+    "seen": 1793025972.1761065,
+    "ast_hash": "3a4057bf76ef01fc34dc1663bca708f2",
+    "semantic_hash": ""
+  },
+  "apps/mobile/test/phase_7.test.js": {
+    "mtime": 1793025876.4744115,
+    "seen": 1793025972.1761065,
+    "ast_hash": "5ac242599796571d7e9f3c73181b4113",
+    "semantic_hash": ""
+  },
+  "docs/PHASE_6_5_VERIFICATION.md": {
+    "mtime": 1793023877.748952,
+    "seen": 1793025972.176625,
+    "ast_hash": "dd62696ca440334bf868c1cf58c4cb1f",
     "semantic_hash": ""
   }
 }

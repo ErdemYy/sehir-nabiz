@@ -16,7 +16,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.sehirnabiz.app",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "ŞehirNabız, harita üzerinde çevrenizdeki olayları göstermek ve konumunuza yakın bildirimlerde bulunmanızı sağlamak için konum izni gerektirir."
+        "NSLocationWhenInUseUsageDescription": "ŞehirNabız, harita üzerinde çevrenizdeki olayları göstermek ve konumunuza yakın bildirimlerde bulunmanızı sağlamak için konum izni gerektirir.",
+        "NSPhotoLibraryUsageDescription": "ŞehirNabız, bildirdiğiniz olaya fotoğraf ekleyebilmeniz için galerinize erişim izni gerektirir.",
+        "NSCameraUsageDescription": "ŞehirNabız, olayı doğrudan fotoğraflayabilmeniz için kamera erişim izni gerektirir."
       }
     },
     "android": {
@@ -26,7 +28,9 @@
       "package": "com.sehirnabiz.app",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "CAMERA",
+        "READ_MEDIA_IMAGES"
       ]
     },
     "web": {
@@ -47,6 +51,14 @@
           "android": {
             "version": "11.5.0"
           }
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "ŞehirNabız, bildirdiğiniz olaya kanıt görseli ekleyebilmeniz için fotoğraf galerinize erişim ister.",
+          "cameraPermission": "ŞehirNabız, bildirdiğiniz olayı yerinde fotoğraflayabilmeniz için kameranıza erişim ister."
         }
       ]
     ],

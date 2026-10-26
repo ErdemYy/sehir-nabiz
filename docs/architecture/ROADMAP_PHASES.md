@@ -42,9 +42,9 @@ Bu belge, projenin kontrollü, test edilebilir ve adım adım ilerleyen gelişti
 - **Kapsam:** Üretim ortamında sentetik olay sızıntısının önlenmesi, demo verilerin `[DEMO]` ve sıfır güvenilirlik ile izole edilmesi, TanStack Query offline cache göstergesi ve son güncelleme zaman damgası, boş önbellek durumunda temiz hata bildirimi, çok sayfalı BBox sayfalama (azami 300 olay ile harita yoğunluk doğruluğu), 350ms kamera hareketi debounce'u, EAS Build development APK yapılandırması (`eas.json`), Android izin/profil doğrulaması ve güvenli Floating UI dikey yerleşimi.
 - **Doğrulama:** 124 testin tamamı (25 mobil test, 84 backend testi, 11 token testi, 4 shared testi) sıfır hata ile geçti. Rapor: [PHASE_6_5_VERIFICATION.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/PHASE_6_5_VERIFICATION.md).
 
-### Phase 7: Olay Bildirim Akışı & Form Deneyimi
-- **Kapsam:** Harita üzerinden konum seçici, kategori seçimi, fotoğraf çekme/seçme (`expo-image-picker`), Zod form validasyonu, çevrimdışı taslak kaydı.
-- **Doğrulama:** Yeni olay bildiriminin uçtan uca mobil uygulamadan gönderilip veritabanına ve haritaya düşmesi.
+### Phase 7: Olay Bildirim Akışı, Konum ve Medya Pipeline'ı (TAMAMLANDI)
+- **Kapsam:** Urban Floating UI 3 adımlı profesyonel olay bildirme akışı (`CreateEventFlow`), `GET /api/v1/categories` ile dinamik 11 kategori desteği, Zod tabanlı çift katmanlı form doğrulama (`CreateEventInputSchema`), MapLibre tabanlı `LocationPickerModal` (sabit merkez pini, GPS entegrasyonu, hassas koordinat gösterimi), `expo-image-picker` ile kamera/galeri fotoğraf seçimi (maks 3 adet, maks 8MB, JPEG/PNG/WebP), 3 adımlı medya yükleme pipeline'ı (`POST /upload-url` -> MinIO/S3 presigned PUT -> `POST /complete`), kısmi medya hatalarında olay ID'si korunarak "Tekrar Dene" desteği, `draftService` yerel taslak kaydı ve kalıcı dosya saklama (`expo-file-system/legacy`), `useAuthStore` güvenli token saklama (`expo-secure-store`) ve refresh yarış durumu korumalı mutex, `DuplicateWarningModal` mükerrerlik uyarısı ve çift tıklama önleyici `submittingLock`.
+- **Doğrulama:** 136 testin tamamı (38 mobil test, 83 backend testi, 11 token testi, 4 shared testi) başarıyla geçti. Rapor: [PHASE_7_REPORT.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/PHASE_7_REPORT.md).
 
 ### Phase 8: Doğrulama, Topluluk Oylaması & Moderasyon
 - **Kapsam:** "Doğru", "Yanlış", "Çözüldü" teyit butonları. Olay yerine yakınlık kontrolü (`is_within_radius`). Kullanıcı itibar skoru hesaplama motoru. Mükerrer bildirim deduplication mantığı.
