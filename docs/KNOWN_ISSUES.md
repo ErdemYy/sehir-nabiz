@@ -1,7 +1,7 @@
 # ŞehirNabız — Bilinen Sorunlar ve Teknik Borç Envanteri (Known Issues)
 
 **Tarih:** 27 Ekim 2026  
-**Faz:** Phase 12 — Mobile Experience Audit, E2E Quality & Beta Readiness  
+**Faz:** Phase 13 — Beta Release Preparation, Security Audit & Distribution Readiness  
 **Son Durum:** Beta Öncesi Risk Değerlendirmesi  
 
 ---
@@ -19,7 +19,7 @@ Bu belge, ŞehirNabız projesinde mevcut bilinen sınırları, ertelenen maddele
 #### 1. Fiziksel Cihaz Donanım Doğrulaması Yapılmadı
 - **Açıklama:** Uygulama Expo Dev Client, Metro bundler ve simülatör/web ortamlarında test edilmiştir. Farklı ekran boyutlarına, GPU yongalarına (Adreno, Mali) ve RAM kısıtlarına sahip gerçek fiziksel Android ve iOS cihazlarında kapsamlı alan testleri henüz gerçekleştirilmemiştir.
 - **Risk:** Eski donanımlı Android cihazlarda MapLibre GPU yükü altında FPS düşüşü veya batarya tüketimi yaşanabilir.
-- **Çözüm Planı:** Faz 13 kapsamında 5 farklı Android cihazda ve 3 iOS modelinde minimum 48 saatlik termal ve bellek profillemesi (Android Studio Profiler / Xcode Instruments) yapılmalıdır.
+- **Çözüm Planı:** Faz 14 kapsamında 5 farklı Android cihazda ve 3 iOS modelinde minimum 48 saatlik termal ve bellek profillemesi (Android Studio Profiler / Xcode Instruments) yapılmalıdır.
 - **Geçici Çözüm:** Beta testleri kontrollü simülatör veya yüksek güçlü test cihazlarıyla sınırlandırılmalıdır.
 
 #### 2. Bağımsız Android APK / AAB ve iOS IPA Üretimi Ertelendi
@@ -32,11 +32,16 @@ Bu belge, ŞehirNabız projesinde mevcut bilinen sınırları, ertelenen maddele
 - **Risk:** Uygulama kapalıyken (arka planda) kullanıcının kilit ekranına bildirim düşmesi fiziksel olarak doğrulanamamıştır.
 - **Çözüm Planı:** Canlı sunucu ortam değişkenlerine `FIREBASE_SERVICE_ACCOUNT` ve `APNS_KEY_ID` tanımlanarak uçtan uca bildirim iletimi test edilmelidir.
 
+#### 4. Kullanıcı Hesap ve Kişisel Veri Silme Akışı Bulunmuyor (Right to Be Forgotten)
+- **Açıklama:** Apple App Store Review Guideline 5.1.1(v) ve KVKK Madde 7 gereğince hesap oluşturulabilen her uygulamada doğrudan mobil uygulama içinden hesap silme seçeneği sunulmalıdır. Backend'de `DELETE /users/me` uç noktası henüz geliştirilmemiştir.
+- **Risk:** App Store ve Google Play inceleme sürecinde doğrudan red (App Rejection) sebebi.
+- **Çözüm Planı:** Phase 14'te soft-delete ve kişisel verileri anonimleştirme iş akışıyla `DELETE /api/v1/users/me` uç noktası ve Ayarlar ekranına "Hesabımı Sil" butonu eklenmelidir.
+
 ---
 
 ### 🟠 High (Yüksek Öncelikli İyileştirmeler)
 
-#### 4. Web Tarayıcılarında MapLibre WebGL Uyumluluğu
+#### 5. Web Tarayıcılarında MapLibre WebGL Uyumluluğu
 - **Açıklama:** Proje birincil olarak mobil odaklıdır (React Native + Expo). Masaüstü tarayıcılarda (`pnpm run web`) MapLibre native modülü yerine canvas veya fallback katmanı gerekmektedir.
 - **Risk:** Masaüstü web üzerinden harita incelenirken tarayıcının WebGL desteğine bağlı olarak harita kararması yaşanabilir.
 - **Çözüm Planı:** Web ortamı için `maplibre-gl-js` köprüsü ile conditional render yapılması.
@@ -45,11 +50,11 @@ Bu belge, ŞehirNabız projesinde mevcut bilinen sınırları, ertelenen maddele
 
 ### 🟡 Medium (Orta Öncelikli İyileştirmeler)
 
-#### 5. Çevrimdışı Harita Karo Önbelleği (Offline Tile Cache Sınırı)
+#### 6. Çevrimdışı Harita Karo Önbelleği (Offline Tile Cache Sınırı)
 - **Açıklama:** MapLibre vektör karoları SQLite tabanlı yerel önbellekte tutulmaktadır. Depolama alanı aşırı düşük (örn. <500MB boş yer kalan) cihazlarda otomatik temizleme (pruning) tetiklenebilir.
 - **Çözüm Planı:** Harita ayarlarından "Önbelleği Temizle" seçeneği sunulması.
 
-#### 6. Hareketi Azalt (Reduced Motion) Desteği
+#### 7. Hareketi Azalt (Reduced Motion) Desteği
 - **Açıklama:** Haritada kullanıcı konumuna giderken veya arama sonucunda pin merkezlenirken yapılan kamera animasyonları, sistem "Hareketi Azalt" seçeneği açık olan kullanıcılar için henüz kapatılmamaktadır.
 - **Çözüm Planı:** `AccessibilityInfo.isReduceMotionEnabled` hook'u ile animasyon süresinin sıfıra indirilmesi.
 
@@ -57,10 +62,10 @@ Bu belge, ŞehirNabız projesinde mevcut bilinen sınırları, ertelenen maddele
 
 ### 🟢 Low (Düşük Öncelikli / Kozmetik)
 
-#### 7. Haptik Titreşim Eksikliği
+#### 8. Haptik Titreşim Eksikliği
 - **Açıklama:** Teyit, itiraz veya olay gönderme işlemlerinde kullanıcıya yalnızca görsel geri bildirim verilmektedir.
 - **Çözüm Planı:** `expo-haptics` ile hafif titreşim geri bildirimi eklenmesi.
 
-#### 8. İstatistik Grafikleri Yatay Döndürme
+#### 9. İstatistik Grafikleri Yatay Döndürme
 - **Açıklama:** Şehir istatistikleri dikey (portrait) modda optimize edilmiştir; cihaz yatay çevrildiğinde (landscape) çubuk grafikler sıkışabilmektedir.
 - **Geçici Çözüm:** Mobil uygulamada ekran yönü dikey (portrait) olarak kilitlenmiştir.

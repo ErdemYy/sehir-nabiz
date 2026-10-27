@@ -1,17 +1,8 @@
-import { Platform } from 'react-native';
 import type { EventResponseDto, PaginatedEventsResponse, CategoryDto } from '@sehir-nabiz/shared';
 import type { BBoxCoordinates } from '../types/map.types';
+import { getApiBaseUrl } from '../../../config/env';
 
-export function getApiBaseUrl(): string {
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL;
-  }
-  // Android emülatör 10.0.2.2 üzerinden geliştirici hostuna bağlanır
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:3001/api/v1';
-  }
-  return 'http://localhost:3001/api/v1';
-}
+export { getApiBaseUrl };
 
 function makeDemoCategory(code: string, nameTr: string, colorHex: string): CategoryDto {
   return {

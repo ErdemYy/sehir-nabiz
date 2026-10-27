@@ -70,15 +70,19 @@ Bu belge, projenin kontrollü, test edilebilir ve adım adım ilerleyen gelişti
 - **Kapsam:** 15 mobil ekranın (Harita, Akış, Bildir, Bildirimler, Profil, Olay Detayı, Olay Oluşturma Sihirbazı, Konum Seçici, Fotoğraf Seçici, Giriş/Kayıt, İstatistikler, Bildirdiğim Olaylar, Ayarlar, Moderasyon Paneli, UI Showcase) uçtan uca kullanılabilirlik, tasarım tutarlılığı ve erişilebilirlik denetimi. Urban Floating UI dikey yerleşim çakışmalarının giderilmesi (Harita ekranında Arama Çubuğu, Kategori Çipleri, Aksiyon Butonları, Banner ve Heatmap Bildirim Hapı mesafelerinin matematiksel olarak ayrıştırılması). 6 kritik uçtan uca kullanıcı yolculuğunun (Yolculuk A–F: Misafir Auth Kalkanı, Olay Bildirimi & EXIF Temizleme, Moderasyon İş Akışı, Topluluk Oylaması Matematiksel Tutarlılığı, Çevrimdışı Taslak & Mükerrer Gönderim Engeli, Transactional Outbox Idempotency) otomatik entegrasyon testleriyle doğrulanması (`phase_12_journeys.test.js`). WCAG 2.1 AA kontrast ve min 44x44 pt dokunma hedefi standartları. Test sayısı uyuşmazlığının çözülmesi (Monorepo gerçek test toplamı: 294 test). 5 temel beta hazırlık dokümantasyonu (`BETA_READINESS_CHECKLIST.md`, `MOBILE_UX_AUDIT.md`, `ACCESSIBILITY_AUDIT.md`, `END_TO_END_USER_JOURNEYS.md`, `KNOWN_ISSUES.md`). Android APK ve fiziksel cihaz testlerinin açıkça Blocker olarak belgelenmesi.
 - **Doğrulama:** 294 testin tamamı (185 backend, 91 mobile, 11 token, 7 shared) sıfır hata ile geçti (%100 yeşil). Rapor: [PHASE_12_REPORT.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/PHASE_12_REPORT.md).
 
+### Phase 13: Beta Release Preparation, Security Audit & Distribution Readiness (TAMAMLANDI)
+- **Kapsam:** Android ve iOS için tam mağaza yayın yapılandırması (`app.json` ve `eas.json` — `versionCode: 1`, `buildNumber: "1"`, `runtimeVersion: { policy: "appVersion" }`, adaptive icon, splash screen, update channels). Production ortamında `localhost`, `10.0.2.2`, `127.0.0.1` döngü adreslerinin engellenmesi (`env.ts`), canlı alan adı olmadan production derlemesinin BLOCKED tutulması. Çıkış (logout) anında refresh token, canlı soket ve yerel taslak dosyalarının tam hijyenle temizlenmesi. ErrorBoundary hata kalkanının Urban Floating UI tasarımına uyarlanması ve prod stack trace koruması. Backend `env.validation.ts` ile üretimde wildcard `CORS_ORIGIN="*"` kullanımının yasaklanması. Phase 12 iddialarının metodolojik analizi (3 adımlı sihirbaz, sunucu tarafı Sharp EXIF temizliği, simülasyon test seviyesi sınıflandırması). 14 senaryolu cihaz QA matrisi (`DEVICE_QA_MATRIX.md`), 13 maddelik Beta Release Gate (`BETA_RELEASE_GATE.md`), Yayın Kılavuzu (`RELEASE_CONFIGURATION.md`), Canlı Dağıtım Kılavuzu (`PRODUCTION_DEPLOYMENT_GUIDE.md`), Güvenlik Denetimi (`SECURITY_AUDIT_PHASE_13.md`) ve Veri Yaşam Döngüsü (`DATA_RETENTION_AND_DELETION.md`). Kullanıcı hesap ve veri silme eksikliğinin (Store Blocker) netleştirilmesi.
+- **Doğrulama:** 311 testin tamamı (189 backend, 104 mobile, 11 token, 7 shared) sıfır hata ile geçti (%100 yeşil). Rapor: [PHASE_13_REPORT.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/PHASE_13_REPORT.md).
+
 ---
 
-## 2. Gelecek Fazlar ve Öneriler (Post-MVP / Phase 13+)
-1. **Fiziksel Cihaz Doğrulaması ve Release APK/AAB:** Gerçek Android ve iOS cihazlarında 48 saatlik batarya, bellek ve termal profilleme testleri.
-2. **Canlı Push Sertifikaları:** FCM Service Account ve Apple APNs canlı ortam değişkenlerinin tanımlanması.
-3. **PostGIS MVT (Mapbox Vector Tile) Pipeline:** Isı haritası ve yoğun veri kümeleme için doğrudan PostgreSQL `ST_AsMVT` ile dinamik vektör karo sunumu.
-4. **Belediye & Kurum Yönetim Portalı (Gov Dashboard):** Yetkili kurumlar için web tabanlı olay doğrulama, müdahale ekiplerini yönlendirme ve resmi duyuru paneli.
-5. **Çevrimdışı Harita Karo Önbellekleme:** Afet ve bağlantı kesintisi durumlarında kullanılmak üzere çevrimdışı OpenFreeMap karo paketi (MBTiles) desteği.
-6. **Gelişmiş Makine Öğrenimi / LLM Moderasyon:** Olay başlık ve açıklamalarındaki küfür, kişisel veri (KVKK) ve spam içeriklerin LLM tabanlı otomatik ön incelemeye alınması.
+## 2. Gelecek Fazlar ve Öneriler (Post-MVP / Phase 14+)
+1. **Kullanıcı Hesap ve Veri Silme Akışı (DELETE /users/me):** Apple ve Google Play mağaza politikaları için hesap silme API'si ve onay arayüzü.
+2. **Fiziksel Cihaz Doğrulaması ve Release APK/AAB:** Gerçek Android ve iOS cihazlarında 48 saatlik batarya, bellek ve termal profilleme testleri.
+3. **Canlı Push Sertifikaları:** FCM Service Account ve Apple APNs canlı ortam değişkenlerinin tanımlanması.
+4. **PostGIS MVT (Mapbox Vector Tile) Pipeline:** Isı haritası ve yoğun veri kümeleme için doğrudan PostgreSQL `ST_AsMVT` ile dinamik vektör karo sunumu.
+5. **Belediye & Kurum Yönetim Portalı (Gov Dashboard):** Yetkili kurumlar için web tabanlı olay doğrulama, müdahale ekiplerini yönlendirme ve resmi duyuru paneli.
+6. **Çevrimdışı Harita Karo Önbellekleme:** Afet ve bağlantı kesintisi durumlarında kullanılmak üzere çevrimdışı OpenFreeMap karo paketi (MBTiles) desteği.
 
 ---
 

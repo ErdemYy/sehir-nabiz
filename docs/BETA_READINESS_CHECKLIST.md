@@ -1,27 +1,29 @@
 # ŞehirNabız — Beta Hazırlık Kontrol Listesi (Beta Readiness Checklist)
 
 **Tarih:** 27 Ekim 2026  
-**Faz:** Phase 12 — Mobile Experience Audit, E2E Quality & Beta Readiness  
-**Son Commit:** `1c38f74` + Phase 12 Değişiklikleri  
-**Genel Durum:** 🟡 **Koşullu Beta Hazır (Simülatör / Sandbox Seviyesi)** — *Fiziksel Cihaz ve Gerçek Push Teslimatı Blocker Olarak İşaretlenmiştir.*
+**Faz:** Phase 13 — Beta Release Preparation, Security Audit & Distribution Readiness  
+**Son Commit:** `c5db186` + Phase 13 Güncellemeleri  
+**Toplam Test:** 311 / 311 (%100 Başarı)  
+**Genel Durum:** 🟡 **Koşullu Beta Hazır (İç Simülatör / Sandbox Seviyesi)** — *Mağaza Dağıtımı Öncesinde 4 Kritik Blocker Bulunmaktadır.*
 
 ---
 
 ## 1. Yönetici Özeti ve Karar Matrisi
 
-ŞehirNabız, Phase 0'dan Phase 12'ye kadar 13 geliştirme fazı boyunca mimari, coğrafi bilgi sistemleri (GIS), gerçek zamanlı soket akışları, transactional outbox güvenilirliği ve 15 mobil ekranlık Urban Floating UI deneyimiyle inşa edilmiştir.
+ŞehirNabız, Phase 0'dan Phase 13'e kadar 14 geliştirme fazı boyunca mimari, coğrafi bilgi sistemleri (GIS), gerçek zamanlı soket akışları, transactional outbox güvenilirliği, 15 mobil ekranlık Urban Floating UI deneyimi ve release konfigürasyonuyla inşa edilmiştir.
 
 | Alan | Durum | Doğrulama Yöntemi | Notlar |
 | :--- | :---: | :--- | :--- |
-| **Backend & CBS Motoru** | 🟢 HAZIR | 185 Unit/E2E Testi (Vitest) | PostGIS 3.4, mesafe hesaplama, CBS indeksleri aktif. |
+| **Backend & CBS Motoru** | 🟢 HAZIR | 189 Unit/E2E Testi (Vitest) | PostGIS 3.4, mesafe hesaplama, CBS indeksleri aktif. |
 | **Transactional Outbox** | 🟢 HAZIR | PostgreSQL FOR UPDATE SKIP LOCKED | Bildirim kaybı sıfıra indirildi, outbox tablosu devrede. |
 | **Tasarım Sistemi (Urban Floating UI)** | 🟢 HAZIR | 15 Ekran Denetimi + UI Showcase | 4px ızgara, 16–24px radius, dikey çakışmalar giderildi. |
-| **Erişilebilirlik (a11y)** | 🟢 HAZIR | WCAG AA Kontrast & min 44x44 Touch Target | Screen reader etiketleri ve hint'leri tamamlandı. |
-| **Uçtan Uca Testler (E2E)** | 🟢 HAZIR | 91 Mobil Test (Node Test Runner) | 6 kritik yolculuk (A–F) simüle edildi ve doğrulandı. |
-| **Veri & Konum Gizliliği** | 🟢 HAZIR | EXIF Temizleme & k-Anonymity | Cihaz GPS geçmişi tutulmaz, fotoğraflar temizlenir. |
-| **Android APK / AAB Üretimi** | 🔴 **BLOCKER** | Yerel Gradle / EAS Build Gerekli | Henüz fiziksel APK derlenip imzalanmadı (Ertelenmiştir). |
+| **Erişilebilirlik (a11y)** | 🟢 HAZIR | WCAG AA Kontrast & min 44x44 Touch Target | Screen reader etiketleri, token kontrastı ve hint'leri tamamlandı. |
+| **Uçtan Uca Yolculuklar** | 🟢 HAZIR | 104 Mobil Test (Node Test Runner) | 6 kritik yolculuk (A–F) mantıksal simülasyonla doğrulandı. |
+| **Veri & Konum Gizliliği** | 🟢 HAZIR | Sharp EXIF Temizleme & k-Anonymity | Cihaz GPS geçmişi tutulmaz, fotoğraflar sunucuda temizlenir. |
+| **Android APK / AAB Üretimi** | 🔴 **BLOCKER** | Yerel Gradle / EAS Build Gerekli | İmzalı `.apk`/`.aab` derlemesi henüz başlatılmadı. |
 | **Fiziksel Cihaz Testleri** | 🔴 **BLOCKER** | Gerçek iOS / Android Donanımı | Donanım ivmeli GPU testi simülatör dışında yapılmadı. |
-| **Canlı Push Bildirim Teslimatı** | 🔴 **BLOCKER** | APNs / FCM Prod Credentials | Altyapı ve outbox hazır, ancak canlı sertifika bekleniyor. |
+| **Canlı Push Bildirim Teslimatı** | 🔴 **BLOCKER** | APNs / FCM Prod Credentials | Altyapı ve outbox hazır; ancak canlı sertifika bekleniyor. |
+| **Hesap ve Veri Silme Akışı** | 🔴 **BLOCKER** | Store & KVKK Zorunluluğu | `DELETE /users/me` uç noktası ve onay modalı henüz eklenmedi. |
 
 ---
 
@@ -52,7 +54,7 @@
 
 ### 2.5 Güvenlik, Gizlilik & KVKK
 - [x] **Cihaz GPS Konumu:** Kullanıcının anlık gezinme konumu sunucuya gönderilmez veya saklanmaz. Yalnızca haritada işaretlenen olay noktası kaydedilir.
-- [x] **EXIF Temizleme:** Kullanıcı tarafından yüklenen fotoğrafların kamera ve GPS meta verileri istemci tarafında temizlenir.
+- [x] **Sunucu Tarafı EXIF Temizleme:** Kullanıcı tarafından yüklenen fotoğrafların kamera ve GPS meta verileri sunucuda Sharp WebP pipeline ile kalıcı olarak silinir.
 - [x] **k-Anonymity Yoğunluk Haritası:** Isı haritasında tekil olay noktaları gizlenir, ızgara tabanlı mekânsal kümeleme uygulanır ve seyrek hücreler bastırılır.
 
 ---
@@ -60,20 +62,16 @@
 ## 3. Açık Blocker'lar ve Beta Koşulları
 
 > [!WARNING]
-> **Kritik Blocker'lar (Beta Öncesi Gerçekleştirilmesi Gerekenler):**
-> 1. **Android APK/AAB ve iOS TestFlight Paketi:** Mobil uygulama şu anda Expo Dev Server / Metro üzerinden doğrulanmıştır. Bağımsız standalone APK veya TestFlight sürümü henüz derlenmemiştir.
-> 2. **Fiziksel Cihaz Donanım Doğrulaması:** MapLibre OpenGL/Metal harita motorunun eski donanımlı cihazlardaki termal ve bellek davranışı fiziksel ortamda test edilmelidir.
-> 3. **APNs / FCM Canlı Sertifikaları:** Push bildirim veritabanı, outbox ve token eşleşmesi simüle edilmiştir; Google Firebase ve Apple Push Notification sertifikaları prod ortamına tanımlanmalıdır.
+> **Kritik Blocker'lar (Açık Beta ve Mağaza Dağıtımı Öncesi Zorunlu):**
+> 1. **Hesap ve Kişisel Veri Silme Akışı (Store Policy):** Apple App Store Guideline 5.1.1(v) ve KVKK gereği kullanıcı doğrudan uygulama içinden hesabını silebilmelidir. Bu özellik Phase 14'te eklenmelidir.
+> 2. **Bağımsız Release APK/AAB ve TestFlight Paketi:** Bağımsız imzalı mağaza derlemesi yerel Gradle veya EAS Build ile henüz alınmamıştır.
+> 3. **Fiziksel Cihaz Donanım Doğrulaması:** MapLibre OpenGL/Metal harita motorunun eski donanımlı cihazlardaki termal ve bellek davranışı fiziksel ortamda test edilmelidir.
+> 4. **Canlı APNs / FCM Sertifikaları:** Apple Developer ve Google Firebase Cloud Messaging canlı sertifikaları üretim sunucusuna tanımlanmalıdır.
 
 ---
 
 ## 4. Sonuç ve Önerilen Beta Süreci
 
-ŞehirNabız, **kapalı geliştirici ve simülatör betası** için tamamen hazırdır. 
+ŞehirNabız, **kontrollü kapalı geliştirici ve simülatör betası** için tamamen hazırdır. 
 
-Uygulama kod tabanında çözülmemiş hiçbir mimari çelişki, bellek sızıntısı veya eksik ekran bulunmamaktadır. 
-
-Halka açık Google Play Store / Apple App Store açık betasına çıkılmadan önce:
-1. EAS Build ile Release APK ve TestFlight build'leri alınmalıdır.
-2. 5 farklı fiziksel Android (farklı marka/ekran boyutu) ve 3 farklı iPhone modelinde 48 saatlik batarya ve ısınma testi yapılmalıdır.
-3. Firebase FCM servis anahtarları canlı sunucu ortam değişkenlerine eklenmelidir.
+Genel açık beta ve mağaza dağıtımı (Play Store / App Store) öncesinde yukarıda listelenen 4 blocker'ın çözülmesi gerekmektedir.

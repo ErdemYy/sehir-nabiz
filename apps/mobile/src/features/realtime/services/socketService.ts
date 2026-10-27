@@ -41,6 +41,11 @@ export class SocketService {
     }
 
     const hostUrl = getApiBaseUrl().replace(/\/api\/v1\/?$/, '');
+    if (!hostUrl) {
+      console.warn('[SocketService] Geçerli API ana bilgisayar adresi bulunamadığından soket bağlantısı ertelendi.');
+      this.updateStatus('disconnected');
+      return null as any;
+    }
     const socketUrl = `${hostUrl}/realtime`;
 
     this.updateStatus('connecting');

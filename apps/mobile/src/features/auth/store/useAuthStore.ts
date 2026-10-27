@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import type { UserResponse, LoginInput, RegisterInput } from '@sehir-nabiz/shared';
 import { authApi } from '../services/authApi';
 import { secureTokenStorage } from '../services/secureTokenStorage';
+import { SocketService } from '../../realtime/services/socketService';
+import { draftService } from '../../events/services/draftService';
 
 interface AuthState {
   user: UserResponse | null;
@@ -77,17 +79,33 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
-    const refreshToken = await secureTokenStorage.getRefreshToken();
-    if (refreshToken) {
-      await authApi.logout(refreshToken);
+    try {
+      const refreshToken = await secureTokenStorage.getRefreshToken();
+      if (refreshToken) {
+        await authApi.logout(refreshToken).catch(() => {});
+      }
+    } finally {
+      // 1. Refresh token temizliği
+      await secureTokenStorage.removeRefreshToken().catch(() => {});
+
+      // 2. Canlı soket bağlantısını ve oda aboneliklerini güvenle sonlandır
+      try {
+        SocketService.getInstance().disconnect();
+      } catch {}
+
+      // 3. Cihazdaki yerel olay taslağını oturum bazlı temizle
+      try {
+        await draftService.clearDraft();
+      } catch {}
+
+      // 4. Store durumunu sıfırla
+      set({
+        user: null,
+        accessToken: null,
+        isAuthenticated: false,
+        error: null,
+      });
     }
-    await secureTokenStorage.removeRefreshToken();
-    set({
-      user: null,
-      accessToken: null,
-      isAuthenticated: false,
-      error: null,
-    });
   },
 
   checkAuth: async (): Promise<boolean> => {

@@ -63,7 +63,7 @@ export function validateEnvironment(config: Record<string, unknown>): Environmen
     throw new Error(`[EnvValidationError] Çevre değişkenleri doğrulanamadı: ${errorMessages}`);
   }
 
-  // Üretim Ortamı Güvenlik Denetimi: Varsayılan JWT Secret'ların Engellenmesi
+  // Üretim Ortamı Güvenlik Denetimi: Varsayılan JWT Secret'ların ve Wildcard CORS'un Engellenmesi
   if (parsed.data.NODE_ENV === 'production') {
     const defaultSecretPrefix = 'sehir_nabiz_default_';
     if (
@@ -72,6 +72,12 @@ export function validateEnvironment(config: Record<string, unknown>): Environmen
     ) {
       throw new Error(
         '[SecurityError] Üretim (production) ortamında varsayılan JWT gizli anahtarları kullanılamaz! Lütfen en az 48 baytlık rastgele bir anahtar belirleyin.',
+      );
+    }
+
+    if (parsed.data.CORS_ORIGIN === '*') {
+      throw new Error(
+        '[SecurityError] Üretim (production) ortamında CORS_ORIGIN="*" kullanılamaz! Lütfen izin verilen alan adlarını virgülle ayrılmış olarak belirtin (örn: https://sehirnabiz.com,https://app.sehirnabiz.com).',
       );
     }
   }
