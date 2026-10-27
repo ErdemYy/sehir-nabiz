@@ -56,7 +56,7 @@ export function DuplicateWarningModal({
           Yakınınızda (150 metre yarıçapında) son 45 dakika içinde bildirilmiş benzer bir olay tespit edildi.
         </AppText>
 
-        {/* Eşleşen Olay Bilgi Kartı */}
+        {/* Eşleşen Olay Bilgi Kartı (Gizlilik Korumalı veya Açık Detay) */}
         {warning?.candidateTitle ? (
           <AppCard
             style={{
@@ -92,7 +92,28 @@ export function DuplicateWarningModal({
               ) : null}
             </View>
           </AppCard>
-        ) : null}
+        ) : (
+          <AppCard
+            style={{
+              marginBottom: spacing.lg,
+              backgroundColor: '#FFFBEB',
+              borderColor: '#FDE68A',
+              borderWidth: 1,
+            }}
+          >
+            <AppText variant="bodyM" weight="bold" style={{ marginBottom: 4, color: '#92400E' }}>
+              {warning?.message || 'Yakın bölgede benzer bir bildirim bulunuyor olabilir.'}
+            </AppText>
+            {warning?.distanceMeters !== undefined ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <MapPin size={12} color="#D97706" />
+                <AppText variant="caption" color="#92400E">
+                  Yaklaşık {formatDistance(warning.distanceMeters)} mesafede
+                </AppText>
+              </View>
+            ) : null}
+          </AppCard>
+        )}
 
         <AppText variant="caption" color={theme.textSecondary} style={{ marginBottom: spacing.lg }}>
           Farklı bir açıdan çekilmiş fotoğraf eklemek veya durumu teyit etmek istiyorsanız bildiriminizi gönderebilirsiniz. Moderatörler mükerrer bildirimleri tek bir olayda birleştirecektir.

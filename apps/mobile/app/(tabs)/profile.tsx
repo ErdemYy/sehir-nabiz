@@ -122,15 +122,15 @@ export default function ProfileScreen(): React.ReactElement {
         {/* Gizlilik & Konum Bilgisi */}
         <AppCard style={{ marginBottom: spacing.lg }}>
           <AppText variant="headingM" weight="bold" style={{ marginBottom: spacing.xs }}>
-            Konum Gizliliği (Fuzzing)
+            Güvenli Konum Politikası
           </AppText>
           <AppText variant="bodyS" color={theme.textSecondary} style={{ marginBottom: spacing.sm }}>
-            Ev ve iş konumlarınız hiçbir zaman tam koordinat olarak kaydedilmez. Otomatik olarak 150-300 metre aralığında rastgele gürültü eklenir.
+            Kişisel ev ve iş konumlarınız sunucularda açık koordinat olarak saklanmaz. Olay bildirimlerinde yalnızca kamuya açık aksaklığın gerçekleştiği kesin nokta doğrulanır; bildiren kullanıcının anlık cihaz konumu asla paylaşılmaz.
           </AppText>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <MapPin size={16} color={theme.success} />
             <AppText variant="caption" weight="semibold" color={theme.success}>
-              KVKK & Konum Koruma Kalkanı Aktif
+              KVKK & Konum Güvenlik Standardı Aktif
             </AppText>
           </View>
         </AppCard>

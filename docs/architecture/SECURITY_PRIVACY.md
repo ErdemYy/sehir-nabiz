@@ -4,19 +4,33 @@ Bu belge, ŞehirNabız platformunda kullanıcı gizliliğinin korunması, sahte 
 
 ---
 
-## 1. Konum Gizliliği ve KVKK / GDPR Uyumu
+## 1. Konum Gizliliği, Güvenli Yayın Politikası ve KVKK / GDPR Uyumu
 
-Kullanıcıların harita tabanlı uygulamalardaki en büyük endişesi, gerçek zamanlı konumlarının veya ev/iş adresi gibi mahrem noktalarının ifşa olmasıdır.
+Kullanıcıların harita tabanlı kentsel bilgi sistemlerindeki en büyük endişesi, gerçek zamanlı konumlarının veya ev/iş adresi gibi mahrem noktalarının ifşa olmasıdır.
 
-### 1.1 Konum Bulanıklaştırma (Fuzzy Location & Noise Injection)
-- **Kullanıcı Profili Konumu:** Kullanıcının bildirim almak istediği ev/mahalle merkezi veritabanında kesin koordinat olarak değil, 250 ila 500 metre rastgele yarıçapta bir ofset ile bulanıklaştırılarak (`home_fuzz_location`) saklanır.
-- **Anonim Bildirim Sahibi:** Bir olayı bildiren kullanıcının kesin anlık konumu arayüzde asla gösterilmez. Yalnızca olayın gerçekleştiği nokta gösterilir.
-- **Doğrulama Konumu:** Kullanıcı bir olayı teyit ederken (`CONFIRM`), cihazının o an olay yerine 500m mesafe içinde olup olmadığı sunucuda (`is_within_radius`) hesaplanır; kullanıcının kesin enlem/boylamı veritabanından kalıcı olarak silinir veya loglanmaz.
+### 1.1 Güvenli Yayın Konumu Politikası (Safe Published Location Policy)
+ŞehirNabız'da iki farklı coğrafi gereksinim dengelenir:
+1. **Kamu Yararı ve Müdahale Doğruluğu:** Kaza, yol çalışması, ana su borusu patlağı gibi kentsel olaylarda koordinatın doğruluğu (metre seviyesinde) müdahale ekipleri ve sürücü yönlendirmesi için kritiktir.
+2. **Kullanıcı Mahremiyeti ve Hassas Özel Mülk Güvenliği:** Bildirim yapan kullanıcının nerede bulunduğu asla ifşa edilmez.
 
-### 1.2 Medya Sanitizasyonu (EXIF / Metadata Stripping)
+- **Çift Çözünürlüklü Konum Modeli (Dual-Resolution Model):**
+  - *İç Mekânsal Çözünürlük (Doğrulama ve PostGIS Katmanı):* Olayın gerçek koordinatı (WGS84 SRID 4326), mükerrer bildirim denetimi (`ST_DWithin` 150m), kümeleme ve belediye/saha moderasyonu için tam doğrulukla saklanır.
+  - *Hassas Özel Mülk Değerlendirmesi:* Özel mülk alanlarını ilgilendiren münferit altyapı şikâyetlerinde harita yayın koordinatı 3 ondalık basamağa (~110 metre) yuvarlanarak veya rastgele 100-200m yarıçaplı dairesel tampon (`ST_Buffer`) ile genel bölge olarak haritalandırılır.
+- **Kullanıcı Cihaz Konumu İzolasyonu:** Bildiren kullanıcının anlık cihaz GPS konumu sunucu veritabanına asla kaydedilmez; sunucuya yalnızca seçilen olayın koordinatı (`longitude`, `latitude`) iletilir. Kullanıcı profili için ev/iş konumu saklanmaz.
+- **Doğrulama Konumu:** Kullanıcı bir olayı teyit ederken (`CONFIRM`), cihazının o an olay yerine 500m mesafe içinde olup olmadığı sunucuda (`is_within_radius`) geçici olarak hesaplanır; kullanıcının kesin enlem/boylamı kalıcı olarak silinir ve loglanmaz.
+
+### 1.2 Mükerrer Olay Uyarısı Gizlilik Kalkanı (Duplicate Warning Privacy Shield)
+Olay oluşturulurken 150m yarıçapta 45 dakika içinde benzer olay sezildiğinde:
+- **Aktif/Kamuya Açık Olaylar (`status = ACTIVE`):** Olay zaten haritada herkese açık olduğundan adayın başlığı, kimliği ve mesafesi kullanıcıya bildirilir.
+- **İnceleme Bekleyen veya Reddedilen Olaylar (`status = PENDING_REVIEW / REJECTED / DISPUTED`):**
+  - Başka bir kullanıcının onaylanmamış taslak bildirimine ait başlık (`candidateTitle`), koordinat, yazar bilgisi, açıklama veya olay kimliği (`candidateId`) **kesinlikle sızdırılmaz**.
+  - İstemciye yalnızca kişisel veri içermeyen genel uyarı metni iletilir: `"Yakın bölgede benzer bir bildirim bulunuyor olabilir."`
+  - Bildirimde bulunan kullanıcının süreci kesintiye uğramadan devam etme (`onProceed`) veya iptal etme (`onCancel`) imkânı korunur.
+
+### 1.3 Medya Sanitizasyonu (EXIF / Metadata Stripping)
 - Akıllı telefon kameraları fotoğraflara çekildiği cihaz modeli, kesin GPS enlem/boylamı ve çekim saatini (EXIF verisi) gömer.
 - **İstemci Tarafında Temizleme:** Mobil istemcide `expo-image-manipulator` kullanılarak görsel yeniden encode edilir (JPEG compression) ve tüm EXIF/GPS meta verileri istemciden çıkmadan önce silinir.
-- **Sunucu Tarafında Doğrulama:** Yüklenen görseller S3/R2 bucket'ına girmeden önce Sharp/ImageMagick filtresinden geçirilerek temizlenir.
+- **Sunucu Tarafında Doğrulama:** Yüklenen görseller S3/R2 bucket'ına girdikten sonra Sharp pipeline'ı (`limitInputPixels: 268402689`, `failOn: 'error'`, Full HD WebP dönüşümü) ile taranır ve tüm EXIF/GPS/XMP meta verileri sıfırlanır (`sanitizedMeta.exif === undefined`).
 
 ---
 

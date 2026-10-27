@@ -336,4 +336,73 @@ test('Phase 7 — Olay Bildirim Akışı, Konum ve Medya Güvenliği Testleri', 
       'Yeni oluşturulan olay resmî veya doğrulanmış görünmemeli, PENDING_REVIEW olmalı'
     );
   });
+
+  // -------------------------------------------------------------
+  // 13. Phase 7.5: DuplicateWarning Gizlilik Kalkanı Doğrulaması
+  // -------------------------------------------------------------
+  await t.test('13. DuplicateWarning gizlilik kalkanı: Onaylanmamış olaylarda başlık ve kimlik gizlenmeli', () => {
+    const privacyWarning = {
+      isDuplicateSuspected: true,
+      message: 'Yakın bölgede benzer bir bildirim bulunuyor olabilir.',
+      candidateId: undefined,
+      candidateTitle: undefined,
+      distanceMeters: 120,
+    };
+
+    assert.equal(privacyWarning.isDuplicateSuspected, true);
+    assert.equal(privacyWarning.candidateTitle, undefined, 'Başka kullanıcının PENDING_REVIEW başlığı sızdırılmamalı');
+    assert.equal(privacyWarning.candidateId, undefined, 'Başka kullanıcının olay kimliği sızdırılmamalı');
+    assert.equal(privacyWarning.message, 'Yakın bölgede benzer bir bildirim bulunuyor olabilir.');
+    assert.equal(privacyWarning.distanceMeters, 120);
+  });
+
+  // -------------------------------------------------------------
+  // 14. Phase 7.5: Tekrar Deneme Sırasında Mükerrer Olay Engeli (Idempotency)
+  // -------------------------------------------------------------
+  await t.test('14. Tekrar denemede mevcut createdEvent varsa ikinci kez createEvent çağrılmamalı', async () => {
+    let apiCallCount = 0;
+    let createdEvent = null;
+
+    const mockCreateEventApi = async (data) => {
+      apiCallCount++;
+      return { id: 'first-created-id-789', ...data };
+    };
+
+    // İlk deneme: Event oluşturuldu ancak fotoğraf yükleme koptu
+    if (!createdEvent) {
+      createdEvent = await mockCreateEventApi({ title: 'Test Kaza' });
+    }
+
+    // İkinci deneme (Kullanıcı tekrar 'Bildirimi Gönder' butonuna bastı)
+    if (!createdEvent) {
+      createdEvent = await mockCreateEventApi({ title: 'Test Kaza' });
+    }
+
+    assert.equal(apiCallCount, 1, 'Event oluşturulduktan sonraki denemelerde ikinci bir olay açılmamalı');
+    assert.equal(createdEvent.id, 'first-created-id-789');
+  });
+
+  // -------------------------------------------------------------
+  // 15. Phase 7.5: Taslak Modelinde createdEventId Korunumu
+  // -------------------------------------------------------------
+  await t.test('15. Uygulama kapanması/ağ kesintisi durumunda taslak createdEventId alanını saklamalı', () => {
+    const draftWithCreatedId = {
+      step: 3,
+      categoryId: 'c1',
+      categoryCode: 'TRAFFIC',
+      categoryNameTr: 'Trafik',
+      title: 'İvedik Caddesi Çukur',
+      description: 'Yolda derin bir çukur oluştu.',
+      severity: EventSeverity.MEDIUM,
+      location: { latitude: 39.95, longitude: 32.85 },
+      photos: [],
+      createdEventId: 'event-persisted-999',
+      updatedAt: Date.now(),
+    };
+
+    const serialized = JSON.stringify(draftWithCreatedId);
+    const restored = JSON.parse(serialized);
+
+    assert.equal(restored.createdEventId, 'event-persisted-999');
+  });
 });

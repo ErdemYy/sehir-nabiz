@@ -3,6 +3,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import type { UploadUrlResponseDto, EventMediaDto } from '@sehir-nabiz/shared';
 import { getApiBaseUrl } from '../../../config/env';
 import type { SelectedPhoto } from '../types/events.types';
+import { useAuthStore } from '../../auth/store/useAuthStore';
 
 export class MediaUploadError extends Error {
   constructor(
@@ -26,12 +27,14 @@ export async function getPresignedUploadUrl(
   accessToken: string
 ): Promise<UploadUrlResponseDto> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/events/${eventId}/media/upload-url`, {
+  let currentToken = accessToken;
+
+  let response = await fetch(`${baseUrl}/events/${eventId}/media/upload-url`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
-      Authorization: `Bearer ${accessToken}`,
+      Authorization: `Bearer ${currentToken}`,
     },
     body: JSON.stringify({
       fileName,
@@ -39,6 +42,27 @@ export async function getPresignedUploadUrl(
       fileSize,
     }),
   });
+
+  // Oturum yenileme: 401 durumunda token yenileyip bir kez tekrar dene
+  if (response.status === 401) {
+    const refreshed = await useAuthStore.getState().getValidAccessToken();
+    if (refreshed && refreshed !== currentToken) {
+      currentToken = refreshed;
+      response = await fetch(`${baseUrl}/events/${eventId}/media/upload-url`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: `Bearer ${currentToken}`,
+        },
+        body: JSON.stringify({
+          fileName,
+          mimeType,
+          fileSize,
+        }),
+      });
+    }
+  }
 
   const data = await response.json();
   if (!response.ok) {
@@ -107,13 +131,30 @@ export async function completeMediaUpload(
   accessToken: string
 ): Promise<EventMediaDto> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/events/${eventId}/media/${mediaId}/complete`, {
+  let currentToken = accessToken;
+
+  let response = await fetch(`${baseUrl}/events/${eventId}/media/${mediaId}/complete`, {
     method: 'POST',
     headers: {
       Accept: 'application/json',
-      Authorization: `Bearer ${accessToken}`,
+      Authorization: `Bearer ${currentToken}`,
     },
   });
+
+  // Oturum yenileme: 401 durumunda token yenileyip bir kez tekrar dene
+  if (response.status === 401) {
+    const refreshed = await useAuthStore.getState().getValidAccessToken();
+    if (refreshed && refreshed !== currentToken) {
+      currentToken = refreshed;
+      response = await fetch(`${baseUrl}/events/${eventId}/media/${mediaId}/complete`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${currentToken}`,
+        },
+      });
+    }
+  }
 
   const data = await response.json();
   if (!response.ok) {

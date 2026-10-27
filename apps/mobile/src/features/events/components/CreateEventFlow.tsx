@@ -110,6 +110,9 @@ export function CreateEventFlow(): React.ReactElement {
           const match = categories.find((c) => c.id === savedDraft.categoryId);
           if (match) setSelectedCategory(match);
         }
+        if (savedDraft.createdEventId) {
+          setCreatedEvent({ id: savedDraft.createdEventId } as EventResponseDto);
+        }
         setHasDraftRestored(true);
       }
     });
@@ -130,11 +133,12 @@ export function CreateEventFlow(): React.ReactElement {
         severity,
         location,
         photos,
+        createdEventId: createdEvent?.id,
         updatedAt: Date.now(),
       };
       draftService.saveDraft(draft);
     }, 400);
-  }, [currentStep, selectedCategory, title, description, severity, location, photos]);
+  }, [currentStep, selectedCategory, title, description, severity, location, photos, createdEvent]);
 
   useEffect(() => {
     if (!isSuccess) {
@@ -221,16 +225,20 @@ export function CreateEventFlow(): React.ReactElement {
         throw new Error(validation.error.errors[0]?.message || 'Form doğrulama hatası');
       }
 
-      // 2. Olay Oluşturma API Çağrısı
-      const newEvent = await createEventApi(validation.data, token);
-      setCreatedEvent(newEvent);
+      // 2. Olay Oluşturma (Mükerrerlik engeli: Eğer olay zaten oluşturulmuşsa tekrar oluşturma)
+      let activeEvent = createdEvent;
+      if (!activeEvent || !activeEvent.id) {
+        activeEvent = await createEventApi(validation.data, token);
+        setCreatedEvent(activeEvent);
 
-      // 3. Mükerrer Bildirim Uyarısı Var mı?
-      if (newEvent.duplicateWarning?.isDuplicateSuspected) {
-        setDuplicateModalOpen(true);
+        // Mükerrer Bildirim Uyarısı Var mı?
+        if (activeEvent.duplicateWarning?.isDuplicateSuspected) {
+          setDuplicateModalOpen(true);
+        }
       }
 
-      // 4. Medya Yüklemelerini Başlat
+      // 3. Medya Yüklemelerini Başlat / Eksik Kalanları Tamamla
+      let anyPhotoFailed = false;
       if (photos.length > 0) {
         const updatedPhotos = [...photos];
         for (let i = 0; i < updatedPhotos.length; i++) {
@@ -241,10 +249,13 @@ export function CreateEventFlow(): React.ReactElement {
           setPhotos([...updatedPhotos]);
 
           try {
-            const mediaRes = await uploadSinglePhoto(newEvent.id, photo, token);
+            const currentToken = (await getValidAccessToken()) || token;
+            const mediaRes = await uploadSinglePhoto(activeEvent.id, photo, currentToken);
             photo.uploadStatus = 'completed';
             photo.mediaId = mediaRes.id;
+            photo.uploadError = undefined;
           } catch (uploadErr: any) {
+            anyPhotoFailed = true;
             photo.uploadStatus = 'failed';
             photo.uploadError = uploadErr.message;
           }
@@ -252,9 +263,15 @@ export function CreateEventFlow(): React.ReactElement {
         }
       }
 
-      // 5. Taslağı Temizle ve Başarı Ekranına Geç
-      await draftService.clearDraft();
-      setIsSuccess(true);
+      if (anyPhotoFailed) {
+        setSubmitError(
+          'Olay bildirimi oluşturuldu ancak bazı fotoğraflar yüklenemedi. Fotoğraf üzerindeki "Tekrar Dene" butonuyla yüklemeyi tamamlayabilirsiniz.'
+        );
+      } else {
+        // 4. Taslağı Temizle ve Başarı Ekranına Geç
+        await draftService.clearDraft();
+        setIsSuccess(true);
+      }
     } catch (err: any) {
       setSubmitError(err.message || 'Bildirim gönderilemedi. Lütfen internet bağlantınızı kontrol ediniz.');
     } finally {
@@ -270,29 +287,39 @@ export function CreateEventFlow(): React.ReactElement {
     description,
     severity,
     photos,
+    createdEvent,
   ]);
 
   // Başarısız Fotoğrafı Yeniden Yükle
   const handleRetryPhoto = useCallback(
     async (failedPhoto: SelectedPhoto) => {
-      if (!createdEvent) return;
+      if (!createdEvent?.id) return;
       const token = await getValidAccessToken();
-      if (!token) return;
+      if (!token) {
+        setAuthModalOpen(true);
+        return;
+      }
 
       const updated = photos.map((p) =>
-        p.id === failedPhoto.id ? { ...p, uploadStatus: 'uploading' as const } : p
+        p.id === failedPhoto.id ? { ...p, uploadStatus: 'uploading' as const, uploadError: undefined } : p
       );
       setPhotos(updated);
 
       try {
         const mediaRes = await uploadSinglePhoto(createdEvent.id, failedPhoto, token);
-        setPhotos((prev) =>
-          prev.map((p) =>
-            p.id === failedPhoto.id
-              ? { ...p, uploadStatus: 'completed', mediaId: mediaRes.id }
-              : p
-          )
+        const nextPhotos = photos.map((p) =>
+          p.id === failedPhoto.id
+            ? { ...p, uploadStatus: 'completed' as const, mediaId: mediaRes.id, uploadError: undefined }
+            : p
         );
+        setPhotos(nextPhotos);
+
+        // Eğer tüm fotoğraflar tamamlandıysa taslağı temizleyip başarıya geç
+        const remainingFailed = nextPhotos.some((p) => p.uploadStatus !== 'completed');
+        if (!remainingFailed) {
+          await draftService.clearDraft();
+          setIsSuccess(true);
+        }
       } catch (err: any) {
         setPhotos((prev) =>
           prev.map((p) =>

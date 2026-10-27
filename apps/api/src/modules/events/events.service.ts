@@ -113,12 +113,21 @@ export class EventsService {
     const event = await this.findById(createdEventId, { sub: authorId, role: user.role } as JwtPayload);
 
     if (duplicateCandidate) {
+      // Gizlilik Kalkanı: Eğer mükerrer aday henüz ACTIVE değilse ve bildiren kullanıcıya ait değilse,
+      // başka bir kullanıcının PENDING_REVIEW / REJECTED / DISPUTED olay başlığı ve kimliği sızdırılamaz.
+      const isPublic = duplicateCandidate.status === EventStatus.ACTIVE;
+      const isOwnEvent = duplicateCandidate.authorId === authorId;
+      const canViewDetails = isPublic || isOwnEvent;
+
       event.duplicateWarning = {
         isDuplicateSuspected: true,
-        candidateId: duplicateCandidate.id,
-        candidateTitle: duplicateCandidate.title,
+        message: canViewDetails
+          ? undefined
+          : 'Yakın bölgede benzer bir bildirim bulunuyor olabilir.',
+        candidateId: canViewDetails ? duplicateCandidate.id : undefined,
+        candidateTitle: canViewDetails ? duplicateCandidate.title : undefined,
         distanceMeters: Math.round(duplicateCandidate.distance_meters),
-        createdAt: duplicateCandidate.createdAt,
+        createdAt: canViewDetails ? duplicateCandidate.createdAt : undefined,
       };
     }
 
@@ -505,11 +514,11 @@ export class EventsService {
     categoryId: string,
     lon: number,
     lat: number,
-  ): Promise<{ id: string; title: string; distance_meters: number; createdAt: string } | null> {
+  ): Promise<{ id: string; title: string; status: EventStatus; authorId: string; distance_meters: number; createdAt: string } | null> {
     const candidates = await this.dataSource.query(
       `
       SELECT 
-        id, title, "createdAt",
+        id, title, status, "authorId", "createdAt",
         ST_Distance(location::geography, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography) AS distance_meters
       FROM "events"
       WHERE "categoryId" = $3

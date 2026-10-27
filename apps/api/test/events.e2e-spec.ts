@@ -201,6 +201,39 @@ describe('Coğrafi Veri ve Olay Yönetimi Canlı PostGIS Entegrasyon Testleri (E
       expect(duplicateReport.duplicateWarning?.candidateTitle).toContain('Trafik');
     });
 
+    it('Başka bir kullanıcının PENDING_REVIEW durumundaki bildirimi için gizlilik korunmalı (başlık ve ID sızdırılmamalı)', async () => {
+      // İkinci bir vatandaş kullanıcısı oluştur
+      const secondCitizen = await dataSource.getRepository(UserEntity).save({
+        email: `citizen-privacy-${Date.now()}@sehirnabiz.local`,
+        passwordHash: 'secret-hash',
+        displayName: 'İkinci Vatandaş',
+        role: UserRole.CITIZEN,
+        accountStatus: AccountStatus.ACTIVE,
+        reputationScore: 10,
+      });
+
+      // İkinci kullanıcı 150m içinde benzer kategoride bildirim yapar
+      const privacyDuplicateReport = await eventsService.create(secondCitizen.id, {
+        categoryId: trafficCategory.id,
+        title: 'Kavşakta Trafik Tıkandı',
+        description: 'Trafik akmıyor, ikinci bildirim.',
+        severity: EventSeverity.MEDIUM,
+        longitude: 35.4830,
+        latitude: 38.7205,
+      });
+
+      expect(privacyDuplicateReport.duplicateWarning).toBeDefined();
+      expect(privacyDuplicateReport.duplicateWarning?.isDuplicateSuspected).toBe(true);
+      // GİZLİLİK KORUMASI: Başka kullanıcının onaylanmamış PENDING_REVIEW olay detayları gizlenmeli
+      expect(privacyDuplicateReport.duplicateWarning?.candidateTitle).toBeUndefined();
+      expect(privacyDuplicateReport.duplicateWarning?.candidateId).toBeUndefined();
+      expect(privacyDuplicateReport.duplicateWarning?.createdAt).toBeUndefined();
+      expect(privacyDuplicateReport.duplicateWarning?.message).toBe(
+        'Yakın bölgede benzer bir bildirim bulunuyor olabilir.',
+      );
+      expect(privacyDuplicateReport.duplicateWarning?.distanceMeters).toBeLessThanOrEqual(150);
+    });
+
     it('Farklı bir kategoride (örn. SU KESİNTİSİ) aynı konuma bildirim yapıldığında mükerrer uyarısı üretmemeli', async () => {
       const differentCategoryReport = await eventsService.create(testUser.id, {
         categoryId: waterCategory.id,

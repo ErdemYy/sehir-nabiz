@@ -122,6 +122,7 @@ sehir-nabiz/
 | **Phase 6** | Harita Motoru & Vektör Katmanları (MapLibre) | **Tamamlandı** |
 | **Phase 6.5**| Android Native Doğrulama, Demo Veri Güvenliği & Harita Kalite Kontrolü | **Tamamlandı** |
 | **Phase 7** | Olay Bildirim Akışı & Formlar | **Tamamlandı** |
+| **Phase 7.5**| Mobil Kalite, Güvenlik ve Android Doğrulama | **Tamamlandı** |
 | **Phase 8** | Doğrulama & Moderasyon Mekanizması | Planlandı |
 | **Phase 9** | Gerçek Zamanlı Bildirimler (WebSocket/Push) | Planlandı |
 | **Phase 10**| Şehir İstatistikleri, Testler & MVP Sürümü | Planlandı |

@@ -32,5 +32,6 @@ export interface EventDraft {
   severity: EventSeverity;
   location: SelectedLocation | null;
   photos: SelectedPhoto[];
+  createdEventId?: string;
   updatedAt: number;
 }

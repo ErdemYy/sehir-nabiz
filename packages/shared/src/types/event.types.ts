@@ -29,6 +29,7 @@ export interface PublicAuthorDto {
  */
 export interface DuplicateWarningDto {
   isDuplicateSuspected: boolean;
+  message?: string;
   candidateId?: string;
   candidateTitle?: string;
   distanceMeters?: number;
