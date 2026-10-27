@@ -143,6 +143,9 @@ export default function FeedScreen(): React.ReactElement {
             key={event.id}
             activeOpacity={0.85}
             onPress={() => router.push(`/events/${event.id}`)}
+            accessibilityRole="button"
+            accessibilityLabel={`${event.title}, ${event.categoryName}, ${event.district}`}
+            accessibilityHint="Olay detayını ve topluluk teyitlerini görüntülemek için dokunun"
           >
             <AppCard>
             <View

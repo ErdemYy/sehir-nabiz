@@ -126,9 +126,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/package.json": {
-    "mtime": 1793122222.831756,
-    "seen": 1793122704.7535424,
-    "ast_hash": "5c6c7cac78606036b161d447266e5b25",
+    "mtime": 1793124203.686414,
+    "seen": 1793124414.968494,
+    "ast_hash": "000d82c072b2d7090ef1492d6bf24b67",
     "semantic_hash": ""
   },
   "apps/mobile/src/components/ErrorBoundary.tsx": {
@@ -780,21 +780,21 @@
     "semantic_hash": ""
   },
   "apps/mobile/app/(tabs)/feed.tsx": {
-    "mtime": 1793117759.1668196,
-    "seen": 1793118394.0275538,
-    "ast_hash": "a2ce3687d7a930af23003ac666e7e6e6",
+    "mtime": 1793124052.4217865,
+    "seen": 1793124414.968494,
+    "ast_hash": "a78908dc43466427de42b72bbc3c1b98",
     "semantic_hash": ""
   },
   "apps/mobile/app/(tabs)/index.tsx": {
-    "mtime": 1793117962.7261536,
-    "seen": 1793118394.0275538,
-    "ast_hash": "b5a129a20a9685bbbd77373cedaed4c3",
+    "mtime": 1793124023.979917,
+    "seen": 1793124414.968494,
+    "ast_hash": "35e9081b1eb1d6c2227a71d95cbbdac7",
     "semantic_hash": ""
   },
   "apps/mobile/app/(tabs)/notifications.tsx": {
-    "mtime": 1793114970.6205833,
-    "seen": 1793115239.6108046,
-    "ast_hash": "58ad49c6c33da5514cde58f92ac62351",
+    "mtime": 1793124048.8514264,
+    "seen": 1793124414.968494,
+    "ast_hash": "ce2ff3f08072c214de76e93167e6abe9",
     "semantic_hash": ""
   },
   "apps/mobile/app/(tabs)/profile.tsx": {
@@ -810,9 +810,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/src/components/layout/MapScreenLayout.tsx": {
-    "mtime": 1792941770.303507,
-    "seen": 1792942093.6707883,
-    "ast_hash": "b21100f08df3f2695c932622e619de4c",
+    "mtime": 1793124005.0697546,
+    "seen": 1793124414.968494,
+    "ast_hash": "0718f690276a04ccc8968dab59c16e5c",
     "semantic_hash": ""
   },
   "apps/mobile/src/components/layout/index.ts": {
@@ -1800,9 +1800,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/app/profile/settings.tsx": {
-    "mtime": 1793121688.5879529,
-    "seen": 1793122704.7535424,
-    "ast_hash": "ccda68c6ab5c5e990dce1d251d69f268",
+    "mtime": 1793124104.9387467,
+    "seen": 1793124414.968494,
+    "ast_hash": "7f9d28283ecc8166bc8a50feac7e6142",
     "semantic_hash": ""
   },
   "apps/mobile/app/stats/index.tsx": {
@@ -2001,6 +2001,42 @@
     "mtime": 1793122480.3347356,
     "seen": 1793122704.7550502,
     "ast_hash": "2009c922a2a83da62d41e5bd0939aa50",
+    "semantic_hash": ""
+  },
+  "apps/mobile/test/phase_12_journeys.test.js": {
+    "mtime": 1793124199.609243,
+    "seen": 1793124414.968494,
+    "ast_hash": "201694ca438c44dfe0a14291490656c4",
+    "semantic_hash": ""
+  },
+  "docs/ACCESSIBILITY_AUDIT.md": {
+    "mtime": 1793124317.721316,
+    "seen": 1793124414.9695008,
+    "ast_hash": "383da3295f0e5d911ef0d0cbac749764",
+    "semantic_hash": ""
+  },
+  "docs/BETA_READINESS_CHECKLIST.md": {
+    "mtime": 1793124260.7177892,
+    "seen": 1793124414.9695008,
+    "ast_hash": "e2c7167f96e9535a8313d48c8d5ca694",
+    "semantic_hash": ""
+  },
+  "docs/END_TO_END_USER_JOURNEYS.md": {
+    "mtime": 1793124346.0686116,
+    "seen": 1793124414.9695008,
+    "ast_hash": "b0b6b03404d9c817916a50fb3b82928f",
+    "semantic_hash": ""
+  },
+  "docs/KNOWN_ISSUES.md": {
+    "mtime": 1793124364.3750606,
+    "seen": 1793124414.9695008,
+    "ast_hash": "1004658ff81ad0f48955e511fd1ddc2e",
+    "semantic_hash": ""
+  },
+  "docs/MOBILE_UX_AUDIT.md": {
+    "mtime": 1793124291.774258,
+    "seen": 1793124414.9695008,
+    "ast_hash": "3c8e892fec7be7dfa8ad9b5a76ef2fff",
     "semantic_hash": ""
   }
 }

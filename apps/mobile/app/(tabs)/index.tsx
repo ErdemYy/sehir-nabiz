@@ -188,9 +188,9 @@ export default function MapScreen(): React.ReactElement {
     }
   }, [requestLocation]);
 
-  // Bildirim banner'larının dikey konumu (Kategori çiplerinin hemen altı)
+  // Bildirim banner'larının dikey konumu (Kategori çiplerinin hemen altı - çakışma önleyici mesafe)
   const bannerTop = useMemo(() => {
-    return Math.max(insets.top + 120, 134);
+    return Math.max(insets.top + 146, 156);
   }, [insets.top]);
 
   return (
@@ -342,7 +342,7 @@ export default function MapScreen(): React.ReactElement {
         <View
           style={{
             position: 'absolute',
-            bottom: insets.bottom + 75,
+            bottom: Math.max(insets.bottom, 12) + 76,
             left: spacing.lg,
             right: spacing.lg,
             backgroundColor: 'rgba(15, 23, 42, 0.92)',

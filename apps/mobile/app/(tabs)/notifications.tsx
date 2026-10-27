@@ -314,6 +314,9 @@ export default function NotificationsScreen(): React.ReactElement {
                     key={item.id}
                     activeOpacity={0.8}
                     onPress={() => handleNotificationPress(item)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${item.title}, ${formatTimeAgo(item.createdAt)}${item.isRead ? '' : ', okunmamış'}`}
+                    accessibilityHint="Bildirim detayına ve ilgili olaya gitmek için dokunun"
                   >
                     <AppCard
                       style={{

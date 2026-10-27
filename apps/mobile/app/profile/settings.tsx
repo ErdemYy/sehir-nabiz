@@ -180,6 +180,7 @@ export default function SettingsScreen(): React.ReactElement {
                 value={currentPrefs.reportedEvents}
                 onValueChange={v => handleTogglePref('reportedEvents', v)}
                 trackColor={{ false: theme.border, true: theme.primary }}
+                accessibilityLabel="Bildirdiğim Olaylar Bildirimleri"
               />
             </View>
 
@@ -197,6 +198,7 @@ export default function SettingsScreen(): React.ReactElement {
                 value={currentPrefs.confirmedEvents}
                 onValueChange={v => handleTogglePref('confirmedEvents', v)}
                 trackColor={{ false: theme.border, true: theme.primary }}
+                accessibilityLabel="Teyit Ettiğim Olaylar Bildirimleri"
               />
             </View>
 
@@ -217,6 +219,7 @@ export default function SettingsScreen(): React.ReactElement {
                 value={currentPrefs.nearbyEvents}
                 onValueChange={v => handleTogglePref('nearbyEvents', v)}
                 trackColor={{ false: theme.border, true: theme.primary }}
+                accessibilityLabel="Yakınımdaki Gelişmeler Bildirimi"
               />
             </View>
 
@@ -234,6 +237,7 @@ export default function SettingsScreen(): React.ReactElement {
                 value={currentPrefs.pushEnabled}
                 onValueChange={v => handleTogglePref('pushEnabled', v)}
                 trackColor={{ false: theme.border, true: theme.primary }}
+                accessibilityLabel="Cihaz Push Bildirimleri"
               />
             </View>
           </View>

@@ -66,14 +66,19 @@ Bu belge, projenin kontrollü, test edilebilir ve adım adım ilerleyen gelişti
 - **Kapsam:** Dual-write ve veri kaybı önleme amacıyla PostgreSQL tabanlı Transactional Outbox mimarisi (`outbox_events` tablosu, `1740000005000` migration'ı). Atomik event + outbox transaction yazımı (`EventsService.create`, `updateStatus`, `submitFeedback`, `removeFeedback`). `FOR UPDATE SKIP LOCKED` ile concurrency korumalı, 30s lease timeout'lu ve exponential backoff'lu arka plan Worker'ı (`OutboxProcessorService`). Tüketici tarafı idempotans (`user_notifications.idempotency_key` unique index). Expo Push API 100'lük batching ve `DeviceNotRegistered` token temizliği. Konum gizliliği denetimi (Cihaz GPS'i saklanmaz garantisi, yanıltıcı 150m kopyasının temizlenmesi). Heatmap $k$-anonymity seyrek hücre bastırması (`suppressedPoints`). Arama güvenliği (maks 100 karakter, 366 gün tarih aralığı, katı cursor format denetimi). PostgreSQL `unaccent` extension ile Türkçe karakter duyarsız arama (`ı/i`, `İ/I`, `ş/s`, `ç/c`, `ö/o`, `ü/u`, `ğ/g`). 1k / 10k / 100k kontrollü mekânsal performans benchmark'ları ve Redis 13.6 kat hızlanma kanıtı.
 - **Doğrulama:** 260 testin tamamı (185 backend, 75 mobile) %100 yeşil; sıfır hata. Raporlar: [PHASE_11_REPORT.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/PHASE_11_REPORT.md), [TRANSACTIONAL_OUTBOX.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/TRANSACTIONAL_OUTBOX.md), [PERFORMANCE_BENCHMARKS.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/PERFORMANCE_BENCHMARKS.md), [PRIVACY_DATA_FLOW.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/PRIVACY_DATA_FLOW.md).
 
+### Phase 12: Mobile Experience Audit, E2E Quality & Beta Readiness (TAMAMLANDI)
+- **Kapsam:** 15 mobil ekranın (Harita, Akış, Bildir, Bildirimler, Profil, Olay Detayı, Olay Oluşturma Sihirbazı, Konum Seçici, Fotoğraf Seçici, Giriş/Kayıt, İstatistikler, Bildirdiğim Olaylar, Ayarlar, Moderasyon Paneli, UI Showcase) uçtan uca kullanılabilirlik, tasarım tutarlılığı ve erişilebilirlik denetimi. Urban Floating UI dikey yerleşim çakışmalarının giderilmesi (Harita ekranında Arama Çubuğu, Kategori Çipleri, Aksiyon Butonları, Banner ve Heatmap Bildirim Hapı mesafelerinin matematiksel olarak ayrıştırılması). 6 kritik uçtan uca kullanıcı yolculuğunun (Yolculuk A–F: Misafir Auth Kalkanı, Olay Bildirimi & EXIF Temizleme, Moderasyon İş Akışı, Topluluk Oylaması Matematiksel Tutarlılığı, Çevrimdışı Taslak & Mükerrer Gönderim Engeli, Transactional Outbox Idempotency) otomatik entegrasyon testleriyle doğrulanması (`phase_12_journeys.test.js`). WCAG 2.1 AA kontrast ve min 44x44 pt dokunma hedefi standartları. Test sayısı uyuşmazlığının çözülmesi (Monorepo gerçek test toplamı: 294 test). 5 temel beta hazırlık dokümantasyonu (`BETA_READINESS_CHECKLIST.md`, `MOBILE_UX_AUDIT.md`, `ACCESSIBILITY_AUDIT.md`, `END_TO_END_USER_JOURNEYS.md`, `KNOWN_ISSUES.md`). Android APK ve fiziksel cihaz testlerinin açıkça Blocker olarak belgelenmesi.
+- **Doğrulama:** 294 testin tamamı (185 backend, 91 mobile, 11 token, 7 shared) sıfır hata ile geçti (%100 yeşil). Rapor: [PHASE_12_REPORT.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/PHASE_12_REPORT.md).
+
 ---
 
-## 2. Gelecek Fazlar ve Öneriler (Post-MVP / Phase 12+)
-1. **Transactional Outbox & Reliable Event Messaging:** Gerçek zamanlı bildirim ve olay yayını sırasında veritabanı ile Redis/WebSocket arasında iki fazlı taahhüt güvenliği (Transactional Outbox Pattern) entegrasyonu.
-2. **PostGIS MVT (Mapbox Vector Tile) Pipeline:** Isı haritası ve yoğun veri kümeleme için doğrudan PostgreSQL `ST_AsMVT` ile dinamik vektör karo sunumu.
-3. **Belediye & Kurum Yönetim Portalı (Gov Dashboard):** Yetkili kurumlar için web tabanlı olay doğrulama, müdahale ekiplerini yönlendirme ve resmi duyuru paneli.
-4. **Çevrimdışı Harita Karo Önbellekleme:** Afet ve bağlantı kesintisi durumlarında kullanılmak üzere çevrimdışı OpenFreeMap karo paketi (MBTiles) desteği.
-5. **Gelişmiş Makine Öğrenimi / LLM Moderasyon:** Olay başlık ve açıklamalarındaki küfür, kişisel veri (KVKK) ve spam içeriklerin LLM tabanlı otomatik ön incelemeye alınması.
+## 2. Gelecek Fazlar ve Öneriler (Post-MVP / Phase 13+)
+1. **Fiziksel Cihaz Doğrulaması ve Release APK/AAB:** Gerçek Android ve iOS cihazlarında 48 saatlik batarya, bellek ve termal profilleme testleri.
+2. **Canlı Push Sertifikaları:** FCM Service Account ve Apple APNs canlı ortam değişkenlerinin tanımlanması.
+3. **PostGIS MVT (Mapbox Vector Tile) Pipeline:** Isı haritası ve yoğun veri kümeleme için doğrudan PostgreSQL `ST_AsMVT` ile dinamik vektör karo sunumu.
+4. **Belediye & Kurum Yönetim Portalı (Gov Dashboard):** Yetkili kurumlar için web tabanlı olay doğrulama, müdahale ekiplerini yönlendirme ve resmi duyuru paneli.
+5. **Çevrimdışı Harita Karo Önbellekleme:** Afet ve bağlantı kesintisi durumlarında kullanılmak üzere çevrimdışı OpenFreeMap karo paketi (MBTiles) desteği.
+6. **Gelişmiş Makine Öğrenimi / LLM Moderasyon:** Olay başlık ve açıklamalarındaki küfür, kişisel veri (KVKK) ve spam içeriklerin LLM tabanlı otomatik ön incelemeye alınması.
 
 ---
 

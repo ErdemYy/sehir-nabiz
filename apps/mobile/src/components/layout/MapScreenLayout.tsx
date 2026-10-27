@@ -103,7 +103,7 @@ export function MapScreenLayout({
         <View
           style={{
             position: 'absolute',
-            top: Math.max(insets.top + spacing.xs, 16),
+            top: Math.max(insets.top + spacing.xs, 12),
             left: spacing.lg,
             right: spacing.lg,
             zIndex: 10,
@@ -118,7 +118,7 @@ export function MapScreenLayout({
         <View
           style={{
             position: 'absolute',
-            top: Math.max(insets.top + 68, 80),
+            top: Math.max(insets.top + 94, 104),
             left: 0,
             right: 0,
             zIndex: 9,
@@ -134,7 +134,7 @@ export function MapScreenLayout({
           style={{
             position: 'absolute',
             right: spacing.lg,
-            top: Math.max(insets.top + 140, 150),
+            top: Math.max(insets.top + 152, 162),
             zIndex: 8,
             alignItems: 'center',
             gap: spacing.sm,
