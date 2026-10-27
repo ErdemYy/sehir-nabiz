@@ -14,9 +14,12 @@ import {
   AlertTriangle,
   CloudOff,
   AlertCircle,
+  BarChart3,
+  Flame,
 } from 'lucide-react-native';
 import type { CameraRef } from '@maplibre/maplibre-react-native';
 import { MapScreenLayout } from '../../src/components/layout/MapScreenLayout';
+import { useHeatmap } from '../../src/features/stats';
 import {
   SearchBar,
   CategoryChip,
@@ -79,6 +82,45 @@ export default function MapScreen(): React.ReactElement {
 
   // Seçilen Olay Detayı (BottomSheet)
   const [selectedEvent, setSelectedEvent] = useState<MapEventProperties | null>(null);
+
+  // Yoğunluk / Isı Haritası (Heatmap) Durumu (Phase 10)
+  const [showHeatmap, setShowHeatmap] = useState(false);
+
+  // Heatmap BBox Sorgusu ve GeoJSON Dönüşümü
+  const heatmapQuery = useMemo(() => {
+    if (!showHeatmap) return null;
+    return {
+      minLng: currentBBox.west,
+      minLat: currentBBox.south,
+      maxLng: currentBBox.east,
+      maxLat: currentBBox.north,
+      category: selectedCategory === 'ALL' ? undefined : (selectedCategory as any),
+      period: '30d' as const,
+      precision: 3,
+    };
+  }, [showHeatmap, currentBBox, selectedCategory]);
+
+  const { data: heatmapData } = useHeatmap(heatmapQuery, showHeatmap);
+
+  const heatmapGeoJson = useMemo(() => {
+    if (!heatmapData?.points) return null;
+    return {
+      type: 'FeatureCollection' as const,
+      features: heatmapData.points.map((p, idx) => ({
+        type: 'Feature' as const,
+        id: `heatmap-${idx}`,
+        geometry: {
+          type: 'Point' as const,
+          coordinates: [p.longitude, p.latitude],
+        },
+        properties: {
+          weight: p.weight,
+          count: p.count,
+          categoryCode: p.categoryCode,
+        },
+      })),
+    };
+  }, [heatmapData]);
 
   // Kullanıcı Konumu Kancası
   const {
@@ -164,6 +206,8 @@ export default function MapScreen(): React.ReactElement {
             onSelectEvent={handleSelectEvent}
             onBBoxChange={handleBBoxChange}
             userCoords={userCoords}
+            showHeatmap={showHeatmap}
+            heatmapGeoJson={heatmapGeoJson}
           />
         }
         // 2. Üst Floating Arama Çubuğu ve Canlı Bağlantı Rozeti
@@ -174,6 +218,28 @@ export default function MapScreen(): React.ReactElement {
                 status={realtimeStatus}
                 onPress={reconnectRealtime}
               />
+              <TouchableOpacity
+                onPress={() => router.push('/stats')}
+                accessibilityRole="button"
+                accessibilityLabel="Şehir İstatistikleri Ekranını Aç"
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 4,
+                  backgroundColor: theme.surfaceElevated,
+                  paddingHorizontal: spacing.sm + 2,
+                  paddingVertical: 6,
+                  borderRadius: radii.full,
+                  borderWidth: 1,
+                  borderColor: theme.border,
+                  minHeight: 32,
+                }}
+              >
+                <BarChart3 size={15} color={theme.primary} />
+                <AppText variant="caption" weight="bold" color={theme.text}>
+                  İstatistikler
+                </AppText>
+              </TouchableOpacity>
             </View>
             <SearchBar
               value={searchQuery}
@@ -242,6 +308,16 @@ export default function MapScreen(): React.ReactElement {
               accessibilityLabel="Mevcut Konumuma Git"
             />
             <FloatingIconButton
+              icon={
+                <Flame
+                  size={20}
+                  color={showHeatmap ? '#EF4444' : theme.text}
+                />
+              }
+              onPress={() => setShowHeatmap(prev => !prev)}
+              accessibilityLabel="Yoğunluk Isı Haritası Katmanı"
+            />
+            <FloatingIconButton
               icon={<Layers size={20} color={theme.text} />}
               onPress={() => setLayerSheetOpen(true)}
               accessibilityLabel="Harita Katmanları"
@@ -260,6 +336,43 @@ export default function MapScreen(): React.ReactElement {
           </>
         }
       />
+
+      {/* Yoğunluk Katmanı Açık Bildirim Hapı */}
+      {showHeatmap && (
+        <View
+          style={{
+            position: 'absolute',
+            bottom: insets.bottom + 75,
+            left: spacing.lg,
+            right: spacing.lg,
+            backgroundColor: 'rgba(15, 23, 42, 0.92)',
+            paddingHorizontal: spacing.md,
+            paddingVertical: spacing.sm,
+            borderRadius: radii.md,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            zIndex: 90,
+            borderWidth: 1,
+            borderColor: 'rgba(239, 68, 68, 0.3)',
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flex: 1 }}>
+            <Flame size={16} color="#EF4444" />
+            <AppText variant="caption" color="#FFFFFF" style={{ fontSize: 11, flex: 1 }}>
+              Yoğunluk Katmanı: Yalnızca ŞehirNabız kullanıcı bildirimlerini gösterir.
+            </AppText>
+          </View>
+          <TouchableOpacity
+            onPress={() => setShowHeatmap(false)}
+            style={{ paddingHorizontal: spacing.xs, minHeight: 30, justifyContent: 'center' }}
+          >
+            <AppText variant="caption" weight="bold" color={theme.primary} style={{ fontSize: 11 }}>
+              Kapat
+            </AppText>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* 5. Geliştirici Demo Modu Bilgilendirme Banner'ı */}
       {isDemoData ? (

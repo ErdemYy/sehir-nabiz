@@ -28,6 +28,8 @@ export interface PulseMapViewProps {
   onBBoxChange?: (bbox: BBoxCoordinates) => void;
   userCoords?: { latitude: number; longitude: number } | null;
   cameraRef?: React.RefObject<CameraRef | null>;
+  showHeatmap?: boolean;
+  heatmapGeoJson?: any;
 }
 
 export function PulseMapView({
@@ -38,6 +40,8 @@ export function PulseMapView({
   onBBoxChange,
   userCoords,
   cameraRef: externalCameraRef,
+  showHeatmap = false,
+  heatmapGeoJson,
 }: PulseMapViewProps): React.ReactElement {
   const { isDark } = useAppTheme();
   const mapRef = useRef<MapRef>(null);
@@ -122,6 +126,45 @@ export function PulseMapView({
 
         {/* Kullanıcı Konumu Noktası */}
         {userCoords ? <UserLocation animated accuracy heading /> : null}
+
+        {/* Yoğunluk Haritası (Heatmap) Katmanı (İsteğe Bağlı) */}
+        {showHeatmap && heatmapGeoJson ? (
+          <GeoJSONSource id="heatmapSource" data={heatmapGeoJson}>
+            <Layer
+              id="heatmapLayer"
+              type="heatmap"
+              style={{
+                heatmapWeight: ['get', 'weight'],
+                heatmapIntensity: [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  0, 1,
+                  15, 3,
+                ],
+                heatmapColor: [
+                  'interpolate',
+                  ['linear'],
+                  ['heatmap-density'],
+                  0, 'rgba(33, 102, 172, 0)',
+                  0.2, '#2DD4BF',
+                  0.4, '#FBBF24',
+                  0.7, '#F97316',
+                  1, '#EF4444',
+                ],
+                heatmapRadius: [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  0, 4,
+                  12, 22,
+                  15, 40,
+                ],
+                heatmapOpacity: 0.65,
+              }}
+            />
+          </GeoJSONSource>
+        ) : null}
 
         {/* GeoJSON Olay Kaynağı (GPU Kümeleme Özellikli) */}
         <GeoJSONSource

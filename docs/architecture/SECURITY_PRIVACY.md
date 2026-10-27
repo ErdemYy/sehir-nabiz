@@ -198,3 +198,38 @@ Gerçek zamanlı harita ve anlık bildirim kanalları, kullanıcı mahremiyetini
    - Bildirimler yalnızca kullanıcının doğrudan ilişkili olduğu eylemler için üretilir: `REPORTED_EVENT_VERIFIED`, `FEEDBACK_DISPUTED`, `EVENT_RESOLVED`, `MODERATION_ACTION`.
    - İnceleme aşamasındaki (`PENDING_REVIEW`) veya reddedilen (`REJECTED`) olaylar kamusal WebSocket odalarına (`events:global`) asla yayınlanmaz. Yalnızca yetkili moderasyon odasına ve olay sahibinin özel kanalına iletilir.
 
+---
+
+## 9. Şehir İstatistikleri, Arama ve Kullanıcı Portali Gizliliği (Phase 10 Uygulaması)
+
+### 9.1 Şehir İstatistikleri & Isı Haritası Mahremiyeti
+1. **Afet ve Risk Yanılsamasının Önlenmesi:**
+   - Şehirdeki bildirim yoğunluğu, doğrudan o bölgenin tehlikeli veya riskli olduğu anlamına gelmez (daha çok bildirim yapan aktif vatandaş varlığı olabilir).
+   - Bu nedenle istatistik ve ısı haritası arayüzlerinde zorunlu olarak şu açıklama yer alır:
+     > *"İstatistikler ve yoğunluk haritası ŞehirNabız üzerinde yayınlanan kullanıcı bildirimlerine dayanmaktadır; tüm gerçek olayların eksiksiz kaydını temsil etmez."*
+2. **Uzamsal Izgara ile Mahremiyet Koruma:**
+   - Isı haritasında tekil kullanıcı koordinatları doğrudan haritaya basılmaz; PostGIS seviyesinde 3 ondalık basamak (~110m) ızgara kutularına toplanarak ham konumlar kümülatif ağırlığa dönüştürülür.
+   - Böylece harita üzerindeki ısı lekelerinden belirli bir kişinin ev veya iş yerinin tam koordinatı deşifre edilemez.
+
+### 9.2 Kamusal Arama Gizlilik Kalkanı
+1. **Kamusal Olmayan Olayların İzolasyonu:**
+   - Kamusal arama (`GET /api/v1/events/search`) sorgularında veritabanı düzeyinde filtreleme uygulanır (`status IN ('ACTIVE', 'RESOLVED', 'DISPUTED')`).
+   - İncelenmekte olan (`PENDING_REVIEW`) veya moderatörlerce reddedilen (`REJECTED`) olaylar kamusal arama sonuçlarına kesinlikle dahil edilmez.
+2. **Karakter ve Hız Sınırı:**
+   - Veritabanı kaynak tüketimini ve crawling saldırılarını önlemek için arama sorguları en az 2 karakter olmalıdır.
+   - Arama uç noktası rate limiting zırhı ile korunur.
+
+### 9.3 Kullanıcı Portali ve "Bildirimlerim" İzolasyonu
+1. **Yazar Bazlı Veri Yalıtımı (`GET /api/v1/users/me/events`):**
+   - Kullanıcı yalnızca kendi kimliğiyle (`userId = currentUser.id`) açtığı olayları görebilir.
+   - Başka kullanıcıların incelenmekte olan veya reddedilmiş olaylarına bu uç noktadan veya arama üzerinden erişilemez.
+2. **Güvenli Moderasyon Red Gerekçesi Gösterimi:**
+   - Reddedilen olaylar için moderatörün girdiği gerekçe (`rejectionReason`) yalnızca olay sahibine gösterilir.
+   - Hassas moderatör iç notları arındırılır; kullanıcıya rehberlik eden yapıcı red gerekçesi sunulur.
+
+### 9.4 Ayarlar ve Tercih Yönetimi
+1. **Varsayılan Kapalı Konum Bildirimi:**
+   - `nearbyEvents` ayarı sunucuda ve istemcide varsayılan olarak kapalıdır; rıza olmadan konum takibi yapılmaz.
+2. **Oturum Kapatma & Veri Temizliği:**
+   - Kullanıcı ayarlar veya profil ekranından çıkış yaptığında SecureStore'daki tokenlar temizlenir, sunucudaki push token pasife alınır ve yerel önbellek sıfırlanır.
+

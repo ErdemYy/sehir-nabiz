@@ -356,3 +356,110 @@ CREATE TABLE user_notification_preferences (
     "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 ```
+
+---
+
+## 4. Phase 10: Şehir Analitiği, Isı Haritası ve Kullanıcı Portali Modelleri
+
+Phase 10 kapsamında yeni bir DDL tablosu eklenmemiştir; mevcut `events`, `event_feedbacks`, `categories` ve `users` tabloları üzerinde yüksek performanslı uzamsal ve ilişkisel sorgular, PostGIS ızgara agregasyonu ve Redis önbellekleme kullanılmıştır.
+
+### 4.1. Şehir İstatistik Modelleri (StatsOverviewDto)
+```typescript
+export interface CategoryStatDto {
+  categoryId: string;
+  categoryName: string;
+  categoryCode: string;
+  count: number;
+  percentage: number;
+}
+
+export interface TimelineStatDto {
+  date: string;       // YYYY-MM-DD
+  count: number;
+}
+
+export interface DistrictStatDto {
+  district: string;
+  count: number;
+  percentage: number;
+}
+
+export interface StatsOverviewDto {
+  city: string;
+  period: '24h' | '7d' | '30d' | 'all';
+  totalEvents: number;
+  resolvedEvents: number;
+  activeEvents: number;
+  disputedEvents: number;
+  resolutionRate: number;      // 0.0 - 1.0
+  categories: CategoryStatDto[];
+  timeline: TimelineStatDto[];
+  districts: DistrictStatDto[];
+  disclaimer: string;          // Yasal ve bilgilendirici kısıtlama notu
+}
+```
+
+### 4.2. PostGIS Isı Haritası Izgara Modeli (HeatmapResponseDto)
+PostGIS uzamsal ızgara (`ROUND(ST_X(location)::numeric, 3)`) ile ~110m hassasiyetinde toplanan ağırlıklı yoğunluk noktaları:
+```typescript
+export interface HeatmapPointDto {
+  lat: number;
+  lng: number;
+  weight: number;     // 0.1 - 1.0 normalize edilmiş yoğunluk ağırlığı
+  count: number;      // Hücre içindeki toplam bildirim sayısı
+}
+
+export interface HeatmapResponseDto {
+  points: HeatmapPointDto[];
+  totalPoints: number;
+  totalEventsRepresented: number;
+  city?: string;
+  disclaimer: string;
+}
+```
+
+### 4.3. Kullanıcı Katkı ve Olaylarım Modelleri
+```typescript
+export interface UserStatsDto {
+  reportedCount: number;
+  confirmedCount: number;
+  resolvedCount: number;
+  reputationScore: number;
+  reputationLevel: string;    // 'Yeni Katılımcı' | 'Aktif Yurttaş' | 'Güvenilir Gözlemci' | 'Şehir Muhafızı'
+}
+
+export interface MyEventResponseDto {
+  id: string;
+  title: string;
+  description: string;
+  status: EventStatus;
+  urgency: EventUrgency;
+  category: {
+    id: string;
+    code: string;
+    name: string;
+  };
+  address: string | null;
+  latitude: number;
+  longitude: number;
+  confirmationCount: number;
+  disputeCount: number;
+  rejectionReason: string | null; // Sadece yazar için güvenli moderasyon notu
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+### 4.4. Kamusal Arama Sorgu Modeli (SearchEventsDto)
+```typescript
+export interface SearchEventsDto {
+  q: string;                  // Min 2 karakter, Türkçe ILIKE arama
+  categoryId?: string;
+  status?: EventStatus;       // Kamusal filtre: Yalnızca ACTIVE, RESOLVED, DISPUTED
+  city?: string;
+  startDate?: string;
+  endDate?: string;
+  limit?: number;             // Varsayılan: 20, Maks: 100
+  cursor?: string;            // Cursor-based sayfalama
+}
+```

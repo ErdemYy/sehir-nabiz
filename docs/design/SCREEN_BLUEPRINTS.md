@@ -246,3 +246,83 @@ AppScreen (scrollable)
 │       └── Decision Buttons ("Yayınla", "Reddet (Spam)", "İhtilaflı Yap", "Çözüldü Yap")
 └── Security Shield (Yetkisiz CITIZEN erişiminde EmptyState kalkanı ve ana sayfaya dönüş)
 ```
+
+---
+
+## 8. Şehir İstatistikleri Ekranı (`/stats` — Phase 10 Uygulaması)
+
+### Ekran Amacı:
+Kullanıcıların seçilen şehir ve zaman dilimindeki kentsel olay dağılımını, haftalık eğilim grafiğini, kategori oranlarını ve ilçe yoğunluklarını incelemesi.
+
+### Bileşen Hiyerarşisi:
+```text
+AppScreen (scrollable, refreshControl)
+├── AppHeader ("Şehir İstatistikleri", Geri Butonu, Bilgi İkonu)
+├── City Filter Row (Yatay kaydırılabilir şehir çipleri: Tümü, Kayseri, İstanbul, Ankara)
+├── Period Filter Row (Zaman hapları: 24s, 7 Gün, 30 Gün, Tümü)
+├── 4x Metric Cards Grid
+│   ├── Total Events Card (BarChart3 ikonu, sayı, "Toplam Bildirim")
+│   ├── Resolved Events Card (CheckCircle2 ikonu, yeşil sayı, "Çözülen Olay")
+│   ├── Active Events Card (AlertTriangle ikonu, sarı sayı, "Aktif Olay")
+│   └── Resolution Rate Card (TrendingUp ikonu, mavi yüzde, "Çözüm Oranı")
+├── Timeline Bar Chart Card
+│   ├── Title ("Zaman Çizelgesi", Günlük Olay Eğilimi)
+│   ├── Responsive Bars Row (Her gün için dikey dinamik bar, bar yüksekliği normalize)
+│   └── Date Labels Row (GG.AA formatında etiketler)
+├── Category Distribution Card
+│   ├── Title ("Kategori Dağılımı")
+│   └── Category Progress Rows (Kategori rengi, adı, sayısı ve yatay ilerleme çubuğu)
+├── District Comparison Card
+│   ├── Title ("İlçe Yoğunluğu")
+│   └── District Rows (İlçe adı, bildirim adedi, yüzdelik bar)
+└── Disclaimer Box (Zorunlu sorumluluk reddi metni)
+```
+
+---
+
+## 9. "Bildirimlerim" Ekranı (`/profile/my-events` — Phase 10 Uygulaması)
+
+### Ekran Amacı:
+Kullanıcının açtığı tüm olayları (bekleyen, onaylanan, reddedilen, çözülen) takip etmesi ve reddedilen olaylar için moderatörün bıraktığı gerekçeyi güvenle incelemesi.
+
+### Bileşen Hiyerarşisi:
+```text
+AppScreen (scrollable, refreshControl)
+├── AppHeader ("Bildirdiğim Olaylar", Geri Butonu)
+├── Status Filter Scroll (Tümü, Yayında, İnceleniyor, Çözüldü, Reddedildi)
+├── Events List
+│   ├── Event Card (N adet)
+│   │   ├── Header (Kategori Rozeti, StatusBadge, Tarih)
+│   │   ├── Title & Description Preview
+│   │   ├── Feedback Counts Row (Gördüm ve İtiraz sayaçları)
+│   │   ├── Rejection Reason Box (Yalnızca status === 'REJECTED' durumunda, kırmızı kalkan ikonu ve moderatör notu)
+│   │   └── "Detayları Gör" Navigasyon Butonu (`/events/:id`)
+│   └── EmptyState (Seçilen filtrede olay bulunmadığında veya oturum açılmadığında)
+└── AuthModal (Giriş yapmamış kullanıcılar için)
+```
+
+---
+
+## 10. Uygulama Ayarları Ekranı (`/profile/settings` — Phase 10 Uygulaması)
+
+### Ekran Amacı:
+Tema görünümü, anlık ve e-posta bildirim tercihleri, konum gizliliği politikası ve uygulama sürüm bilgilerinin yönetilmesi.
+
+### Bileşen Hiyerarşisi:
+```text
+AppScreen (scrollable)
+├── AppHeader ("Ayarlar", Geri Butonu)
+├── Section ("Görünüm")
+│   └── Theme Selector Segmented Row (Açık, Koyu, Sistem butonları)
+├── Section ("Bildirim Tercihleri")
+│   ├── Switch Row ("Takip Ettiğim Olaylar")
+│   ├── Switch Row ("Teyit Verdiğim Olaylar")
+│   ├── Switch Row ("Bildirdiğim Olaylar")
+│   ├── Switch Row ("Yakınımdaki Gelişmeler" - Konum bazlı)
+│   └── Switch Row ("Push Bildirimleri")
+├── Section ("Gizlilik ve Güvenlik")
+│   └── Info Card (150m konum bulanıklaştırma, EXIF temizliği ve KVKK taahhüdü)
+├── Section ("Hakkında")
+│   └── App Info Card (Logo, Versiyon: v1.0.0-mvp, Açık Kaynak Lisansı)
+└── Logout Button (Hesaptan Güvenli Çıkış)
+```

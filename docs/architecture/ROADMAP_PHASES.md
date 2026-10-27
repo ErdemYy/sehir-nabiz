@@ -58,9 +58,18 @@ Bu belge, projenin kontrollü, test edilebilir ve adım adım ilerleyen gelişti
 - **Kapsam:** NestJS WebSocket Gateway (`/realtime`), Redis Pub/Sub Adapter (`RedisIoAdapter`), coğrafi abonelik odaları (`events:global`, `subscribe_bbox`), güvenli moderatör odası (`moderation:queue`), `serverEventId` deduplication ve artan monotonic `events.version` sıralama koruması, reconnect sonrası REST snapshot mutabakatı (reconciliation). PostgreSQL `user_notifications`, `device_push_tokens`, `user_notification_preferences` varlıkları ve `1740000004000-CreateNotificationsAndPushTokens.ts` migration'ı. REST Bildirim API'leri (`GET /notifications`, `GET /unread-count`, `PATCH /:id/read`, `PATCH /read-all`, `GET/PATCH /preferences`, `POST/DELETE /devices/push-token`). Expo Push altyapısı, Android bildirim kanalı ve dev simülasyon adaptörü. Mobil Bildirimler sekmesi (`app/(tabs)/notifications.tsx`), Harita Canlı Bağlantı Rozeti (`ConnectionStatusBadge`), `useRealtimeEvents` kancası ve Moderatör canlı akışı.
 - **Doğrulama:** 221 testin tamamı (147 backend, 57 mobile, 11 token, 6 shared) %100 yeşil; sıfır hata. Rapor: [PHASE_9_REPORT.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/PHASE_9_REPORT.md). Mimariler: [REALTIME_ARCHITECTURE.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/architecture/REALTIME_ARCHITECTURE.md), [PUSH_NOTIFICATIONS_GUIDE.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/architecture/PUSH_NOTIFICATIONS_GUIDE.md).
 
-### Phase 10: Şehir İstatistikleri, Test Raporu & MVP Lansmanı
-- **Kapsam:** İl/ilçe bazlı olay yoğunluğu ısı haritası ve istatistik sayfası (`GET /stats/city`). Uçtan uca regresyon testleri, performans denetimi ve MVP teslim raporu.
-- **Doğrulama:** Test otomasyon raporu ve stabil çalışan release APK/IPA hazır bulunuşluğu.
+### Phase 10: Şehir İstatistikleri, Isı Haritası, Kullanıcı Portali & MVP Sürümü (TAMAMLANDI)
+- **Kapsam:** Şehir analitiği ve PostGIS uzamsal ızgara (spatial binning ~110m) agregasyonu ile ısı haritası (`GET /api/v1/stats/overview`, `GET /api/v1/stats/heatmap`). Redis 60s önbellekleme ve güvenli istatistik feragatnamesi ("Yalnızca ŞehirNabız bildirimlerini yansıtır"). MapLibre donanım ivmeli `heatmap` katmanı entegrasyonu, harita ve akış ekranı giriş noktaları. Türkçe `ILIKE` ve tam gizlilik kalkanlı kamusal arama motoru (`GET /api/v1/events/search`). Profesyonel profil ekranı, gerçek backend verileriyle kullanıcı katkı metrikleri (`GET /api/v1/users/me/stats`), red gerekçesi korumalı "Bildirimlerim" ekranı (`GET /api/v1/users/me/events` & `app/profile/my-events.tsx`). Ayrı profesyonel Ayarlar ekranı (`app/profile/settings.tsx`), Light/Dark/System tema seçimi, gerçek bildirim tercihleri entegrasyonu (`GET/PATCH /notifications/preferences`), gizlilik beyanı ve sürüm bilgisi.
+- **Doğrulama:** 256 testin tamamı (168 backend, 70 mobil, 11 token, 7 shared) %100 yeşil; sıfır hata. Docker Compose servisleri, PostGIS sorguları ve TypeScript Strict Mode doğrulanmış MVP sürümü tamamlandı. Rapor: [PHASE_10_REPORT.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/PHASE_10_REPORT.md).
+
+---
+
+## 2. Gelecek Fazlar ve Öneriler (Post-MVP / Phase 11+)
+1. **Transactional Outbox & Reliable Event Messaging:** Gerçek zamanlı bildirim ve olay yayını sırasında veritabanı ile Redis/WebSocket arasında iki fazlı taahhüt güvenliği (Transactional Outbox Pattern) entegrasyonu.
+2. **PostGIS MVT (Mapbox Vector Tile) Pipeline:** Isı haritası ve yoğun veri kümeleme için doğrudan PostgreSQL `ST_AsMVT` ile dinamik vektör karo sunumu.
+3. **Belediye & Kurum Yönetim Portalı (Gov Dashboard):** Yetkili kurumlar için web tabanlı olay doğrulama, müdahale ekiplerini yönlendirme ve resmi duyuru paneli.
+4. **Çevrimdışı Harita Karo Önbellekleme:** Afet ve bağlantı kesintisi durumlarında kullanılmak üzere çevrimdışı OpenFreeMap karo paketi (MBTiles) desteği.
+5. **Gelişmiş Makine Öğrenimi / LLM Moderasyon:** Olay başlık ve açıklamalarındaki küfür, kişisel veri (KVKK) ve spam içeriklerin LLM tabanlı otomatik ön incelemeye alınması.
 
 ---
 

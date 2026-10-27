@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Clock, MapPin, ThumbsUp } from 'lucide-react-native';
+import { Clock, MapPin, ThumbsUp, BarChart3, ChevronRight } from 'lucide-react-native';
 import {
   AppScreen,
   AppHeader,
@@ -67,6 +67,50 @@ export default function FeedScreen(): React.ReactElement {
         title="Şehir Akışı"
         subtitle="Çevrenizde gerçekleşen son doğrulanmış olaylar"
       />
+
+      {/* Şehir İstatistikleri Giriş Kartı (Phase 10) */}
+      <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xs }}>
+        <TouchableOpacity
+          onPress={() => router.push('/stats')}
+          accessibilityRole="button"
+          accessibilityLabel="Şehir İstatistikleri Ekranını Aç"
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            backgroundColor: theme.surfaceElevated,
+            borderRadius: 16,
+            paddingHorizontal: spacing.md,
+            paddingVertical: spacing.md - 2,
+            borderWidth: 1,
+            borderColor: theme.border,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1 }}>
+            <View
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                backgroundColor: theme.primary + '18',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <BarChart3 size={18} color={theme.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <AppText variant="bodyM" weight="semibold">
+                Şehir İstatistikleri
+              </AppText>
+              <AppText variant="caption" color={theme.textSecondary} numberOfLines={1}>
+                Olay yoğunluğu ve kategori analizlerini inceleyin
+              </AppText>
+            </View>
+          </View>
+          <ChevronRight size={18} color={theme.textSecondary} />
+        </TouchableOpacity>
+      </View>
 
       <View
         style={{

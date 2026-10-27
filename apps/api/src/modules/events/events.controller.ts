@@ -24,6 +24,7 @@ import {
   BBoxEventsQuerySchema,
   UpdateEventStatusSchema,
   CreateFeedbackSchema,
+  SearchEventsQuerySchema,
 } from '@sehir-nabiz/shared';
 import type {
   JwtPayload,
@@ -37,6 +38,7 @@ import {
   BBoxEventsDto,
   UpdateEventStatusDto,
   CreateFeedbackDto,
+  SearchEventsDto,
 } from './dto';
 
 @Controller('events')
@@ -85,6 +87,21 @@ export class EventsController {
   ): Promise<PaginatedEventsResponse> {
     const user = (req.user as JwtPayload) || undefined;
     return this.eventsService.findBBox(query, user);
+  }
+
+  /**
+   * Olay Arama (GET /events/search)
+   * Metin, kategori, şehir, ilçe ve tarih filtreli arama
+   */
+  @Get('search')
+  @UseGuards(OptionalJwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async searchEvents(
+    @Req() req: Request,
+    @Query(new ZodValidationPipe(SearchEventsQuerySchema)) query: SearchEventsDto,
+  ): Promise<PaginatedEventsResponse> {
+    const user = (req.user as JwtPayload) || undefined;
+    return this.eventsService.searchEvents(query, user);
   }
 
   /**

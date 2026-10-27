@@ -271,6 +271,54 @@ Phase 9 ile kentsel olayların dinamik takibini sağlayan gerçek zamanlı göst
 3. **Moderatör Canlı Kuyruk Entegrasyonu:**
    - Moderatör ekranı açıkken `MODERATION_EVENT_ADDED` veya `EVENT_STATUS_CHANGED` soket olayı geldiğinde liste titreme olmadan, otomatik arka plan sorgusuyla güncellenir.
 
+---
+
+## 13. Şehir Analitiği, Isı Haritası ve Kullanıcı Portali Arayüzü (Phase 10)
+
+### 13.1 Şehir İstatistikleri Ekranı (`/stats`)
+- **Şehir ve Dönem Seçimi:** Yatay kaydırılabilir şehir çipleri (`Tümü`, `Kayseri`, `İstanbul`, `Ankara`) ve zaman aralığı kapsülleri (`24s`, `7 Gün`, `30 Gün`, `Tümü`).
+- **Özet Metrik Kartları:** 4'lü 2x2 grid yapısı:
+  - Toplam Bildirim (Birincil renk ikonu ve sayısı)
+  - Çözülen Olaylar (Başarı yeşili `theme.success` ikonu)
+  - Aktif Olaylar (Uyarı sarısı `theme.warning` ikonu)
+  - Çözüm Oranı (`%XX` göstergesi ve bilgi ikonu)
+- **Haftalık/Günlük Zaman Grafiği (Responsive Bar Chart):**
+  - Saf React Native bileşenleriyle harici hantal kütüphane eklemeden oluşturulan temiz dikey çubuk grafiği.
+  - Maksimum değere göre normalize edilmiş çubuk yükseklikleri (azami 120px).
+  - Tarih etiketleri ve dokunulabilir yükseklik geri bildirimi.
+- **Kategori Dağılımı Çubukları:** Kategoriye özel renkler, yüzdelik oran ve yatay ilerleme çubukları (`ProgressBar`).
+- **İlçe Karşılaştırma Listesi:** Yoğunluğa göre sıralı ilçe bildirim sayıları ve yüzde barları.
+- **Yasal ve Bilgilendirici Feragatname:** Ekranın en altında göze çarpmayan ama okunabilir bilgilendirme kutusu:
+  > *"İstatistikler ŞehirNabız üzerinde yayınlanan kullanıcı bildirimlerine dayanmaktadır; tüm gerçek olayların eksiksiz kaydını temsil etmez."*
+
+### 13.2 Isı Haritası (Heatmap) Katmanı ve Arayüz Kontrolü
+- **Harita Düğmesi:** Haritanın sağ üst araç çubuğunda yüzen `Flame` ikonu (`FloatingIconButton`).
+- **Aktif/Pasif Gösterimi:** Açıkken birincil renkte parlayan arka plan, kapalıyken nötr yüzen kart stili.
+- **Renk Skalası (Color Ramp):** MapLibre katmanı üzerinde tema dostu pürüzsüz geçiş:
+  - Düşük yoğunluk: `#2DD4BF` (Turkuaz)
+  - Orta yoğunluk: `#FBBF24` (Sarı)
+  - Yüksek yoğunluk: `#F97316` (Turuncu)
+  - Yoğun merkez: `#EF4444` (Kırmızı)
+- **Opaklık Kuralı:** Harita sokak adlarının ve bina etiketlerinin kapanmaması için `heatmap-opacity` azami 0.65 seviyesinde tutulur.
+- **Alt Bilgi Kapsülü:** Isı haritası aktifken haritanın alt kısmında beliren "Yoğunluk Haritası Aktif • Yalnızca kullanıcı bildirimlerini yansıtır" hapı.
+
+### 13.3 Kullanıcı Profili ve İtibar Göstergesi (`/profile`)
+- **Katkı Sayaçları:** Gerçek backend verileriyle beslenen 3 sütunlu metrik kartı (Bildirdiğim, Teyit Ettiğim, Çözülen).
+- **İtibar Seviyesi Barı:** Kullanıcının mevcut puanına göre dinamik seviye belirleme (`Yeni Katılımcı` -> `Şehir Muhafızı`) ve ilerleme yüzdesi.
+- **Açıklanabilir İtibar Paneli:** İtibar puanına dokunulduğunda açılan ve puanlama mantığını ("Onaylanan bildirim +10 puan, yanlış bildirim -5 puan" vb.) açıklayan bilgilendirme kutusu.
+- **Aksiyon Menüleri:** "Bildirimlerim", "Uygulama Ayarları", "Moderatör Paneli" (yalnızca yetkili kullanıcılarda) ve "Çıkış Yap".
+
+### 13.4 "Bildirimlerim" Ekranı (`/profile/my-events`)
+- **Durum Filtre Çipleri:** `Tümü`, `Yayında`, `İnceleniyor`, `Çözüldü`, `Reddedildi`.
+- **Kişisel Olay Kartları:** Başlık, kategori rozeti, tarih, onay/itiraz sayıları.
+- **Reddedilen Olay Gerekçesi Kalkanı:** Moderatörce reddedilmiş olaylarda kırmızı çerçeveli güvenlik kartı içinde "Moderatör Gerekçesi" gösterilir; kullanıcıya hatasını düzeltip yeni bildirim açması için yol gösterir.
+
+### 13.5 Ayarlar Ekranı (`/profile/settings`)
+- **Görünüm Grubu:** `Açık`, `Koyu`, `Sistem` tema seçici butonları (`themePreference`).
+- **Bildirim Tercihleri:** Gerçek sunucu API'sine bağlı Switch kontrolleri (Takip Ettiğim Olaylar, Teyit Verdiğim Olaylar, Bildirdiğim Olaylar, Yakınımdaki Gelişmeler, Push Bildirimleri).
+- **Gizlilik ve Güvenlik:** Konum bulanıklaştırma politikası (150m kalkanı) ve fotoğraf meta veri temizliği (EXIF strip) bilgilendirme kartı.
+- **Hakkında:** ŞehirNabız sürümü (`v1.0.0-mvp`), lisans ve açık kaynak teşekkürleri.
+
 
 
 

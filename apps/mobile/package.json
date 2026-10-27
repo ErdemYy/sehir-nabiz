@@ -11,7 +11,7 @@
     "web": "expo start --web",
     "lint": "echo \"Mobile linting passed\"",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "node --test test/navigation.test.js test/map.test.js test/phase_6_5.test.js test/phase_7.test.js test/phase_8.test.js test/phase_9.test.js",
+    "test": "node --test test/navigation.test.js test/map.test.js test/phase_6_5.test.js test/phase_7.test.js test/phase_8.test.js test/phase_9.test.js test/phase_10.test.js",
     "clean": "node -e \"try{require('fs').rmSync('.expo',{recursive:true,force:true})}catch(e){}\""
   },
   "dependencies": {

@@ -13,6 +13,8 @@ import { MediaModule } from './modules/media/media.module';
 import { ModerationModule } from './modules/moderation/moderation.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { StatsModule } from './modules/stats/stats.module';
+import { UsersModule } from './modules/users/users.module';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 
 @Module({
@@ -36,6 +38,8 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     StorageModule,
     RealtimeModule,
     NotificationsModule,
+    StatsModule,
+    UsersModule,
     AuthModule,
     CategoriesModule,
     EventsModule,

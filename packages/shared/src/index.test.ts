@@ -152,3 +152,53 @@ test('Phase 9: NotificationType, PushPlatform, Realtime enums ve Push şemaları
   assert.equal(query.unreadOnly, true);
 });
 
+test('Phase 10: StatsOverviewQuerySchema, HeatmapQuerySchema ve SearchEventsQuerySchema doğrulamalı', () => {
+  const {
+    StatsOverviewQuerySchema,
+    HeatmapQuerySchema,
+    SearchEventsQuerySchema,
+    MyEventsQuerySchema,
+  } = require('./index');
+
+  // Stats Overview varsayılanları
+  const statsQuery = StatsOverviewQuerySchema.parse({});
+  assert.equal(statsQuery.city, 'Kayseri');
+  assert.equal(statsQuery.period, '7d');
+
+  // Heatmap koordinat sınırları
+  const validHeatmap = {
+    minLng: 35.4,
+    minLat: 38.6,
+    maxLng: 35.6,
+    maxLat: 38.8,
+    period: '24h',
+  };
+  const heatmapRes = HeatmapQuerySchema.safeParse(validHeatmap);
+  assert.equal(heatmapRes.success, true);
+
+  const invalidHeatmap = {
+    minLng: -195, // geçersiz boylam
+    minLat: 38.6,
+    maxLng: 35.6,
+    maxLat: 38.8,
+  };
+  const invalidHeatmapRes = HeatmapQuerySchema.safeParse(invalidHeatmap);
+  assert.equal(invalidHeatmapRes.success, false);
+
+  // Arama şeması
+  const searchValid = SearchEventsQuerySchema.parse({
+    q: 'Kayseri Tramvay',
+    limit: '25',
+  });
+  assert.equal(searchValid.q, 'Kayseri Tramvay');
+  assert.equal(searchValid.limit, 25);
+
+  // Çok kısa arama terimi (< 2)
+  const searchShort = SearchEventsQuerySchema.safeParse({ q: 'a' });
+  assert.equal(searchShort.success, false);
+
+  // MyEvents şeması
+  const myEventsValid = MyEventsQuerySchema.parse({ limit: '10' });
+  assert.equal(myEventsValid.limit, 10);
+});
+

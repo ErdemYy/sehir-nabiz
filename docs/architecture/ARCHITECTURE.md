@@ -218,3 +218,33 @@ Tüm coğrafi veriler WGS 84 (`SRID 4326`) projeksiyon sisteminde tutulur.
    - Geliştirme ortamında kontrollü simülasyon adaptörü; canlıda Expo Push API ve `DeviceNotRegistered` token temizliği.
    - Detaylı mimari belgeleri: [REALTIME_ARCHITECTURE.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/architecture/REALTIME_ARCHITECTURE.md) ve [PUSH_NOTIFICATIONS_GUIDE.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/architecture/PUSH_NOTIFICATIONS_GUIDE.md).
 
+---
+
+## 9. Şehir Analitiği, Isı Haritası ve Arama Mimarisi (Phase 10 Uygulaması)
+
+### 9.1 Şehir İstatistikleri & Dağıtık Önbellekleme (`StatsModule`)
+- **Şehir Özeti (`GET /api/v1/stats/overview`):**
+  - Seçilen şehir ve zaman dilimine (`24h`, `7d`, `30d`, `all`) göre toplam, çözülen, aktif ve itirazlı olay metrikleri.
+  - Kategori bazında olay sayısı ve yüzdelik dağılımı.
+  - Günlük zaman çizelgesi kırılımı (`DATE_TRUNC('day', created_at)`).
+  - İlçe bazlı karşılaştırma ve bildirim yoğunluğu tablosu.
+  - Yüksek trafik altında veritabanı yükünü asgariye indirmek için 60 saniyelik Redis önbelleklemesi (`stats:overview:<city>:<period>`).
+  - **Sorumluluk Reddi (Disclaimer):** Gerçek risk ve afet algısını manipüle etmemek adına tüm yanıtlarda zorunlu kentsel bildirim kısıtlama notu eklenir.
+
+### 9.2 PostGIS Isı Haritası (Heatmap) ve Uzamsal Izgara Agregasyonu
+- **Sınırlı Veri Yanılsamasının Önlenmesi:**
+  - Haritada yalnızca ilk 300 olayı ham nokta olarak çizip bunu "şehir ısı haritası" olarak sunmak yanıltıcıdır.
+  - Bunun yerine PostGIS seviyesinde uzamsal ızgara agregasyonu (`ROUND(ST_X(location)::numeric, 3)`) kullanılarak ~110 metre hassasiyetindeki hücreler toplanır (`COUNT(*)`).
+  - Hücreler `weight` (0.1 - 1.0) değerine normalize edilir ve donanım ivmeli MapLibre `heatmap` katmanı ile çizdirilir.
+  - `heatmap-opacity` değeri azami 0.65 ile sınırlandırılarak alt harita etiketlerinin okunabilirliği garanti altına alınır.
+
+### 9.3 Kamusal Arama Motoru (`EventsModule.searchEvents`)
+- **Metin Sorgulama:** Başlık ve açıklamalarda Türkçe karakter duyarsız (`ILIKE %q%`) arama.
+- **Gizlilik Yalıtımı:** Kamusal arama yalnızca onaylanmış kamusal durumlardaki (`ACTIVE`, `RESOLVED`, `DISPUTED`) olayları listeler; `PENDING_REVIEW` veya `REJECTED` olaylar asla genel aramada çıkmaz.
+- **Performans:** Minimum 2 karakter arama sınırı, kategori ve tarih filtreleri, cursor-based sayfalama.
+
+### 9.4 Kullanıcı Portali & Bildirimlerim (`UsersModule`)
+- **Kullanıcı Katkı Metrikleri (`GET /api/v1/users/me/stats`):** Kullanıcının gerçek bildirdiği, teyit ettiği ve çözülen olay sayıları ile itibar kademesi (`Yeni Katılımcı`, `Aktif Yurttaş`, `Güvenilir Gözlemci`, `Şehir Muhafızı`).
+- **Bildirimlerim Ekranı (`GET /api/v1/users/me/events`):** Kullanıcının kendi gönderdiği tüm olayları (bekleyen, onaylanan, çözülen, reddedilen) görmesini sağlar. Reddedilen olaylar için moderatörün bıraktığı `rejectionReason` güvenle gösterilir; başkalarının olaylarına erişim kesinlikle engellenir.
+- **Ayrı Ayarlar Ekranı:** Tema seçimi (Light/Dark/System), bildirim tercihleri anahtarları (`followedEvents`, `confirmedEvents`, `reportedEvents`, `nearbyEvents`, `pushEnabled`), gizlilik bilgilendirmesi ve sürüm bilgisi.
+

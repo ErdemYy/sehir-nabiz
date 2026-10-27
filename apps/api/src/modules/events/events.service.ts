@@ -37,6 +37,7 @@ import {
   UpdateEventStatusDto,
   CreateFeedbackDto,
   ModerationEventsQueryDto,
+  SearchEventsDto,
 } from './dto';
 
 @Injectable()
@@ -401,6 +402,153 @@ export class EventsService {
     if (hasMore && itemsRows.length > 0) {
       const last = itemsRows[itemsRows.length - 1];
       nextCursor = Buffer.from(`${new Date(last.createdAt).toISOString()}_${last.id}`).toString('base64');
+    }
+
+    const items: EventResponseDto[] = itemsRows.map((r: any) => this.mapRawToDto(r));
+
+    return {
+      items,
+      nextCursor,
+      hasMore,
+    };
+  }
+
+  /**
+   * Olay Arama (GET /events/search)
+   * Başlık, açıklama, adres ve ilçe alanlarında Türkçe uyumlu ve gizlilik kalkanlı arama
+   */
+  async searchEvents(
+    query: SearchEventsDto,
+    requestingUser?: JwtPayload,
+  ): Promise<PaginatedEventsResponse> {
+    const rawQ = (query.q || '').trim();
+    if (rawQ.length < 2) {
+      throw new BadRequestException('Arama terimi en az 2 karakter olmalıdır.');
+    }
+
+    const limit = Math.min(Math.max(query.limit || 20, 1), 50);
+    const isModerator =
+      requestingUser &&
+      (requestingUser.role === UserRole.MODERATOR || requestingUser.role === UserRole.ADMIN);
+
+    const params: unknown[] = [];
+    let paramIndex = 1;
+
+    // Arama koşulu: Başlık, açıklama, adres, ilçe (Türkçe duyarsız ILIKE)
+    const searchParam = `%${rawQ}%`;
+    const searchClause = `(
+      e.title ILIKE $${paramIndex}
+      OR e.description ILIKE $${paramIndex}
+      OR e."addressText" ILIKE $${paramIndex}
+      OR e.district ILIKE $${paramIndex}
+    )`;
+    params.push(searchParam);
+    paramIndex++;
+
+    // Gizlilik Kalkanı: Yalnızca kamuya açık olaylar (ACTIVE, DISPUTED, RESOLVED)
+    let statusClause = `e.status IN ('ACTIVE', 'DISPUTED', 'RESOLVED')`;
+    if (isModerator) {
+      statusClause = `e.status != 'REJECTED'`;
+    }
+
+    // Kategori filtresi
+    let categoryClause = '';
+    if (query.category) {
+      categoryClause = `AND (c.code = $${paramIndex} OR c.id::text = $${paramIndex})`;
+      params.push(query.category);
+      paramIndex++;
+    }
+
+    // Şehir filtresi
+    let cityClause = '';
+    if (query.city) {
+      cityClause = `AND e.city ILIKE $${paramIndex}`;
+      params.push(`%${query.city.trim()}%`);
+      paramIndex++;
+    }
+
+    // İlçe filtresi
+    let districtClause = '';
+    if (query.district) {
+      districtClause = `AND e.district ILIKE $${paramIndex}`;
+      params.push(`%${query.district.trim()}%`);
+      paramIndex++;
+    }
+
+    // Tarih filtreleri
+    let dateClause = '';
+    if (query.startDate) {
+      dateClause += ` AND e."createdAt" >= $${paramIndex}`;
+      params.push(new Date(query.startDate));
+      paramIndex++;
+    }
+    if (query.endDate) {
+      dateClause += ` AND e."createdAt" <= $${paramIndex}`;
+      params.push(new Date(query.endDate));
+      paramIndex++;
+    }
+
+    // Cursor Pagination (createdAt + id)
+    let cursorClause = '';
+    if (query.cursor) {
+      try {
+        const decoded = Buffer.from(query.cursor, 'base64').toString('utf8');
+        const [cursorDate, cursorId] = decoded.split('_');
+        if (cursorDate && cursorId) {
+          cursorClause = `
+            AND (
+              e."createdAt" < $${paramIndex}
+              OR (e."createdAt" = $${paramIndex} AND e.id > $${paramIndex + 1})
+            )
+          `;
+          params.push(new Date(cursorDate), cursorId);
+          paramIndex += 2;
+        }
+      } catch (err) {
+        this.logger.warn(`Geçersiz search cursor: ${query.cursor}`);
+      }
+    }
+
+    params.push(limit + 1);
+    const limitParam = `$${paramIndex}`;
+
+    const rawRows = await this.dataSource.query(
+      `
+      SELECT 
+        e.id, e.title, e.description, e.severity, e.status,
+        e."addressText", e.city, e.district, e."isDemo",
+        e."confirmationCount", e."denialCount", e."reliabilityScore",
+        e."createdAt", e."updatedAt", e."expiresAt", e."resolvedAt",
+        ST_X(e.location) AS longitude,
+        ST_Y(e.location) AS latitude,
+        c.id AS category_id, c.code AS category_code, c.name_tr AS category_name_tr,
+        c.description_tr AS category_description_tr, c.icon AS category_icon,
+        c.color_hex AS category_color_hex, c.default_duration_hours AS category_default_duration_hours,
+        u.id AS author_id, u."displayName" AS author_display_name, u."reputationScore" AS author_reputation_score
+      FROM "events" e
+      INNER JOIN "categories" c ON c.id = e."categoryId"
+      INNER JOIN "users" u ON u.id = e."authorId"
+      WHERE ${searchClause}
+        AND ${statusClause}
+        ${categoryClause}
+        ${cityClause}
+        ${districtClause}
+        ${dateClause}
+        ${cursorClause}
+      ORDER BY e."createdAt" DESC, e.id ASC
+      LIMIT ${limitParam};
+      `,
+      params,
+    );
+
+    const hasMore = rawRows.length > limit;
+    const itemsRows = hasMore ? rawRows.slice(0, limit) : rawRows;
+
+    let nextCursor: string | null = null;
+    if (hasMore && itemsRows.length > 0) {
+      const last = itemsRows[itemsRows.length - 1];
+      const rawCursor = `${new Date(last.createdAt).toISOString()}_${last.id}`;
+      nextCursor = Buffer.from(rawCursor, 'utf8').toString('base64');
     }
 
     const items: EventResponseDto[] = itemsRows.map((r: any) => this.mapRawToDto(r));

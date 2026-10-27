@@ -663,4 +663,78 @@ describe('EventsService (Unit Tests)', () => {
       expect(savedLog.referenceId).toBe('event-uuid-1');
     });
   });
+
+  describe('Phase 10: Olay Arama (searchEvents)', () => {
+    it('2 karakterden kısa arama teriminde BadRequestException fırlatmalı', async () => {
+      await expect(service.searchEvents({ q: 'a' })).rejects.toThrow(BadRequestException);
+    });
+
+    it('Türkçe karakterler içeren aramalarda eşleşen sonuçları dönmeli', async () => {
+      dataSource.query = vi.fn().mockResolvedValue([
+        {
+          id: 'event-search-1',
+          title: 'Çamlıca Caddesi Su Patlağı',
+          description: 'İncesu mevkiinde ana şebeke borusunda arıza meydana geldi.',
+          severity: EventSeverity.HIGH,
+          status: EventStatus.ACTIVE,
+          addressText: 'Çamlıca Mah. İncesu',
+          city: 'Kayseri',
+          district: 'İncesu',
+          confirmationCount: 5,
+          denialCount: 0,
+          reliabilityScore: '1.2',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          expiresAt: new Date(),
+          latitude: 38.72,
+          longitude: 35.48,
+          category_id: mockCategory.id,
+          category_code: mockCategory.code,
+          category_name_tr: mockCategory.nameTr,
+          category_description_tr: mockCategory.descriptionTr,
+          category_icon: mockCategory.icon,
+          category_color_hex: mockCategory.colorHex,
+          category_default_duration_hours: mockCategory.defaultDurationHours,
+          author_id: mockUser.id,
+          author_display_name: mockUser.displayName,
+          author_reputation_score: mockUser.reputationScore,
+        },
+      ]);
+
+      const result = await service.searchEvents({ q: 'Çamlıca' });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]?.title).toContain('Çamlıca');
+      expect(dataSource.query).toHaveBeenCalledWith(
+        expect.stringContaining('e.title ILIKE $1'),
+        expect.arrayContaining(['%Çamlıca%']),
+      );
+    });
+
+    it('arama sorgusu boş sonuç verdiğinde boş dizi dönmeli', async () => {
+      dataSource.query = vi.fn().mockResolvedValue([]);
+
+      const result = await service.searchEvents({ q: 'VarOlmayanKelime' });
+
+      expect(result.items).toHaveLength(0);
+      expect(result.hasMore).toBe(false);
+      expect(result.nextCursor).toBeNull();
+    });
+
+    it('arama parametrelerinde kategori, ilçe ve tarih filtrelerini querye eklemeli', async () => {
+      dataSource.query = vi.fn().mockResolvedValue([]);
+
+      await service.searchEvents({
+        q: 'trafik',
+        category: 'TRAFFIC' as any,
+        district: 'Melikgazi',
+        startDate: '2026-10-01T00:00:00Z',
+      });
+
+      expect(dataSource.query).toHaveBeenCalledWith(
+        expect.stringContaining('AND (c.code = $2 OR c.id::text = $2)'),
+        expect.anything(),
+      );
+    });
+  });
 });

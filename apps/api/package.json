@@ -10,7 +10,7 @@
     "start:prod": "node dist/main",
     "lint": "echo \"NestJS API linting passed\"",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run",
+    "test": "vitest run --fileParallelism=false",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "migration:run": "typeorm migration:run -d dist/database/data-source.js",

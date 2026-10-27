@@ -1,7 +1,16 @@
-import React from 'react';
-import { View, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { View, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Moon, Sun, Monitor, Shield, Sparkles, ChevronRight, MapPin, ShieldAlert } from 'lucide-react-native';
+import {
+  Shield,
+  Sparkles,
+  ChevronRight,
+  ShieldAlert,
+  FileText,
+  Settings,
+  LogOut,
+  HelpCircle,
+} from 'lucide-react-native';
 import {
   AppScreen,
   AppHeader,
@@ -10,174 +19,285 @@ import {
   AppText,
   AppBadge,
 } from '../../src/components/ui';
-import { useAppTheme, type ThemeMode } from '../../src/theme';
-import { useAuthStore } from '../../src/features/auth';
+import { useAppTheme } from '../../src/theme';
+import { useAuthStore, AuthModal } from '../../src/features/auth';
+import { useMyStats } from '../../src/features/users';
 import { UserRole } from '@sehir-nabiz/shared';
 
 export default function ProfileScreen(): React.ReactElement {
   const router = useRouter();
-  const { theme, spacing, radii, themeMode, setThemeMode } = useAppTheme();
-  const { user, isAuthenticated } = useAuthStore();
+  const { theme, spacing, radii } = useAppTheme();
+  const { user, isAuthenticated, logout } = useAuthStore();
+  const [authModalVisible, setAuthModalVisible] = useState(false);
+  const [reputationInfoVisible, setReputationInfoVisible] = useState(false);
+
+  const { data: stats, isLoading: statsLoading } = useMyStats(isAuthenticated);
 
   const isModeratorOrAdmin =
     isAuthenticated &&
     user &&
     (user.role === UserRole.MODERATOR || user.role === UserRole.ADMIN);
 
+  const displayName = user?.displayName || (isAuthenticated ? 'Şehir Sakini' : 'Misafir Kullanıcı');
+  const userEmail = user?.email || 'Oturum açılmadı';
+  const reputationScore = stats?.reputationScore ?? (user?.reputationScore ?? 10);
+  const reputationLevel = stats?.reputationLevel ?? 'Topluluk Gözlemcisi (Seviye 1)';
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Oturumu Kapat',
+      'Hesabınızdan çıkış yapmak istediğinize emin misiniz?',
+      [
+        { text: 'İptal', style: 'cancel' },
+        {
+          text: 'Çıkış Yap',
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <AppScreen scrollable contentContainerStyle={{ paddingBottom: 100 }}>
-      <AppHeader title="Profil" subtitle="Hesabınız ve tercihleriniz" />
+      <AppHeader title="Profil" subtitle="Hesabınız, katkılarınız ve ayarlar" />
 
       <View style={{ padding: spacing.lg }}>
-        {/* Kullanıcı Bilgi Kartı */}
-        <AppCard style={{ marginBottom: spacing.lg }}>
+        {/* 1. Üst Premium Ama Sade Profil Kartı */}
+        <AppCard style={{ marginBottom: spacing.lg, padding: spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-            <AppAvatar name="Caner Yılmaz" size="xl" isVerified />
+            <AppAvatar name={displayName} size="xl" isVerified={isAuthenticated} />
             <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexWrap: 'wrap' }}>
                 <AppText variant="headingM" weight="bold">
-                  Caner Yılmaz
+                  {displayName}
                 </AppText>
-                <AppBadge label="Güvenilir Yazar" variant="primary" size="sm" />
+                {isAuthenticated && (
+                  <AppBadge
+                    label={user?.role === UserRole.ADMIN ? 'Yönetici' : user?.role === UserRole.MODERATOR ? 'Moderatör' : 'Doğrulanmış'}
+                    variant={user?.role === UserRole.ADMIN || user?.role === UserRole.MODERATOR ? 'warning' : 'primary'}
+                    size="sm"
+                  />
+                )}
               </View>
+
               <AppText variant="caption" color={theme.textSecondary} style={{ marginTop: 2 }}>
-                Kayseri • Katılım: Ekim 2026
+                {userEmail}
               </AppText>
 
-              <View
+              {/* İtibar Seviyesi Barı */}
+              <TouchableOpacity
+                onPress={() => setReputationInfoVisible(prev => !prev)}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  gap: spacing.sm,
-                  marginTop: spacing.sm,
+                  gap: 4,
+                  marginTop: spacing.xs + 2,
                 }}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <Shield size={14} color={theme.primary} />
-                  <AppText variant="caption" weight="bold" color={theme.primary}>
-                    İtibar Puanı: 84
-                  </AppText>
-                </View>
-              </View>
+                <Shield size={14} color={theme.primary} />
+                <AppText variant="caption" weight="bold" color={theme.primary}>
+                  {reputationScore} İtibar Puanı
+                </AppText>
+                <AppText variant="caption" color={theme.textSecondary} style={{ fontSize: 11 }}>
+                  • {reputationLevel.split(' (')[0]}
+                </AppText>
+                <HelpCircle size={12} color={theme.textSecondary} />
+              </TouchableOpacity>
             </View>
           </View>
-        </AppCard>
 
-        {/* Görünüm & Tema Ayarları */}
-        <AppCard style={{ marginBottom: spacing.lg }}>
-          <AppText
-            variant="headingM"
-            weight="bold"
-            style={{ marginBottom: spacing.sm }}
-          >
-            Tema Tercihi
-          </AppText>
-          <AppText
-            variant="bodyS"
-            color={theme.textSecondary}
-            style={{ marginBottom: spacing.md }}
-          >
-            Uygulama renk şemasını seçin veya sistem ayarını kullanın.
-          </AppText>
-
-          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-            {(
-              [
-                { mode: 'light', label: 'Açık', icon: Sun },
-                { mode: 'dark', label: 'Koyu', icon: Moon },
-                { mode: 'system', label: 'Sistem', icon: Monitor },
-              ] as const
-            ).map((item) => {
-              const Icon = item.icon;
-              const isSelected = themeMode === item.mode;
-              return (
-                <Pressable
-                  key={item.mode}
-                  onPress={() => setThemeMode(item.mode as ThemeMode)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${item.label} Tema`}
-                  accessibilityState={{ selected: isSelected }}
-                  style={{
-                    flex: 1,
-                    height: 48,
-                    borderRadius: radii.large,
-                    backgroundColor: isSelected ? theme.primaryLight : theme.surfaceElevated,
-                    borderColor: isSelected ? theme.primary : theme.border,
-                    borderWidth: 1,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: spacing.xs,
-                  }}
-                >
-                  <Icon
-                    size={16}
-                    color={isSelected ? theme.primaryDark : theme.textSecondary}
-                  />
-                  <AppText
-                    variant="bodyS"
-                    weight={isSelected ? 'bold' : 'medium'}
-                    color={isSelected ? theme.primaryDark : theme.text}
-                  >
-                    {item.label}
-                  </AppText>
-                </Pressable>
-              );
-            })}
-          </View>
-        </AppCard>
-
-        {/* Gizlilik & Konum Bilgisi */}
-        <AppCard style={{ marginBottom: spacing.lg }}>
-          <AppText variant="headingM" weight="bold" style={{ marginBottom: spacing.xs }}>
-            Güvenli Konum Politikası
-          </AppText>
-          <AppText variant="bodyS" color={theme.textSecondary} style={{ marginBottom: spacing.sm }}>
-            Kişisel ev ve iş konumlarınız sunucularda açık koordinat olarak saklanmaz. Olay bildirimlerinde yalnızca kamuya açık aksaklığın gerçekleştiği kesin nokta doğrulanır; bildiren kullanıcının anlık cihaz konumu asla paylaşılmaz.
-          </AppText>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <MapPin size={16} color={theme.success} />
-            <AppText variant="caption" weight="semibold" color={theme.success}>
-              KVKK & Konum Güvenlik Standardı Aktif
-            </AppText>
-          </View>
-        </AppCard>
-
-        {/* Yetkili Moderatör Paneli Bağlantısı */}
-        {isModeratorOrAdmin || __DEV__ ? (
-          <AppCard
-            onPress={() => router.push('/moderation')}
-            style={{
-              marginBottom: spacing.lg,
-              borderColor: '#F59E0B',
-              backgroundColor: '#FEF3C7',
-            }}
-          >
+          {/* İtibar Açıklama Bilgisi (Açılır/Kapanır) */}
+          {reputationInfoVisible && (
             <View
               style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
+                marginTop: spacing.md,
+                padding: spacing.sm + 2,
+                backgroundColor: theme.surfaceElevated,
+                borderRadius: radii.sm,
+                borderWidth: 1,
+                borderColor: theme.border,
               }}
             >
+              <AppText variant="caption" weight="bold" style={{ marginBottom: 2 }}>
+                İtibar Puanı Nedir?
+              </AppText>
+              <AppText variant="caption" color={theme.textSecondary} style={{ fontSize: 11, lineHeight: 16 }}>
+                ŞehirNabız'da paylaştığınız teyitli olaylar (+5 puan) itibarınızı artırır. Yanıltıcı veya asılsız bildirimler itibar puanınızı düşürür. Yüksek puanlı kullanıcıların bildirimleri daha hızlı yayına alınır.
+              </AppText>
+            </View>
+          )}
+
+          {/* Oturum Açma Çağrısı (Misafir kullanıcı için) */}
+          {!isAuthenticated && (
+            <View style={{ marginTop: spacing.md, borderTopWidth: 1, borderTopColor: theme.border, paddingTop: spacing.sm }}>
+              <TouchableOpacity
+                onPress={() => setAuthModalVisible(true)}
+                style={{
+                  backgroundColor: theme.primary,
+                  paddingVertical: spacing.sm + 2,
+                  borderRadius: radii.md,
+                  alignItems: 'center',
+                  minHeight: 44,
+                  justifyContent: 'center',
+                }}
+              >
+                <AppText variant="bodyM" weight="bold" color="#FFFFFF">
+                  Giriş Yap / Kayıt Ol
+                </AppText>
+              </TouchableOpacity>
+            </View>
+          )}
+        </AppCard>
+
+        {/* 2. Gerçek Katkı İstatistikleri (3'lü Sayaç Kartı) */}
+        {isAuthenticated && (
+          <AppCard style={{ marginBottom: spacing.lg, padding: spacing.md }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm }}>
+              <AppText variant="bodyM" weight="bold">
+                Kentsel Katkı Özeti
+              </AppText>
+              {statsLoading && <ActivityIndicator size="small" color={theme.primary} />}
+            </View>
+
+            <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingTop: spacing.xs }}>
+              {/* Bildirdiğim */}
+              <TouchableOpacity
+                onPress={() => router.push('/profile/my-events')}
+                style={{ alignItems: 'center', flex: 1 }}
+              >
+                <AppText variant="headingL" weight="bold" color={theme.primary}>
+                  {stats?.reportedCount ?? 0}
+                </AppText>
+                <AppText variant="caption" color={theme.textSecondary} style={{ marginTop: 2, fontSize: 11 }}>
+                  Bildirdiğim
+                </AppText>
+              </TouchableOpacity>
+
+              <View style={{ width: 1, height: 28, backgroundColor: theme.border }} />
+
+              {/* Teyit Ettiğim */}
+              <View style={{ alignItems: 'center', flex: 1 }}>
+                <AppText variant="headingL" weight="bold" color={theme.accentBlue}>
+                  {stats?.confirmedCount ?? 0}
+                </AppText>
+                <AppText variant="caption" color={theme.textSecondary} style={{ marginTop: 2, fontSize: 11 }}>
+                  Teyit Ettiğim
+                </AppText>
+              </View>
+
+              <View style={{ width: 1, height: 28, backgroundColor: theme.border }} />
+
+              {/* Çözülen */}
+              <View style={{ alignItems: 'center', flex: 1 }}>
+                <AppText variant="headingL" weight="bold" color={theme.success}>
+                  {stats?.resolvedCount ?? 0}
+                </AppText>
+                <AppText variant="caption" color={theme.textSecondary} style={{ marginTop: 2, fontSize: 11 }}>
+                  Çözülen
+                </AppText>
+              </View>
+            </View>
+          </AppCard>
+        )}
+
+        {/* 3. Düzenli Eylem Grupları */}
+        <View style={{ gap: spacing.sm, marginBottom: spacing.lg }}>
+          {/* Bildirdiğim Olaylar */}
+          <AppCard
+            onPress={() => {
+              if (isAuthenticated) {
+                router.push('/profile/my-events');
+              } else {
+                setAuthModalVisible(true);
+              }
+            }}
+            style={{ padding: spacing.md }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                <ShieldAlert size={20} color="#B45309" />
+                <FileText size={20} color={theme.primary} />
                 <View>
-                  <AppText variant="bodyM" weight="bold" color="#92400E">
-                    Moderatör Yönetim Paneli
+                  <AppText variant="bodyM" weight="semibold">
+                    Bildirdiğim Olaylar
                   </AppText>
-                  <AppText variant="caption" color="#B45309">
-                    Topluluk olaylarını incele, onayla veya reddet
+                  <AppText variant="caption" color={theme.textSecondary}>
+                    İnceleme, yayında ve çözülen bildirimleriniz
                   </AppText>
                 </View>
               </View>
-              <ChevronRight size={18} color="#B45309" />
+              <ChevronRight size={18} color={theme.textSecondary} />
             </View>
           </AppCard>
-        ) : null}
 
-        {/* Geliştirici UI Showcase Bağlantısı */}
-        {__DEV__ ? (
+          {/* Uygulama Ayarları */}
+          <AppCard
+            onPress={() => router.push('/profile/settings')}
+            style={{ padding: spacing.md }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                <Settings size={20} color={theme.primary} />
+                <View>
+                  <AppText variant="bodyM" weight="semibold">
+                    Ayarlar
+                  </AppText>
+                  <AppText variant="caption" color={theme.textSecondary}>
+                    Görünüm, bildirimler ve gizlilik politikası
+                  </AppText>
+                </View>
+              </View>
+              <ChevronRight size={18} color={theme.textSecondary} />
+            </View>
+          </AppCard>
+
+          {/* Moderatör Paneli (Yetkili kullanıcılar) */}
+          {isModeratorOrAdmin && (
+            <AppCard
+              onPress={() => router.push('/moderation')}
+              style={{
+                padding: spacing.md,
+                borderColor: '#F59E0B',
+                backgroundColor: '#FEF3C7',
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                  <ShieldAlert size={20} color="#B45309" />
+                  <View>
+                    <AppText variant="bodyM" weight="bold" color="#92400E">
+                      Moderatör Yönetim Paneli
+                    </AppText>
+                    <AppText variant="caption" color="#B45309">
+                      Bekleyen ve ihtilaflı olayları incele
+                    </AppText>
+                  </View>
+                </View>
+                <ChevronRight size={18} color="#B45309" />
+              </View>
+            </AppCard>
+          )}
+
+          {/* Oturumu Kapat */}
+          {isAuthenticated && (
+            <AppCard onPress={handleLogout} style={{ padding: spacing.md }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                  <LogOut size={20} color={theme.error} />
+                  <AppText variant="bodyM" weight="semibold" color={theme.error}>
+                    Oturumu Kapat
+                  </AppText>
+                </View>
+                <ChevronRight size={18} color={theme.error} />
+              </View>
+            </AppCard>
+          )}
+        </View>
+
+        {/* 4. Geliştirici UI Showcase Bağlantısı (__DEV__) */}
+        {__DEV__ && (
           <AppCard
             onPress={() => router.push('/showcase')}
             style={{
@@ -185,13 +305,7 @@ export default function ProfileScreen(): React.ReactElement {
               backgroundColor: theme.primaryLight,
             }}
           >
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                 <Sparkles size={20} color={theme.primaryDark} />
                 <View>
@@ -206,8 +320,13 @@ export default function ProfileScreen(): React.ReactElement {
               <ChevronRight size={18} color={theme.primaryDark} />
             </View>
           </AppCard>
-        ) : null}
+        )}
       </View>
+
+      <AuthModal
+        visible={authModalVisible}
+        onClose={() => setAuthModalVisible(false)}
+      />
     </AppScreen>
   );
 }
