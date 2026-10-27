@@ -101,3 +101,54 @@ test('Phase 8: FeedbackType enum ve CreateFeedbackSchema doğrulamalı', () => {
   const res4 = CreateFeedbackSchema.safeParse(tooLongReason);
   assert.equal(res4.success, false);
 });
+
+test('Phase 9: NotificationType, PushPlatform, Realtime enums ve Push şemaları doğrulamalı', () => {
+  const {
+    NotificationType,
+    PushPlatform,
+    RealtimeEventName,
+    RealtimeRoom,
+    RegisterPushTokenSchema,
+    UpdateNotificationPreferencesSchema,
+    NotificationsQuerySchema,
+  } = require('./index');
+
+  assert.equal(NotificationType.EVENT_APPROVED, 'EVENT_APPROVED');
+  assert.equal(NotificationType.EVENT_RESOLVED, 'EVENT_RESOLVED');
+  assert.equal(NotificationType.MODERATION_QUEUE, 'MODERATION_QUEUE');
+  assert.equal(PushPlatform.IOS, 'ios');
+  assert.equal(PushPlatform.ANDROID, 'android');
+  assert.equal(RealtimeEventName.EVENT_STATUS_CHANGED, 'event:status_changed');
+  assert.equal(RealtimeRoom.EVENTS_GLOBAL, 'events:global');
+
+  // Push token doğrulaması
+  const validToken = {
+    token: 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]',
+    platform: PushPlatform.ANDROID,
+    deviceIdentifier: 'device-hash-123',
+  };
+  const resToken = RegisterPushTokenSchema.safeParse(validToken);
+  assert.equal(resToken.success, true);
+
+  const invalidToken = {
+    token: 'short',
+    platform: 'invalid-platform',
+  };
+  const resTokenInvalid = RegisterPushTokenSchema.safeParse(invalidToken);
+  assert.equal(resTokenInvalid.success, false);
+
+  // Tercihler doğrulaması
+  const validPrefs = {
+    followedEvents: true,
+    pushEnabled: false,
+    nearbyEvents: false,
+  };
+  const resPrefs = UpdateNotificationPreferencesSchema.safeParse(validPrefs);
+  assert.equal(resPrefs.success, true);
+
+  // Query parametresi doğrulaması
+  const query = NotificationsQuerySchema.parse({ limit: '15', unreadOnly: 'true' });
+  assert.equal(query.limit, 15);
+  assert.equal(query.unreadOnly, true);
+});
+

@@ -207,4 +207,47 @@ Form verileri kullanıcı yazarken `draftService` aracılığıyla otomatik kayd
 ### 9.4 Kimlik Doğrulama ve Eşzamanlı Yenileme Koruması (Mutex)
 Oturum açmamış kullanıcılar bildirim oluşturabilir; gönderim butonuna basıldığında `AuthModal` açılarak güvenli giriş veya kayıt yapılması sağlanır. `useAuthStore` içinde eşzamanlı isteklerde birden fazla refresh token çağrısının sunucuya giderek reuse detection'ı tetiklemesini engellemek için Promise-tabanlı bir refresh mutex kilidi bulunmaktadır.
 
+---
+
+## 10. Topluluk Teyit ve Moderasyon Akışı (Phase 8)
+
+### 10.1 Geri Bildirim API'leri
+- `POST /api/v1/events/:id/feedback`: Kullanıcı bir olaya `CONFIRM`, `DISPUTE` veya `RESOLVED_REPORT` oyu gönderir. Kendi olayına oy veremez.
+- `DELETE /api/v1/events/:id/feedback`: Verilmiş oyu geri çeker.
+- `GET /api/v1/events/:id/feedback/summary`: Olayın açıklanabilir teyit özetini döner.
+
+### 10.2 Moderasyon Paneli
+Moderatörler `MODERATOR` veya `ADMIN` rolü ile oturum açtıklarında `/moderation` ekranına erişebilir:
+- `GET /api/v1/events/moderation/queue`: İnceleme bekleyen ve ihtilaflı olayları listeler.
+- `PATCH /api/v1/events/:id/status`: Olay durumunu günceller (`ACTIVE`, `REJECTED`, `DISPUTED`, `RESOLVED`).
+
+---
+
+## 11. Gerçek Zamanlı Harita, WebSocket ve Push Bildirimleri (Phase 9)
+
+### 11.1 WebSocket Gateway ve İletişim Protokolü
+WebSocket sunucusu Socket.IO protokolü üzerinde `/realtime` namespace'i altında çalışır:
+- **Yerel Endpoint:** `ws://127.0.0.1:3001/realtime` (veya WSS)
+- **Kimlik Doğrulama:** Handshake esnasında `auth: { token: 'Bearer <JWT>' }` veya `headers: { authorization: 'Bearer <JWT>' }` iletilir. Anonim bağlantılar genel akışları dinleyebilir.
+- **Odalar ve Olaylar:**
+  - `events:global`: Kamusal olay değişiklikleri (`EVENT_CREATED`, `EVENT_UPDATED`, `EVENT_RESOLVED`).
+  - `subscribe_bbox`: Görüntülenen harita koordinat kutusuna göre filtrelenmiş coğrafi akış.
+  - `user:${userId}`: Kişisel bildirimler (`NOTIFICATION_NEW`).
+  - `moderation:queue`: Sadece `MODERATOR` ve `ADMIN` rolleri erişebilir (`MODERATION_EVENT_ADDED`).
+
+### 11.2 Redis Pub/Sub Adapter (Yatay Ölçeklenebilirlik)
+Birden fazla NestJS backend pod'u çalıştığında mesajların tüm istemcilere dağıtılması için Redis 7 (`127.0.0.1:6380`) üzerinde `@socket.io/redis-adapter` kullanılır. Redis bağlantısı sağlanamadığında sistem otomatik ve güvenli şekilde dahili bellek (in-memory) adapter'ına düşer.
+
+### 11.3 Expo Push Bildirim Geliştirme ve Test Modu
+- **Geliştirme Modu Simülatörü:** Yerel ortamda gerçek Expo Access Token veya üretim FCM/APNs anahtarları tanımlanmadığında (`EXPO_ACCESS_TOKEN` boş), backend `PushNotificationService` otomatik olarak simülasyon moduna geçer.
+- **Güvenli Fallback:** Geliştirme ortamında push servisinin çalışır gibi davranıp teslim edilmiş süsü vermesi engellenir; simülasyon loglara dökülür ve formatı bozuk tokenlar (`ExponentPushToken[...]` standardına uymayanlar) hata listesine eklenir.
+- **Geçersiz Token Temizliği:** Push servisinden `DeviceNotRegistered` yanıtı alındığında token veritabanında pasife alınır (`isActive = false`).
+
+### 11.4 Reconnection ve Senkronizasyon Testleri
+Mobil istemci (`socketService`) kopan bağlantılarda exponential backoff (1s -> 2s -> 4s ... maks 30s) ve %20 jitter uygular.
+- Bağlantı koptuğunda harita sol üstündeki `ConnectionStatusBadge` `Çevrimdışı` moduna geçer.
+- Bağlantı yeniden kurulduğunda harita verileri REST API (`GET /api/v1/events/bbox`) ile snapshot mutabakatına (reconciliation) tabi tutulur.
+- Mesaj tekrarını engellemek için 500 elemanlık bellek içi LRU `serverEventId` önbelleği ve `version` monotoniği kullanılır.
+
+
 

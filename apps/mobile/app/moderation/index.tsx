@@ -34,8 +34,9 @@ import {
   fetchModerationEvents,
   updateEventStatus,
 } from '../../src/features/events/services/moderationApi';
+import { socketService } from '../../src/features/realtime';
 import type { ModerationEventItemDto } from '@sehir-nabiz/shared';
-import { EventStatus, UserRole } from '@sehir-nabiz/shared';
+import { EventStatus, UserRole, RealtimeEventName } from '@sehir-nabiz/shared';
 
 export default function ModerationScreen(): React.ReactElement {
   const router = useRouter();
@@ -82,9 +83,26 @@ export default function ModerationScreen(): React.ReactElement {
   }, [isAuthorized, activeTab, getValidAccessToken]);
 
   useEffect(() => {
-    if (isAuthorized) {
-      loadEvents();
+    if (!isAuthorized) {
+      return undefined;
     }
+
+    loadEvents();
+
+    // Moderatör kuyruğu canlı güncellemeleri (Phase 9)
+    socketService.joinModeration().catch(() => {});
+
+    const unsubMod = socketService.on(RealtimeEventName.MODERATION_EVENT_ADDED, () => {
+      loadEvents();
+    });
+    const unsubStatus = socketService.on(RealtimeEventName.EVENT_STATUS_CHANGED, () => {
+      loadEvents();
+    });
+
+    return () => {
+      unsubMod();
+      unsubStatus();
+    };
   }, [isAuthorized, loadEvents]);
 
   // Karar Verme Fonksiyonu

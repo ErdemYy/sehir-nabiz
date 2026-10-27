@@ -5,12 +5,16 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  OneToOne,
   Index,
 } from 'typeorm';
 import { UserRole, AccountStatus } from '@sehir-nabiz/shared';
 import { RefreshTokenEntity } from './refresh-token.entity';
 import { EventFeedbackEntity } from './event-feedback.entity';
 import { UserReputationLogEntity } from './user-reputation-log.entity';
+import { UserNotificationEntity } from './user-notification.entity';
+import { DevicePushTokenEntity } from './device-push-token.entity';
+import { UserNotificationPreferenceEntity } from './user-notification-preference.entity';
 
 @Entity('users')
 export class UserEntity {
@@ -52,6 +56,15 @@ export class UserEntity {
 
   @OneToMany(() => UserReputationLogEntity, log => log.user)
   reputationLogs?: UserReputationLogEntity[];
+
+  @OneToMany(() => UserNotificationEntity, notification => notification.user)
+  notifications?: UserNotificationEntity[];
+
+  @OneToMany(() => DevicePushTokenEntity, pushToken => pushToken.user)
+  pushTokens?: DevicePushTokenEntity[];
+
+  @OneToOne(() => UserNotificationPreferenceEntity, preference => preference.user)
+  notificationPreference?: UserNotificationPreferenceEntity;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;

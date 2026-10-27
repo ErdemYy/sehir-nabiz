@@ -162,3 +162,39 @@ Topluluk odaklı kentsel platformların en kırılgan tarafı bot orduları, org
 - Kullanıcıya *"Bu olay %95 doğrudur"* benzeri yapay zeka veya yüzde yanılsaması oluşturacak ifadeler sunulmaz.
 - Sayısal döküm ("12 kişi gördü, 3 kişi itiraz etti") şeffafça ve yalnızca yeterli örneklem ($N \ge 3$) toplandığında açıklayıcı metinle gösterilir.
 - Olay durumu yalnızca oy sayısına bağlı olarak otomatik `ACTIVE` veya `VERIFIED` yapılamaz. Karar süreci moderatörlerin yetkisindedir.
+
+---
+
+## 8. Gerçek Zamanlı İletişim ve Push Bildirim Güvenliği (Phase 9 Uygulaması)
+
+Gerçek zamanlı harita ve anlık bildirim kanalları, kullanıcı mahremiyetini ve veri bütünlüğünü tehdit etmeyecek şekilde sıkı güvenlik protokolleriyle yapılandırılmıştır:
+
+### 8.1 WebSocket & WSS Güvenliği ve Yetkilendirme
+1. **İki Katmanlı Bağlantı Modeli:**
+   - **Genel Akış (Anonim İstemciler):** Anonim kullanıcılar yalnızca kamusal olay güncellemelerini (`events:global`, coğrafi `bbox`) dinleyebilir.
+   - **Kişisel ve Yönetim Akışları (Kimlik Doğrulamalı):** Kullanıcıya özel odalar (`user:${userId}`) ve moderasyon odası (`moderation:queue`) için handshake esnasında `auth.token` veya `headers.authorization` ile JWT zorunludur.
+2. **Moderasyon Odası İzolasyonu:**
+   - Socket istemcisi kendini moderatör olarak beyan edemez.
+   - `join_moderation` isteği geldiğinde soketin doğrulanmış JWT payload'ındaki roller (`MODERATOR` veya `ADMIN`) sunucu tarafında denetlenir. Yetkisiz istemciler anında `UNAUTHORIZED_ROOM` hatası ile reddedilir.
+3. **Log Sanitizasyonu:**
+   - JWT, refresh token veya hassas kimlik bilgileri sunucu loglarına, konsola veya Redis Pub/Sub mesaj yüklerine asla yazdırılmaz. Hata mesajlarında yalnızca genel kimliksizleştirilmiş tanımlayıcılar yer alır.
+
+### 8.2 Cihaz Push Token Mahremiyeti ve Güvenli Yönetim
+1. **Veri Minimizasyonu:**
+   - Kullanıcının gerçek donanım kimliği (IMEI, MAC adresi, benzersiz donanım serisi) kesinlikle toplanmaz.
+   - `deviceIdentifier` alanı yalnızca platform adı (`expo-android`, `expo-ios`) veya güvenli yerel UUID ile sınırlandırılır.
+2. **Token Güvenliği ve Tekillik:**
+   - Push tokenları veritabanında `UNIQUE(token)` kısıtı ile korunur.
+   - Kullanıcı başka bir hesapla giriş yaptığında veya token yenilendiğinde eski sahiplik otomatik olarak yeni hesaba geçirilir.
+   - Kullanıcı çıkış yaptığında (`DELETE /devices/push-token`) cihaz tokenı anında `isActive = false` yapılarak oturumlar arası bildirim sızıntısı engellenir.
+3. **Ölü Token Temizliği (Stale Token Eviction):**
+   - Push servisinden `DeviceNotRegistered` yanıtı alındığında ilgili token veritabanında pasife alınır ve bir sonraki push döngüsünde filtrelenir.
+
+### 8.3 Bildirim Tercihleri ve Konum İzni Kalkanı
+1. **Varsayılan Kapalı Konum Bildirimi:**
+   - `nearbyEvents` (Yakınımdaki gelişmeler) tercihi yeni kullanıcılarda **varsayılan olarak KAPALIDIR (`false`)**.
+   - Kullanıcı açık rıza verip konumuyla ilgili bildirim almak istemediği sürece konum bazlı bildirim iletilmez.
+2. **Yetki Temelli Bildirim Tetikleyicileri:**
+   - Bildirimler yalnızca kullanıcının doğrudan ilişkili olduğu eylemler için üretilir: `REPORTED_EVENT_VERIFIED`, `FEEDBACK_DISPUTED`, `EVENT_RESOLVED`, `MODERATION_ACTION`.
+   - İnceleme aşamasındaki (`PENDING_REVIEW`) veya reddedilen (`REJECTED`) olaylar kamusal WebSocket odalarına (`events:global`) asla yayınlanmaz. Yalnızca yetkili moderasyon odasına ve olay sahibinin özel kanalına iletilir.
+

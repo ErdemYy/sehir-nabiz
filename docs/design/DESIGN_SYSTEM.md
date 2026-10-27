@@ -238,5 +238,39 @@ Phase 8 ile birlikte kullanıcının olayları teyit etmesini, itiraz bildirmesi
    - **Olay Kartı Dökümü:** Kategori, başlık, bildiren kullanıcı bilgisi, teyit/itiraz sayıları ve harita koordinatları.
    - **Karar Aksiyonları ve Onay Diyaloğu:** "Yayınla / Onayla" (Yeşil buton), "Reddet" (Kırmızı buton), "İhtilaflı Yap" (Turuncu buton). Kritik kararlarda gerekçe notu girişi desteklenir.
 
+---
+
+## 12. Gerçek Zamanlı Durum ve Bildirim Merkezi Arayüzü (Phase 9)
+
+Phase 9 ile kentsel olayların dinamik takibini sağlayan gerçek zamanlı göstergeler ve Urban Floating UI bildirim merkezi tasarlanmıştır:
+
+1. **Minimalist Bağlantı Durum Hapı (`ConnectionStatusBadge`):**
+   - **Yerleşim:** Haritanın sol üst köşesinde, arama çubuğunun altında bağımsız yüzen kapsül (floating pill).
+   - **Durum Kodlaması:**
+     - `Canlı`: Başarı yeşili (`theme.success`), yeşil parlama halkası ve nokta animasyonu.
+     - `Güncelleniyor`: Canlı yeşil, minik aktivite indikatörü (spinner).
+     - `Bağlanıyor`: Şehir mavisi (`theme.accentBlue`), sarı/mavi indikatör.
+     - `Çevrimdışı`: Kırmızı/gri uyarı tonu (`theme.error`), uyarı ikonu ve dokunulduğunda yeniden bağlantıyı tetikleme eylemi (`socketService.reconnect()`).
+   - **Pürüzsüzlük:** Haritanın kamera açısını veya etkileşimini engellemeyecek kompakt boyut (32px yükseklik, 16px yuvarlatılmış köşe).
+
+2. **Bildirim Merkezi (`NotificationsScreen` - `/notifications`):**
+   - **Başlık ve Hızlı Aksiyon:** Sayfa başlığında okunmamış bildirim sayısı rozeti ve sağ üstte "Tümünü Oku" bağlantısı.
+   - **Filtre Sekmeleri (Tab Bar):** `Tümü` ve `Okunmamış` sekmeleri. Aktif sekme `theme.primary` çizgi ve yazı rengi ile belirginleştirilir.
+   - **Kronolojik Zaman Gruplaması:** Bildirimler "Bugün", "Dün" ve "Daha Önce" başlıkları altında organize edilir.
+   - **Bildirim Kartı Anatomisi:**
+     - Sol İkon Kapsülü: Bildirim türüne göre semantic renk arka planı ve Lucide ikonu (`AlertTriangle`, `CheckCircle2`, `HelpCircle`, `Info`, `ShieldCheck`).
+     - İçerik Gövdesi: Bildirim başlığı (`fontWeight: 600`), açıklama metni ve göreceli zaman bilgisi ("5 dk önce", "2 sa önce").
+     - Okunmamışlık Göstergesi: Okunmamış kartların sağında 8px çapında birincil turkuaz mavi nokta (`theme.primary`).
+     - Tıklama & Navigasyon: Karta dokunulduğunda bildirim arka planda okundu işaretlenir ve ilişkili olayın detayına (`/events/:id`) yumuşak geçiş yapılır.
+   - **Durum Deneyimleri (State Handling):**
+     - Misafir Kullanıcı: `EmptyState` içerisinde "Giriş Yap / Kayıt Ol" butonu ile doğrudan `AuthModal` tetiklenir.
+     - Boş Liste: Zili temsil eden sakin illüstratif ikon ve "Henüz bir bildiriminiz bulunmuyor" bilgilendirmesi.
+     - Hata Durumu: `ErrorState` kartı ve "Tekrar Dene" butonu.
+     - Yenileme: `RefreshControl` ile aşağı çekerek yenileme (pull-to-refresh).
+
+3. **Moderatör Canlı Kuyruk Entegrasyonu:**
+   - Moderatör ekranı açıkken `MODERATION_EVENT_ADDED` veya `EVENT_STATUS_CHANGED` soket olayı geldiğinde liste titreme olmadan, otomatik arka plan sorgusuyla güncellenir.
+
+
 
 

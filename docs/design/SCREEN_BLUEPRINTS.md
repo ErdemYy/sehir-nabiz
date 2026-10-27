@@ -138,21 +138,38 @@ CreateEventScreen (CreateEventFlow)
 ## 4. Bildirimler Ekranı (`/(tabs)/notifications`)
 
 ### Ekran Amacı:
-Kullanıcının bildirdiği olayların topluluk teyidi durumunu, kazanılan itibar puanlarını ve yakın çevresindeki kritik uyarıları listelemek.
+Kullanıcının bildirdiği olayların durumu (`REPORTED_EVENT_VERIFIED`, `FEEDBACK_DISPUTED`), teyit ettiği gelişmeler (`EVENT_RESOLVED`), moderasyon kararları (`MODERATION_ACTION`) ve kentsel duyuruların gerçek zamanlı listelendiği Urban Floating UI bildirim merkezi.
 
 ### Bileşen Hiyerarşisi:
 ```text
-AppScreen (scrollable)
-├── AppHeader ("Bildirimler", "Olay teyitleri ve yerel uyarılar")
-└── Notification List
-    └── AppCard (Okunmamış bildirimlerde primary border)
-        ├── Left Icon (Başarı: Yeşil Tik, Uyarı: Sarı Üçgen, Sistem: Kalkan)
-        ├── Content (Başlık, mesaj metni, zaman damgası)
-        └── Unread Dot (Turkuaz nokta)
+AppScreen (useSafeAreaInsets, scrollable)
+├── Header Bar
+│   ├── Başlık ("Bildirimler")
+│   ├── Okunmamış Sayacı Rozeti (Badge, unreadCount > 0 durumunda görünür)
+│   └── "Tümünü Oku" Butonu (idempotent PATCH /api/v1/notifications/read-all)
+├── Filtre Sekmeleri (Tab Bar)
+│   ├── "Tümü" Sekmesi
+│   └── "Okunmamış" Sekmesi (Okunmamış sayaç rozeti ile)
+├── Kronolojik Bildirim Listesi (RefreshControl ile çekerek yenileme)
+│   ├── Tarih Grubu Başlığı ("Bugün", "Dün", "Daha Önce")
+│   └── Bildirim Kartı (Pressable AppCard)
+│       ├── Tür İkonu (AlertTriangle, CheckCircle2, HelpCircle, Info, ShieldCheck)
+│       ├── İçerik Alanı
+│       │   ├── Başlık (600 weight)
+│       │   ├── Açıklama Metni (2 satır sınır)
+│       │   └── Göreceli Zaman ("5 dk önce", "2 sa önce")
+│       └── Okunmamış Gösterge Noktası (8px turkuaz primary dot)
+├── Durum Ekranları
+│   ├── Misafir Kullanıcı EmptyState ("Bildirimlerinizi görmek için giriş yapın" + AuthModal butonu)
+│   ├── Boş Liste EmptyState ("Henüz bir bildiriminiz bulunmuyor")
+│   └── Hata Ekranı ErrorState ("Bildirimler yüklenirken hata oluştu" + "Tekrar Dene")
+└── AuthModal (Giriş/Kayıt olma akışı)
 ```
 
-### Auth Gereksinimi:
-- **Zorunlu Giriş:** Oturum açmamış kullanıcılar için EmptyState ("Bildirimlerinizi görmek için giriş yapın") gösterilir.
+### Etkileşim ve Veri Akışı:
+- **Tıklama & Yönlendirme:** Karta tıklandığında `PATCH /api/v1/notifications/:id/read` çağrılır (okundu işaretlenir) ve `eventId` varsa kullanıcı doğrudan `/events/[id]` detay sayfasına yönlendirilir.
+- **Gerçek Zamanlı Güncelleme:** WebSocket üzerinden `NOTIFICATION_NEW` olayı alındığında liste ve sayaç otomatik olarak yenilenir.
+- **Auth Gereksinimi:** Oturum açmamış kullanıcılara EmptyState gösterilir; buton `AuthModal`'ı tetikler. Giriş yapıldığında liste anında yüklenir.
 
 ---
 

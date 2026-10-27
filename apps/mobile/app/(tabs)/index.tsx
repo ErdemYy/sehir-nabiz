@@ -39,6 +39,7 @@ import {
   type MapStyleMode,
   type MapEventProperties,
 } from '../../src/features/map';
+import { useRealtimeEvents, ConnectionStatusBadge } from '../../src/features/realtime';
 import { EventCategory } from '@sehir-nabiz/shared';
 
 const CATEGORIES_LIST: { code: string; name: string }[] = [
@@ -104,6 +105,11 @@ export default function MapScreen(): React.ReactElement {
     searchQuery,
   });
 
+  // Gerçek Zamanlı WebSocket ve Canlı Harita Güncellemeleri (Phase 9)
+  const { status: realtimeStatus, reconnect: reconnectRealtime } = useRealtimeEvents({
+    bbox: currentBBox,
+  });
+
   // Kamera hareketi sonrasında BBox güncellemesi (Debounced - 350ms)
   const bboxDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleBBoxChange = useCallback((bbox: BBoxCoordinates) => {
@@ -160,22 +166,30 @@ export default function MapScreen(): React.ReactElement {
             userCoords={userCoords}
           />
         }
-        // 2. Üst Floating Arama Çubuğu
+        // 2. Üst Floating Arama Çubuğu ve Canlı Bağlantı Rozeti
         searchBarSlot={
-          <SearchBar
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Şehirde ara..."
-            rightAction={
-              __DEV__ ? (
-                <FloatingIconButton
-                  icon={<Sparkles size={18} color={theme.primary} />}
-                  onPress={() => router.push('/showcase')}
-                  accessibilityLabel="UI Showcase Aç"
-                />
-              ) : null
-            }
-          />
+          <View style={{ gap: spacing.xs }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <ConnectionStatusBadge
+                status={realtimeStatus}
+                onPress={reconnectRealtime}
+              />
+            </View>
+            <SearchBar
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Şehirde ara..."
+              rightAction={
+                __DEV__ ? (
+                  <FloatingIconButton
+                    icon={<Sparkles size={18} color={theme.primary} />}
+                    onPress={() => router.push('/showcase')}
+                    accessibilityLabel="UI Showcase Aç"
+                  />
+                ) : null
+              }
+            />
+          </View>
         }
         // 3. Yatay 11 Kategori Filtre Çipleri
         categoryFilterSlot={

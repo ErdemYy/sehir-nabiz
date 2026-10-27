@@ -7,10 +7,14 @@ import { EventModerationLogEntity } from './entities/event-moderation-log.entity
 import { EventMediaEntity } from './entities/event-media.entity';
 import { EventFeedbackEntity } from './entities/event-feedback.entity';
 import { UserReputationLogEntity } from './entities/user-reputation-log.entity';
+import { UserNotificationEntity } from './entities/user-notification.entity';
+import { DevicePushTokenEntity } from './entities/device-push-token.entity';
+import { UserNotificationPreferenceEntity } from './entities/user-notification-preference.entity';
 import { InitialAuthAndPostGis1740000000000 } from './migrations/1740000000000-InitialAuthAndPostGis';
 import { CreateCategoriesAndEvents1740000001000 } from './migrations/1740000001000-CreateCategoriesAndEvents';
 import { CreateEventMedia1740000002000 } from './migrations/1740000002000-CreateEventMedia';
 import { CreateEventFeedbackAndReputationLogs1740000003000 } from './migrations/1740000003000-CreateEventFeedbackAndReputationLogs';
+import { CreateNotificationsAndPushTokens1740000004000 } from './migrations/1740000004000-CreateNotificationsAndPushTokens';
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
@@ -28,12 +32,16 @@ export const dataSourceOptions: DataSourceOptions = {
     EventMediaEntity,
     EventFeedbackEntity,
     UserReputationLogEntity,
+    UserNotificationEntity,
+    DevicePushTokenEntity,
+    UserNotificationPreferenceEntity,
   ],
   migrations: [
     InitialAuthAndPostGis1740000000000,
     CreateCategoriesAndEvents1740000001000,
     CreateEventMedia1740000002000,
     CreateEventFeedbackAndReputationLogs1740000003000,
+    CreateNotificationsAndPushTokens1740000004000,
   ],
   synchronize: false,
   logging: process.env.DB_LOGGING === 'true',

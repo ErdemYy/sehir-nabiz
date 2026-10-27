@@ -74,6 +74,7 @@ describe('EventsService (Unit Tests)', () => {
     expiresAt: new Date(Date.now() + 3 * 3600 * 1000),
     resolvedAt: null,
     isDemo: false,
+    version: 1,
     createdAt: new Date(),
     updatedAt: new Date(),
   };

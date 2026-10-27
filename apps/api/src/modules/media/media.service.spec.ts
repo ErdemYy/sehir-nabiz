@@ -44,6 +44,7 @@ describe('MediaService (Unit Tests)', () => {
     reliabilityScore: 1,
     expiresAt: new Date(),
     isDemo: false,
+    version: 1,
     createdAt: new Date(),
     updatedAt: new Date(),
     author: null as any,

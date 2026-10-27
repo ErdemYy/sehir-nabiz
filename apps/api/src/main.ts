@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { RedisIoAdapter } from './modules/realtime/redis-io.adapter';
 
 async function bootstrap(): Promise<void> {
   const logger = new Logger('Bootstrap');
@@ -39,6 +40,11 @@ async function bootstrap(): Promise<void> {
 
   // Merkezi Hata Yönetimi
   app.useGlobalFilters(new AllExceptionsFilter());
+
+  // WebSocket Redis IoAdapter Entegrasyonu
+  const redisIoAdapter = new RedisIoAdapter(app, configService);
+  await redisIoAdapter.connectToRedis();
+  app.useWebSocketAdapter(redisIoAdapter);
 
   await app.listen(port);
   logger.log(`🚀 ŞehirNabız API [${nodeEnv}] http://localhost:${port}/${apiPrefix.replace(/^\//, '')}`);

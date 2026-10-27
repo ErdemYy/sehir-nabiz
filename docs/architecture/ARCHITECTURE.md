@@ -199,3 +199,22 @@ Tüm coğrafi veriler WGS 84 (`SRID 4326`) projeksiyon sisteminde tutulur.
 3. **Kullanıcı İtibar Denetimi:**
    - İlk sürümde manipülasyona ve puan kasmaya karşı oylamayla sınırsız itibar kazanımı engellenmiştir.
    - İleride moderasyon teyitli puanlama için `user_reputation_logs` audit trail altyapısı hazır tutulmaktadır.
+
+---
+
+## 8. Gerçek Zamanlı Sistem, WebSocket & Akıllı Bildirimler (Phase 9 Uygulaması)
+
+1. **WebSocket Ağ Geçidi & Redis Adaptörü (`RealtimeGateway` & `RedisIoAdapter`):**
+   - `/realtime` ad alanında Socket.IO sunucusu ve `@socket.io/redis-adapter` kümeleme desteği.
+   - JWT handshake ile oturumlu kullanıcılar için özel `user:${userId}` odası, anonim kullanıcılar için genel `events:global` odası.
+   - `join_moderation` korumalı odası ile sadece `MODERATOR` ve `ADMIN` rollerine canlı kuyruk akışı.
+2. **Mesaj Tutarlılığı ve Sıralama Garantisi:**
+   - Her olay mesajı `serverEventId` (UUID) ve `eventVersion` taşır.
+   - İstemci tarafında son 500 olay kimliği ile deduplication ve eski durumların yeni durumu ezmesini önleyen monotonik sürüm denetimi.
+   - Ağ kopmaları (Wi-Fi/Mobil veri geçişi) sonrası snapshot mutabakatı (reconciliation) ile REST üzerinden veri tazeleme.
+3. **Akıllı Bildirimler ve Expo Push Altyapısı (`NotificationsModule`):**
+   - Kullanıcıya özel olay onay, red, çözüm ve teyit bildirimleri (`user_notifications`).
+   - Cihaz push tokenları (`device_push_tokens`) ve kullanıcı tercihleri (`user_notification_preferences`).
+   - Geliştirme ortamında kontrollü simülasyon adaptörü; canlıda Expo Push API ve `DeviceNotRegistered` token temizliği.
+   - Detaylı mimari belgeleri: [REALTIME_ARCHITECTURE.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/architecture/REALTIME_ARCHITECTURE.md) ve [PUSH_NOTIFICATIONS_GUIDE.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/architecture/PUSH_NOTIFICATIONS_GUIDE.md).
+

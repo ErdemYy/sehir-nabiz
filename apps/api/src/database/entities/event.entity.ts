@@ -104,6 +104,9 @@ export class EventEntity {
   @Column({ type: 'boolean', default: false })
   isDemo!: boolean;
 
+  @Column({ type: 'int', default: 1 })
+  version!: number;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;
 

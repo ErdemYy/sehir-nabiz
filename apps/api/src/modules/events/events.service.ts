@@ -4,6 +4,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
@@ -13,6 +14,8 @@ import { CategoryEntity } from '../../database/entities/category.entity';
 import { EventModerationLogEntity } from '../../database/entities/event-moderation-log.entity';
 import { EventFeedbackEntity } from '../../database/entities/event-feedback.entity';
 import { UserReputationLogEntity } from '../../database/entities/user-reputation-log.entity';
+import { RealtimeService } from '../realtime/realtime.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import {
   EventStatus,
   EventSeverity,
@@ -25,6 +28,7 @@ import {
   FeedbackSummaryDto,
   ModerationEventItemDto,
   PaginatedModerationEventsResponse,
+  NotificationType,
 } from '@sehir-nabiz/shared';
 import {
   CreateEventDto,
@@ -53,6 +57,10 @@ export class EventsService {
     @InjectRepository(UserReputationLogEntity)
     private readonly reputationLogRepository: Repository<UserReputationLogEntity>,
     private readonly dataSource: DataSource,
+    @Optional()
+    private readonly realtimeService?: RealtimeService,
+    @Optional()
+    private readonly notificationsService?: NotificationsService,
   ) {}
 
   /**
@@ -141,6 +149,13 @@ export class EventsService {
         distanceMeters: Math.round(duplicateCandidate.distance_meters),
         createdAt: canViewDetails ? duplicateCandidate.createdAt : undefined,
       };
+    }
+
+    // Gerçek zamanlı bildirim ve yayın (WebSocket)
+    if (event.status === EventStatus.PENDING_REVIEW) {
+      this.realtimeService?.notifyModerationQueue(event);
+    } else if (event.status === EventStatus.ACTIVE) {
+      this.realtimeService?.broadcastEventCreated(event);
     }
 
     return event;
@@ -480,6 +495,7 @@ export class EventsService {
     await this.dataSource.transaction(async manager => {
       const updatePayload: Partial<EventEntity> = {
         status: newStatus,
+        version: (event.version || 1) + 1,
         updatedAt: new Date(),
       };
 
@@ -506,7 +522,55 @@ export class EventsService {
       `Olay durumu güncellendi: ${id} [${currentStatus} -> ${newStatus}] Kullanıcı: ${user.sub} (${user.role})`,
     );
 
-    return this.findById(id, user);
+    const updatedEvent = await this.findById(id, user);
+
+    // Gerçek zamanlı WebSocket yayını
+    this.realtimeService?.broadcastEventStatusChanged(updatedEvent);
+
+    // Akıllı bildirim üretimi (Section 12)
+    if (newStatus === EventStatus.ACTIVE) {
+      this.notificationsService
+        ?.createNotification({
+          userId: event.authorId,
+          type: NotificationType.EVENT_APPROVED,
+          title: 'Bildiriminiz yayınlandı',
+          body: `"${event.title}" başlıklı bildiriminiz onaylandı ve yayına alındı.`,
+          eventId: id,
+        })
+        .catch(() => {});
+    } else if (newStatus === EventStatus.REJECTED) {
+      this.notificationsService
+        ?.createNotification({
+          userId: event.authorId,
+          type: NotificationType.EVENT_REJECTED,
+          title: 'Bildiriminiz hakkında bir moderasyon kararı verildi',
+          body: `"${event.title}" başlıklı bildiriminiz moderasyon tarafından onaylanmadı.${dto.reason ? ` Gerekçe: ${dto.reason}` : ''}`,
+          eventId: id,
+        })
+        .catch(() => {});
+    } else if (newStatus === EventStatus.RESOLVED) {
+      this.notificationsService
+        ?.createNotification({
+          userId: event.authorId,
+          type: NotificationType.EVENT_RESOLVED,
+          title: 'Takip ettiğiniz gelişme çözüldü olarak işaretlendi',
+          body: `"${event.title}" başlıklı aksaklık çözüldü olarak işaretlendi.`,
+          eventId: id,
+        })
+        .catch(() => {});
+    } else if (newStatus === EventStatus.DISPUTED) {
+      this.notificationsService
+        ?.createNotification({
+          userId: event.authorId,
+          type: NotificationType.EVENT_DISPUTED,
+          title: 'Katkıda bulunduğunuz olaya itiraz edildi',
+          body: `"${event.title}" başlıklı olay hakkında ihtilaf kaydı oluşturuldu.`,
+          eventId: id,
+        })
+        .catch(() => {});
+    }
+
+    return updatedEvent;
   }
 
   /**
@@ -719,7 +783,43 @@ export class EventsService {
       `Geri bildirim kaydedildi: Olay: ${eventId}, Kullanıcı: ${userId}, Tür: ${dto.type}`,
     );
 
-    return this.getFeedbackSummary(eventId, userId);
+    const summary = await this.getFeedbackSummary(eventId, userId);
+
+    // Gerçek zamanlı WebSocket yayını
+    this.realtimeService?.broadcastFeedbackUpdated({
+      id: eventId,
+      confirmationCount: summary.confirmCount,
+      disputeCount: summary.disputeCount,
+      resolvedReportCount: summary.resolvedReportCount,
+      reliabilityScore: 1.0,
+    });
+
+    // Olay sahibine bildirim iletimi (Anti-spam kurallarıyla)
+    if (event.authorId !== userId) {
+      if (dto.type === FeedbackType.CONFIRM) {
+        this.notificationsService
+          ?.createNotification({
+            userId: event.authorId,
+            type: NotificationType.EVENT_FEEDBACK,
+            title: 'Bildirdiğiniz olay teyit edildi',
+            body: `"${event.title}" başlıklı bildiriminiz bir mahalle sakini tarafından görüldü olarak teyit edildi.`,
+            eventId,
+          })
+          .catch(() => {});
+      } else if (dto.type === FeedbackType.DISPUTE) {
+        this.notificationsService
+          ?.createNotification({
+            userId: event.authorId,
+            type: NotificationType.EVENT_DISPUTED,
+            title: 'Bildiriminize itiraz edildi',
+            body: `"${event.title}" başlıklı bildiriminize bilgi yanlışı veya yanıltıcı ihbar gerekçesiyle itiraz edildi.`,
+            eventId,
+          })
+          .catch(() => {});
+      }
+    }
+
+    return summary;
   }
 
   /**
@@ -781,7 +881,17 @@ export class EventsService {
 
     this.logger.log(`Geri bildirim geri çekildi: Olay: ${eventId}, Kullanıcı: ${userId}`);
 
-    return this.getFeedbackSummary(eventId, userId);
+    const summary = await this.getFeedbackSummary(eventId, userId);
+
+    this.realtimeService?.broadcastFeedbackUpdated({
+      id: eventId,
+      confirmationCount: summary.confirmCount,
+      disputeCount: summary.disputeCount,
+      resolvedReportCount: summary.resolvedReportCount,
+      reliabilityScore: 1.0,
+    });
+
+    return summary;
   }
 
   /**

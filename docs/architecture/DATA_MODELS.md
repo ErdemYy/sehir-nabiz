@@ -270,4 +270,89 @@ export const VerifyEventDtoSchema = z.object({
 });
 
 export type VerifyEventDto = z.infer<typeof VerifyEventDtoSchema>;
+
+/**
+ * Phase 9: Bildirimler ve Push Modelleri
+ */
+export const RegisterPushTokenSchema = z.object({
+  token: z.string().min(10).max(255),
+  platform: z.enum(['ios', 'android', 'web']),
+  deviceIdentifier: z.string().max(128).optional().nullable(),
+});
+
+export type RegisterPushTokenInput = z.infer<typeof RegisterPushTokenSchema>;
+
+export const UpdateNotificationPreferencesSchema = z.object({
+  followedEvents: z.boolean().optional(),
+  confirmedEvents: z.boolean().optional(),
+  reportedEvents: z.boolean().optional(),
+  nearbyEvents: z.boolean().optional(),
+  systemNotifications: z.boolean().optional(),
+  pushEnabled: z.boolean().optional(),
+  inAppEnabled: z.boolean().optional(),
+});
+
+export type UpdateNotificationPreferencesInput = z.infer<typeof UpdateNotificationPreferencesSchema>;
+```
+
+---
+
+## 3. Phase 9: Bildirim ve Cihaz Tabloları (DDL)
+
+```sql
+-- 1. Bildirim Türü ve Platform Enumları
+CREATE TYPE notification_type_enum AS ENUM(
+  'EVENT_APPROVED',
+  'EVENT_REJECTED',
+  'EVENT_RESOLVED',
+  'EVENT_DISPUTED',
+  'EVENT_FEEDBACK',
+  'MODERATION_QUEUE',
+  'SYSTEM'
+);
+
+CREATE TYPE push_platform_enum AS ENUM('ios', 'android', 'web');
+
+-- 2. Kullanıcı Bildirimleri Tablosu
+CREATE TABLE user_notifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "userId" UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    type notification_type_enum NOT NULL DEFAULT 'SYSTEM',
+    title VARCHAR(150) NOT NULL,
+    body VARCHAR(500) NOT NULL,
+    "eventId" UUID REFERENCES events(id) ON DELETE SET NULL,
+    "readAt" TIMESTAMPTZ,
+    "expiresAt" TIMESTAMPTZ,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IDX_notifications_user_created ON user_notifications ("userId", "createdAt" DESC);
+CREATE INDEX IDX_notifications_user_read ON user_notifications ("userId", "readAt");
+
+-- 3. Cihaz Push Tokenları Tablosu
+CREATE TABLE device_push_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "userId" UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    platform push_platform_enum NOT NULL DEFAULT 'android',
+    "deviceIdentifier" VARCHAR(128),
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "lastSeenAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IDX_device_push_tokens_user_active ON device_push_tokens ("userId", "isActive");
+
+-- 4. Kullanıcı Bildirim Tercihleri Tablosu
+CREATE TABLE user_notification_preferences (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "userId" UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    "followedEvents" BOOLEAN NOT NULL DEFAULT true,
+    "confirmedEvents" BOOLEAN NOT NULL DEFAULT true,
+    "reportedEvents" BOOLEAN NOT NULL DEFAULT true,
+    "nearbyEvents" BOOLEAN NOT NULL DEFAULT false,
+    "systemNotifications" BOOLEAN NOT NULL DEFAULT true,
+    "pushEnabled" BOOLEAN NOT NULL DEFAULT true,
+    "inAppEnabled" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 ```

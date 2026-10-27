@@ -6,3 +6,6 @@ export * from './event-moderation-log.entity';
 export * from './event-media.entity';
 export * from './event-feedback.entity';
 export * from './user-reputation-log.entity';
+export * from './user-notification.entity';
+export * from './device-push-token.entity';
+export * from './user-notification-preference.entity';

@@ -117,3 +117,46 @@ export enum MediaStatus {
   REJECTED = 'REJECTED',
   DELETED = 'DELETED',
 }
+
+/**
+ * Bildirim Türleri (Phase 9)
+ */
+export enum NotificationType {
+  EVENT_APPROVED = 'EVENT_APPROVED',
+  EVENT_REJECTED = 'EVENT_REJECTED',
+  EVENT_RESOLVED = 'EVENT_RESOLVED',
+  EVENT_DISPUTED = 'EVENT_DISPUTED',
+  EVENT_FEEDBACK = 'EVENT_FEEDBACK',
+  MODERATION_QUEUE = 'MODERATION_QUEUE',
+  SYSTEM = 'SYSTEM',
+}
+
+/**
+ * Cihaz Push Bildirim Platformu (Phase 9)
+ */
+export enum PushPlatform {
+  IOS = 'ios',
+  ANDROID = 'android',
+  WEB = 'web',
+}
+
+/**
+ * Gerçek Zamanlı WebSocket Olay Adları (Phase 9)
+ */
+export enum RealtimeEventName {
+  EVENT_CREATED = 'event:created',
+  EVENT_UPDATED = 'event:updated',
+  EVENT_STATUS_CHANGED = 'event:status_changed',
+  EVENT_FEEDBACK_UPDATED = 'event:feedback_updated',
+  MODERATION_EVENT_ADDED = 'moderation:event_added',
+  NOTIFICATION_NEW = 'notification:new',
+}
+
+/**
+ * Gerçek Zamanlı WebSocket Odaları (Phase 9)
+ */
+export enum RealtimeRoom {
+  EVENTS_GLOBAL = 'events:global',
+  MODERATION_QUEUE = 'moderation:queue',
+}
+

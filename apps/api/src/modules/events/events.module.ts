@@ -9,6 +9,7 @@ import { UserReputationLogEntity } from '../../database/entities/user-reputation
 import { EventsService } from './events.service';
 import { EventsController } from './events.controller';
 import { CategoriesModule } from '../categories/categories.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { CategoriesModule } from '../categories/categories.module';
       UserReputationLogEntity,
     ]),
     CategoriesModule,
+    NotificationsModule,
   ],
   controllers: [EventsController],
   providers: [EventsService],

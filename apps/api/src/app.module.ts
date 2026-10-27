@@ -11,6 +11,8 @@ import { EventsModule } from './modules/events/events.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { MediaModule } from './modules/media/media.module';
 import { ModerationModule } from './modules/moderation/moderation.module';
+import { RealtimeModule } from './modules/realtime/realtime.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 
 @Module({
@@ -32,6 +34,8 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     DatabaseModule,
     RedisModule,
     StorageModule,
+    RealtimeModule,
+    NotificationsModule,
     AuthModule,
     CategoriesModule,
     EventsModule,
