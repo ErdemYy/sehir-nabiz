@@ -34,3 +34,7 @@ graphify-out/cache/
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# Test & Preview Artifacts
+.playwright-mcp/
+sehir-nabiz-web-preview.png
