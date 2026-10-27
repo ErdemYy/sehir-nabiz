@@ -56,6 +56,6 @@ Beta Sürüm Geçiş Kapısı; uygulamanın geliştirme ve simülatör aşaması
 
 ## 4. Karar ve Sonuç
 
-ŞehirNabız projesinin mimari, kod kalitesi ve birim/entegrasyon testleri mükemmel durumdadır (329/329 başarılı test).
+ŞehirNabız projesinin mimari, kod kalitesi ve birim/entegrasyon testleri mükemmel durumdadır (330/330 başarılı test).
 
 Ancak yukarıdaki 3 kritik blocker (canlı APK derlemesi, fiziksel cihaz QA ve push sertifikaları) karşılanmadan **mağazalara veya genel açık betaya geçiş ONAYLANMAZ.** Uygulama şu aşamada **yalnızca kontrollü iç geliştirici betası (Internal Dev Build)** seviyesindedir.

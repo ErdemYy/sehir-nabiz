@@ -1,7 +1,7 @@
 # Graph Report - ŞehirNabız  (2026-10-27)
 
 ## Corpus Check
-- 334 files · ~180,662 words
+- 334 files · ~180,981 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 21 file(s) not represented in the graph (top: .xml 10, (none) 3, .example 2)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `cb2ba5c3`
+- Built from commit: `2936cb21`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -487,7 +487,7 @@ Nodes (3): NotificationsController, NotificationsService, UserNotificationDto
 
 ### Community 82 - "ŞehirNabız — Phase 14 Doğrulama ve Kapanış Raporu (PHASE_14_REPORT.md)"
 Cohesion: 0.12
-Nodes (14): 10. MapLibre GL Native Sürüm Doğrulaması, 11. Android Paket Kimliği Kararı, 12. Monorepo Toplam Test Sayısı (329 / 329 Passed), 14. Git Commit Bilgisi, 15. Kalan Yayın Engelleri (Release Blockers Durumu), 1. Hesap Silme API'si (Account Deletion API), 3. Veri Silme ve Anonimleştirme Politikası (PII Masking), 5. Oturum İptali ve Güvenlik İzolasyonu (+6 more)
+Nodes (14): 10. MapLibre GL Native Sürüm Doğrulaması, 11. Android Paket Kimliği Kararı, 12. Monorepo Toplam Test Sayısı (330 / 330 Passed), 14. Git Commit Bilgisi, 15. Kalan Yayın Engelleri (Release Blockers Durumu), 1. Hesap Silme API'si (Account Deletion API), 3. Veri Silme ve Anonimleştirme Politikası (PII Masking), 5. Oturum İptali ve Güvenlik İzolasyonu (+6 more)
 
 ### Community 83 - "UsersController"
 Cohesion: 0.20
@@ -727,7 +727,7 @@ Nodes (5): isDevelopmentDemoEnabled(), 2.1 Güvenlik Açığı Analizi (Önceki 
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `@nestjs/common` connect `@nestjs/common` to `app.module.ts`, `outbox.e2e-spec.ts`, `ref_express`, `UserEntity`, `api/package.json`, `shared/src/index.ts`, `DevicePushTokenEntity`, `CategoryEntity`, `phase_14_account_deletion.e2e-spec.ts`, `health.controller.ts`, `media.controller.ts`, `users.controller.ts`, `main.ts`, `events.controller.ts`, `notifications.service.ts`, `stats.service.ts`, `auth.controller.ts`?**
-  _High betweenness centrality (0.047) - this node is a cross-community bridge._
+  _High betweenness centrality (0.046) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `useAppTheme()` (e.g. with `4. Tema Sistemi` and `7. Gerçek Ekran ve Tasarım Sistemi Kontrolü`) actually correct?**
   _`useAppTheme()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `@nestjs/platform-express`, `@sehir-nabiz/shared`, `passport` to the rest of the system?**
@@ -735,7 +735,7 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `1. Geliştirme Fazları` be split into smaller, more focused modules?**
   _Cohesion score 0.14285714285714285 - nodes in this community are weakly interconnected._
 - **Why does `useAppTheme()` connect `useAppTheme` to `PulseMapView.tsx`, `CreateEventFlow.tsx`, `moderation/index.tsx`, `app/_layout.tsx`, `ThemeContext.tsx`, `react`, `ŞehirNabız — Phase 7.5 Doğrulama ve Güvenlik Raporu (PHASE_7_5_VERIFICATION.md)`, `(tabs)/index.tsx`?**
-  _High betweenness centrality (0.047) - this node is a cross-community bridge._
+  _High betweenness centrality (0.044) - this node is a cross-community bridge._
 - **Are the 3 inferred relationships involving `AppText()` (e.g. with `Phase 5: Premium Mobil UI Foundation ve Tasarım Sistemi (TAMAMLANDI)` and `6. Temel UI Bileşen Kütüphanesi`) actually correct?**
   _`AppText()` has 3 INFERRED edges - model-reasoned connections that need verification._
 - **Should `outbox.e2e-spec.ts` be split into smaller, more focused modules?**

@@ -18,9 +18,9 @@
     "semantic_hash": ""
   },
   "docs/architecture/ROADMAP_PHASES.md": {
-    "mtime": 1793129339.051604,
-    "seen": 1793129422.7426307,
-    "ast_hash": "fe325d203270a908fdabe12a248d3fe3",
+    "mtime": 1793129749.3732965,
+    "seen": 1793129770.477142,
+    "ast_hash": "b9b2da02c2bed829e27587149cbb567e",
     "semantic_hash": ""
   },
   "docs/architecture/SECURITY_PRIVACY.md": {
@@ -2052,9 +2052,9 @@
     "semantic_hash": ""
   },
   "docs/BETA_RELEASE_GATE.md": {
-    "mtime": 1793129079.891802,
-    "seen": 1793129422.7426307,
-    "ast_hash": "a8ea44e6bc6fbe502fa1be6c4653bc50",
+    "mtime": 1793129738.4298818,
+    "seen": 1793129770.477142,
+    "ast_hash": "cf6e52a856a18d3b06a16f6094c65763",
     "semantic_hash": ""
   },
   "docs/DATA_RETENTION_AND_DELETION.md": {
@@ -2124,9 +2124,9 @@
     "semantic_hash": ""
   },
   "apps/api/test/phase_14_account_deletion.e2e-spec.ts": {
-    "mtime": 1793128843.9005773,
-    "seen": 1793129422.7420442,
-    "ast_hash": "21e679765305395ce39acd02ce026f8b",
+    "mtime": 1793129586.9667819,
+    "seen": 1793129770.476627,
+    "ast_hash": "c1fe2156d11080f055866ea1541d0e64",
     "semantic_hash": ""
   },
   "apps/mobile/app/account-deletion.tsx": {
@@ -2148,9 +2148,9 @@
     "semantic_hash": ""
   },
   "docs/PHASE_14_REPORT.md": {
-    "mtime": 1793129403.3018677,
-    "seen": 1793129422.7426307,
-    "ast_hash": "41a673f04d2c51b8047ecc7aab7a2588",
+    "mtime": 1793129724.6954212,
+    "seen": 1793129770.477142,
+    "ast_hash": "7f969ea6372316bfd3b0a6e1d1fc431d",
     "semantic_hash": ""
   }
 }

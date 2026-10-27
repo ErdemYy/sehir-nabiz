@@ -3,7 +3,7 @@
 **Tarih:** 27 Ekim 2026  
 **Faz:** Phase 14 — Güvenli Hesap Silme, Veri Yaşam Döngüsü ve Release Blocker Düzeltmeleri  
 **Durum:** TAMAMLANDI (%100 Yeşil)  
-**Toplam Başarılı Test:** 329 / 329  
+**Toplam Başarılı Test:** 330 / 330  
 
 ---
 
@@ -95,7 +95,8 @@ Veri tabanında `CASCADE DELETE` ile kullanıcının tamamen uçurulması, kenti
 
 ## 4. Medya ve Depolama Temizliği (MinIO Cleanup)
 
-- Kullanıcının bildirdiği ancak onaylanmamış/taslak statüsünde kalan veya olay silme kapsamında işaretlenen medya dosyaları MinIO / Cloudflare R2 depolama alanından temizlenir.
+- Kullanıcının bildirdiği ancak onaylanmamış/taslak statüsünde kalan veya olay silme kapsamında işaretlenen medya dosyaları MinIO / Cloudflare R2 depolama alanından `StorageService.deleteObject(storageKey)` metodu ile fiziksel olarak silinir.
+- **Canlı MinIO Doğrulaması:** Gerçek MinIO servisine (`http://127.0.0.1:9000`) bir test görseli yüklenmiş (`putObject`), dosyanın varlığı `getObject()` ile kanıtlanmış, ardından hesap silme çalıştırıldığında nesnenin depolamadan yok edildiği, sonraki `getObject()` çağrısının hata fırlattığı ve `details.mediaDeleted: 1` audit kaydı oluşturulduğu E2E testiyle kanıtlanmıştır.
 - **Hata Toleransı (Fault-Tolerance):**
   - MinIO sunucusuna erişilememesi veya nesne silme hatası (`S3Error`) fırlatılması durumunda tüm hesap silme işlemi `ROLLBACK` edilmez.
   - Hata yakalanır (`catch`), `account_deletion_requests.lastError` alanına yazılır ve talep durumu `FAILED` olarak işaretlenir.
@@ -166,7 +167,8 @@ Phase 14 kapsamında eklenen tüm yeni güvenlik senaryoları otomatik testlerle
 | **Token İptali** | API E2E | Silme sonrası refresh token tablosunun temizlenmesi | **0 token, login engelli** |
 | **WebSocket İzolasyonu** | Unit & E2E | `RealtimeGateway.disconnectUser` ve `auth:revoked` emit | **Bağlantı derhal kesilir** |
 | **Push Token & Tercih Silimi** | API E2E | `device_push_tokens` ve bildirimlerin silinmesi | **0 kayıt kalır** |
-| **Medya Temizliği Hata Toleransı** | API Unit | S3 hatasında işlemin çökmemesi, `FAILED` audit kaydı | **lastError yazılır, retry hazır** |
+| **Gerçek MinIO Nesne Silme** | API E2E | Canlı MinIO'ya yüklenen dosyanın silinmesi ve doğrulanması | **MinIO'dan silindi, DELETED işaretlendi** |
+| **Medya Temizliği Hata Toleransı** | API E2E | S3 hatasında işlemin çökmemesi, `FAILED` audit kaydı | **lastError yazılır, retry hazır** |
 | **Silme Talebi İptali** | API E2E | 14 gün içinde `POST /cancel-deletion` ile hesabı yeniden açma | **AccountStatus.ACTIVE döner** |
 | **Doğrudan Anında Silme** | API E2E | `immediate: true` ile beklemeden PII maskeleme | **Anında DELETED olur** |
 | **Mobil Danger Zone UI** | Mobile Test | Modal doğrulama, şifre girişi, logout tetikleyicisi | **Tam akış onaylandı** |
@@ -177,7 +179,7 @@ Phase 14 kapsamında eklenen tüm yeni güvenlik senaryoları otomatik testlerle
 
 Tüm testler canlı Docker konteynerleri (PostgreSQL 16 + PostGIS, Redis 7, MinIO) üzerinde koşulmuştur:
 
-- **API Canlı Entegrasyon (`test/phase_14_account_deletion.e2e-spec.ts`):** 10 test (2.56s)
+- **API Canlı Entegrasyon (`test/phase_14_account_deletion.e2e-spec.ts`):** 11 test (2.02s)
   1. Başarılı Soğuma Süresi Talebi (`PENDING_DELETION`, 14 gün)
   2. Başarılı Anında Silme ve Veri Anonimleştirme (`immediate: true`, PII maskeleme)
   3. Yanlış Şifre Koruması (`401 Unauthorized`)
@@ -187,7 +189,8 @@ Tüm testler canlı Docker konteynerleri (PostgreSQL 16 + PostGIS, Redis 7, MinI
   7. Eşzamanlı Silme İstekleri Yarış Durumu (CAS / Row-level locking)
   8. Web Üzerinden Silme Talebi (`/web-deletion-request`)
   9. Oturum İptali & Push Token Temizliği Doğrulaması
-  10. Medya Temizliği Hata Toleransı ve Yeniden Deneme Kaydı
+  10. Gerçek MinIO Nesnesi Yükleme, Depolamadan Silme ve Fiziksel Yok Edilme Doğrulaması
+  11. Medya Temizliği Hata Toleransı ve Yeniden Deneme Kaydı
 - **Mobil Entegrasyon (`test/phase_14.test.js`):** 6 test
   1. MapLibre kurulu sürüm doğrulaması (`11.5.0`)
   2. Android ve iOS paket kimliği kanonikliği (`com.sehirnabiz.app`)
@@ -219,17 +222,17 @@ Tüm testler canlı Docker konteynerleri (PostgreSQL 16 + PostGIS, Redis 7, MinI
 
 ---
 
-## 12. Monorepo Toplam Test Sayısı (329 / 329 Passed)
+## 12. Monorepo Toplam Test Sayısı (330 / 330 Passed)
 
-Phase 13 sonunda mevcut olan 311 test korunmuş ve Phase 14 kapsamında 18 yeni test eklenerek test tabanı büyütülmüştür:
+Phase 13 sonunda mevcut olan 311 test korunmuş ve Phase 14 kapsamında 19 yeni test eklenerek test tabanı büyütülmüştür:
 
 | Paket / Servis | Test Türü | Önceki Test (Phase 13) | Yeni Eklenen (Phase 14) | Toplam Test |
 | :--- | :--- | :--- | :--- | :--- |
-| **`sehir-nabiz-api`** | Vitest (Unit & E2E) | 189 | +10 (E2E) | **199** |
+| **`sehir-nabiz-api`** | Vitest (Unit & E2E) | 189 | +11 (E2E) | **200** |
 | **`sehir-nabiz-mobile`** | Node.js Test Runner | 104 | +7 (Integration) | **111** |
 | **`@sehir-nabiz/design-tokens`** | Node.js Test Runner | 11 | 0 | **11** |
 | **`@sehir-nabiz/shared`** | Node.js Test Runner | 7 | +1 (Deletion Schemas) | **8** |
-| **GENEL TOPLAM** | **Full Monorepo** | **311** | **+18** | **329 / 329 (%100 Yeşil)** |
+| **GENEL TOPLAM** | **Full Monorepo** | **311** | **+19** | **330 / 330 (%100 Yeşil)** |
 
 ---
 

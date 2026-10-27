@@ -506,6 +506,85 @@ describe('Phase 14 — Güvenli Hesap Silme, Veri Yaşam Döngüsü ve Release B
   });
 
   describe('8. Medya Temizliği, MinIO Hata Toleransı & Yeniden Deneme (Retry)', () => {
+    it('gerçek MinIO nesnesi yükleyip hesap silindiğinde nesnenin MinIO depolamasından fiziksel olarak silindiğini doğrulamalı', async () => {
+      const user = await createTestUser('media_real_minio_user');
+      const mediaRepo = dataSource.getRepository(EventMediaEntity);
+
+      const eventResult = await dataSource.query(
+        `
+        INSERT INTO "events" (
+          "authorId", "categoryId", "title", "description", "severity", "status",
+          "location", "expiresAt", "reliabilityScore", "createdAt", "updatedAt"
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6,
+          ST_SetSRID(ST_MakePoint($7, $8), 4326),
+          $9, 1.0, NOW(), NOW()
+        ) RETURNING id;
+        `,
+        [
+          user.id,
+          testCategory.id,
+          'Canlı MinIO Test Olayı',
+          'Açıklama',
+          EventSeverity.MEDIUM,
+          EventStatus.PENDING_REVIEW,
+          35.48,
+          38.72,
+          new Date(Date.now() + 86400000),
+        ],
+      );
+      const eventId = eventResult[0].id;
+      const realStorageKey = `events/phase14-real-test-${user.id}.webp`;
+
+      // 1. MinIO'ya gerçek test görseli/buffer'ı yaz
+      const testBuffer = Buffer.from('RIFF....WEBPVP8 ... fake webp bytes for live test');
+      await storageService.putObject(realStorageKey, testBuffer, 'image/webp');
+
+      // MinIO'da nesnenin var olduğunu doğrula
+      const downloadedBefore = await storageService.getObject(realStorageKey);
+      expect(downloadedBefore).toBeDefined();
+      expect(downloadedBefore.length).toBeGreaterThan(0);
+
+      // 2. EventMediaEntity kaydet (PENDING_UPLOAD durumunda)
+      const mediaEntity = await mediaRepo.save(
+        mediaRepo.create({
+          eventId,
+          uploadedById: user.id,
+          storageKey: realStorageKey,
+          mimeType: 'image/webp',
+          fileSize: testBuffer.length,
+          status: MediaStatus.PENDING_UPLOAD,
+        }),
+      );
+
+      // 3. Silme talebi oluştur ve executeDeletion çalıştır
+      const delReq = await dataSource.getRepository(AccountDeletionRequestEntity).save(
+        dataSource.getRepository(AccountDeletionRequestEntity).create({
+          userId: user.id,
+          status: DeletionRequestStatus.PROCESSING,
+          scheduledFor: new Date(),
+          attemptCount: 1,
+        }),
+      );
+
+      const execResult = await deletionService.executeDeletion(user.id, delReq.id);
+      expect(execResult.success).toBe(true);
+
+      // 4. Veritabanında medya durumunun DELETED olduğunu doğrula
+      const freshMedia = await mediaRepo.findOne({ where: { id: mediaEntity.id } });
+      expect(freshMedia?.status).toBe(MediaStatus.DELETED);
+
+      // 5. MinIO nesnesinin fiziksel olarak silindiğini doğrula (getObject hata fırlatmalı)
+      await expect(storageService.getObject(realStorageKey)).rejects.toThrow();
+
+      // 6. Audit kaydında mediaDeleted: 1 olduğunu doğrula
+      const freshAudit = await dataSource.getRepository(AccountDeletionRequestEntity).findOne({
+        where: { id: delReq.id },
+      });
+      expect(freshAudit?.status).toBe(DeletionRequestStatus.COMPLETED);
+      expect(freshAudit?.details?.mediaDeleted).toBe(1);
+    });
+
     it('MinIO nesne silme hatası aldığında ana silme işlemi çökmemeli ve hata kaydedilmeli', async () => {
       const user = await createTestUser('media_error_user');
 
