@@ -110,6 +110,16 @@ export class AuthService {
     }
 
     // Hesap Durumu Kontrolü
+    if (user.accountStatus === AccountStatus.DELETED) {
+      throw new UnauthorizedException('Bu hesap kalıcı olarak silinmiştir.');
+    }
+
+    if (user.accountStatus === AccountStatus.PENDING_DELETION) {
+      throw new UnauthorizedException(
+        'Hesabınız silinme sürecindedir. Silme talebini iptal etmek için iptal akışını kullanınız.',
+      );
+    }
+
     if (user.accountStatus === AccountStatus.SUSPENDED) {
       throw new UnauthorizedException(
         'Hesabınız askıya alınmıştır. Destek ekibiyle iletişime geçiniz.',
@@ -183,8 +193,13 @@ export class AuthService {
         where: { id: payload.sub },
       });
 
-      if (!user || user.accountStatus === AccountStatus.SUSPENDED) {
-        throw new UnauthorizedException('Kullanıcı hesabı aktif değil.');
+      if (
+        !user ||
+        user.accountStatus === AccountStatus.SUSPENDED ||
+        user.accountStatus === AccountStatus.DELETED ||
+        user.accountStatus === AccountStatus.PENDING_DELETION
+      ) {
+        throw new UnauthorizedException('Kullanıcı hesabı aktif değil veya silinmiş.');
       }
 
       // 5. Yeni Token Çifti Üret (Rotation)

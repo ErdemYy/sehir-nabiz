@@ -11,12 +11,14 @@ import { UserNotificationEntity } from './entities/user-notification.entity';
 import { DevicePushTokenEntity } from './entities/device-push-token.entity';
 import { UserNotificationPreferenceEntity } from './entities/user-notification-preference.entity';
 import { OutboxEventEntity } from './entities/outbox-event.entity';
+import { AccountDeletionRequestEntity } from './entities/account-deletion-request.entity';
 import { InitialAuthAndPostGis1740000000000 } from './migrations/1740000000000-InitialAuthAndPostGis';
 import { CreateCategoriesAndEvents1740000001000 } from './migrations/1740000001000-CreateCategoriesAndEvents';
 import { CreateEventMedia1740000002000 } from './migrations/1740000002000-CreateEventMedia';
 import { CreateEventFeedbackAndReputationLogs1740000003000 } from './migrations/1740000003000-CreateEventFeedbackAndReputationLogs';
 import { CreateNotificationsAndPushTokens1740000004000 } from './migrations/1740000004000-CreateNotificationsAndPushTokens';
 import { CreateOutboxEventsAndIdempotency1740000005000 } from './migrations/1740000005000-CreateOutboxEventsAndIdempotency';
+import { CreateAccountDeletionAndAudit1740000006000 } from './migrations/1740000006000-CreateAccountDeletionAndAudit';
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
@@ -38,6 +40,7 @@ export const dataSourceOptions: DataSourceOptions = {
     DevicePushTokenEntity,
     UserNotificationPreferenceEntity,
     OutboxEventEntity,
+    AccountDeletionRequestEntity,
   ],
   migrations: [
     InitialAuthAndPostGis1740000000000,
@@ -46,6 +49,7 @@ export const dataSourceOptions: DataSourceOptions = {
     CreateEventFeedbackAndReputationLogs1740000003000,
     CreateNotificationsAndPushTokens1740000004000,
     CreateOutboxEventsAndIdempotency1740000005000,
+    CreateAccountDeletionAndAudit1740000006000,
   ],
   synchronize: false,
   logging: process.env.DB_LOGGING === 'true',

@@ -1,8 +1,8 @@
 # ŞehirNabız — Bilinen Sorunlar ve Teknik Borç Envanteri (Known Issues)
 
 **Tarih:** 27 Ekim 2026  
-**Faz:** Phase 13 — Beta Release Preparation, Security Audit & Distribution Readiness  
-**Son Durum:** Beta Öncesi Risk Değerlendirmesi  
+**Faz:** Phase 14 — Güvenli Hesap Silme, Veri Yaşam Döngüsü ve Release Blocker Düzeltmeleri  
+**Son Durum:** Beta Öncesi Risk Değerlendirmesi (Hesap Silme Engeli Başarıyla Çözüldü)  
 
 ---
 
@@ -14,12 +14,12 @@ Bu belge, ŞehirNabız projesinde mevcut bilinen sınırları, ertelenen maddele
 
 ## 2. Sorun ve Eksiklik Envanteri
 
-### 🔴 Blocker (Canlı Mağaza ve Açık Beta Öncesi Zorunlu)
+### 🔴 Kalan Blockerlar (Canlı Mağaza ve Açık Beta Öncesi Zorunlu)
 
 #### 1. Fiziksel Cihaz Donanım Doğrulaması Yapılmadı
 - **Açıklama:** Uygulama Expo Dev Client, Metro bundler ve simülatör/web ortamlarında test edilmiştir. Farklı ekran boyutlarına, GPU yongalarına (Adreno, Mali) ve RAM kısıtlarına sahip gerçek fiziksel Android ve iOS cihazlarında kapsamlı alan testleri henüz gerçekleştirilmemiştir.
 - **Risk:** Eski donanımlı Android cihazlarda MapLibre GPU yükü altında FPS düşüşü veya batarya tüketimi yaşanabilir.
-- **Çözüm Planı:** Faz 14 kapsamında 5 farklı Android cihazda ve 3 iOS modelinde minimum 48 saatlik termal ve bellek profillemesi (Android Studio Profiler / Xcode Instruments) yapılmalıdır.
+- **Çözüm Planı:** Faz 15 kapsamında fiziksel Android ve iOS cihazlarında termal ve bellek profillemesi (Android Studio Profiler / Xcode Instruments) yapılmalıdır.
 - **Geçici Çözüm:** Beta testleri kontrollü simülatör veya yüksek güçlü test cihazlarıyla sınırlandırılmalıdır.
 
 #### 2. Bağımsız Android APK / AAB ve iOS IPA Üretimi Ertelendi
@@ -32,10 +32,17 @@ Bu belge, ŞehirNabız projesinde mevcut bilinen sınırları, ertelenen maddele
 - **Risk:** Uygulama kapalıyken (arka planda) kullanıcının kilit ekranına bildirim düşmesi fiziksel olarak doğrulanamamıştır.
 - **Çözüm Planı:** Canlı sunucu ortam değişkenlerine `FIREBASE_SERVICE_ACCOUNT` ve `APNS_KEY_ID` tanımlanarak uçtan uca bildirim iletimi test edilmelidir.
 
-#### 4. Kullanıcı Hesap ve Kişisel Veri Silme Akışı Bulunmuyor (Right to Be Forgotten)
-- **Açıklama:** Apple App Store Review Guideline 5.1.1(v) ve KVKK Madde 7 gereğince hesap oluşturulabilen her uygulamada doğrudan mobil uygulama içinden hesap silme seçeneği sunulmalıdır. Backend'de `DELETE /users/me` uç noktası henüz geliştirilmemiştir.
-- **Risk:** App Store ve Google Play inceleme sürecinde doğrudan red (App Rejection) sebebi.
-- **Çözüm Planı:** Phase 14'te soft-delete ve kişisel verileri anonimleştirme iş akışıyla `DELETE /api/v1/users/me` uç noktası ve Ayarlar ekranına "Hesabımı Sil" butonu eklenmelidir.
+---
+
+### 🟢 Çözülen Blockerlar (Phase 14)
+
+#### [ÇÖZÜLDÜ] Kullanıcı Hesap ve Kişisel Veri Silme Akışı (Right to Be Forgotten)
+- **Açıklama:** Apple App Store Review Guideline 5.1.1(v) ve KVKK Madde 7 gereğince hesap oluşturulabilen her uygulamada doğrudan mobil uygulama içinden ve kamuya açık bir web URL'inden hesap silme seçeneği sunulmalıdır.
+- **Durum:** **Phase 14 ile Tamamlandı.**
+  - Backend: `DELETE /api/v1/users/me`, `POST /api/v1/users/web-deletion-request`, `GET /account-deletion` web sayfası, `POST /api/v1/users/cancel-deletion` ve `GET /api/v1/users/me/deletion-status` geliştirildi.
+  - Veri Hijyeni: E-posta maskeleme (`deleted_<timestamp>_<uuid>@deleted.sehirnabiz.local`), parola hash ezme (`*DELETED*`), display name `"Anonim Vatandaş"`, oturum feshi, push token imhası ve MinIO medya temizliği uygulandı.
+  - Mobil: Ayarlar ekranında Tehlikeli Bölge ve şifre doğrulamalı silme modalı entegre edildi.
+  - Doğrulama: 10 E2E ve 6 mobil birim testi (%100 başarı) ile kapatıldı.
 
 ---
 

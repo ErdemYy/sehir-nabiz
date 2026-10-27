@@ -1,8 +1,8 @@
 # ŞehirNabız — Dağıtım ve Yayın Yapılandırması Kılavuzu (RELEASE_CONFIGURATION.md)
 
 **Tarih:** 27 Ekim 2026  
-**Faz:** Phase 13 — Beta Release Preparation, Security Audit & Distribution Readiness  
-**Son Durum:** Yapılandırma Standartları ve Ortam Ayrıştırması  
+**Faz:** Phase 14 — Güvenli Hesap Silme, Veri Yaşam Döngüsü ve Release Blocker Düzeltmeleri  
+**Son Durum:** Yapılandırma Standartları, Mağaza Uyumluluğu ve Hesap Silme Desteği  
 
 ---
 
@@ -125,5 +125,41 @@ Mağaza inceleme süreçlerinde (Apple App Review & Google Play Data Safety) red
 ## 8. Yayın Hazırlık Durumu (Release Readiness Status)
 
 > [!WARNING]
-> **Mevcut Durum: 🔴 BLOCKED (Canlı API Alan Adı Bekleniyor)**  
-> Uygulama release konfigürasyonu yerel olarak tam ve hatasızdır; ancak gerçek bir canlı alan adı (örn: `https://api.sehirnabiz.com/api/v1`) henüz internete açılmadığı için Production derlemesi bilerek ve isteyerek **BLOCKED** olarak işaretlenmiştir.
+> **Mevcut Durum: 🟡 BETA READINESS (Teknik Altyapı Hazır, Dağıtım Öncesi 3 Engel Kalan)**  
+> Uygulama release konfigürasyonu yerel olarak tam ve hatasızdır; Mağaza hesap silme şartı (Apple Guideline 5.1.1(v) & Google Play Data Safety) Phase 14 ile eksiksiz tamamlanmıştır.
+
+---
+
+## 9. Native Paket ve Bağımlılık Doğrulaması (MapLibre & Paket Kimliği)
+
+Phase 14 denetimi kapsamında bağımlılık kilitleri ve kimlik tanımlayıcıları doğrulanmıştır:
+
+### MapLibre Native Sürümü
+- **`apps/mobile/package.json`:** `"@maplibre/maplibre-react-native": "11.5.0"`
+- **`pnpm-lock.yaml`:** `@maplibre/maplibre-react-native@11.5.0`
+- **Doğrulama Sonucu:** Projede kurulu ve çalışan gerçek sürüm **`11.5.0`**'dır. Geçmiş dokümanlarda yer alan `10.1.1` ifadesi yazım hatası olup 11.5.0 donanım hızlandırmalı vektör harita motoru kullanılmaktadır.
+- **Config Plugin Uyumu:** `@maplibre/maplibre-react-native` Expo config plugini `apps/mobile/app.json` içinde `plugins` dizisinde kayıtlıdır ve Prebuild/EAS derleme adımlarında native Android/iOS projelerine doğru Maven/CocoaPods bağımlılıklarını enjekte eder.
+
+### Android Paket Kimliği & iOS Bundle ID Kararı
+- **`apps/mobile/app.json`:**
+  - `android.package`: `com.sehirnabiz.app`
+  - `ios.bundleIdentifier`: `com.sehirnabiz.app`
+- **Karar:** Mağaza kimliği olarak Android ve iOS platformlarında tutarlı biçimde tek bir kanonik değer belirlenmiştir: **`com.sehirnabiz.app`**.
+- Geçmiş notlardaki `com.sehirnabiz.mobile` ifadesi bir taslak önerisi olup hiçbir derleme dosyasına veya konfigürasyona yansıtılmamıştır. Mevcut tüm testler (`phase_6_5.test.js`, `phase_13.test.js`, `phase_14.test.js`) `com.sehirnabiz.app` değerini onaylamaktadır.
+
+---
+
+## 10. Apple App Store & Google Play Hesap Silme Uyumluluğu
+
+Apple App Store İnceleme Kılavuzu Kuralı 5.1.1(v) ve Google Play Data Safety politikaları uyarınca hesap oluşturan her uygulamanın kullanıcıya hem uygulama içerisinden hem de harici bir web sayfası üzerinden hesabını ve kişisel verilerini silme imkânı sunması zorunludur.
+
+| Gereksinim | ŞehirNabız Çözümü | Durum |
+| :--- | :--- | :--- |
+| **Uygulama İçi Silme** | `apps/mobile/app/profile/settings.tsx` — Profil Ayarları altında "Tehlike Bölgesi" modalı | **Tamamlandı** |
+| **Uygulama İçi Doğrulama** | Şifre tekrarı (`password`), isteğe bağlı silme nedeni (`reason`) ve anında silme seçeneği (`immediate`) | **Tamamlandı** |
+| **Harici Web Silme Sayfası** | NestJS SSR: `GET /account-deletion` & Expo Web: `/account-deletion` | **Tamamlandı** |
+| **Web Silme API'si** | `POST /api/v1/users/web-deletion-request` (E-posta, şifre ve onay bayrağı ile) | **Tamamlandı** |
+| **Bekleme Süresi (Grace Period)** | 14 gün (`AccountStatus.PENDING_DELETION`), iptal edebilme imkânı (`POST /api/v1/users/cancel-deletion`) | **Tamamlandı** |
+| **PII Veri Maskeleme** | E-posta, isim, şifre hash'i rastgele maskeleme; push token ve oturumların anında yok edilmesi | **Tamamlandı** |
+| **Kentsel Güvenlik Olayları** | Kamu yararı taşıyan kaza ve afet raporları silinmez; yazar kimliği `"Anonim Vatandaş"` olarak korunur | **Tamamlandı** |
+

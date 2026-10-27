@@ -15,6 +15,7 @@ import { UserReputationLogEntity } from './user-reputation-log.entity';
 import { UserNotificationEntity } from './user-notification.entity';
 import { DevicePushTokenEntity } from './device-push-token.entity';
 import { UserNotificationPreferenceEntity } from './user-notification-preference.entity';
+import { AccountDeletionRequestEntity } from './account-deletion-request.entity';
 
 @Entity('users')
 export class UserEntity {
@@ -65,6 +66,9 @@ export class UserEntity {
 
   @OneToOne(() => UserNotificationPreferenceEntity, preference => preference.user)
   notificationPreference?: UserNotificationPreferenceEntity;
+
+  @OneToMany(() => AccountDeletionRequestEntity, request => request.user)
+  deletionRequests?: AccountDeletionRequestEntity[];
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;

@@ -12,11 +12,13 @@ import { UserReputationLogEntity } from './entities/user-reputation-log.entity';
 import { UserNotificationEntity } from './entities/user-notification.entity';
 import { DevicePushTokenEntity } from './entities/device-push-token.entity';
 import { UserNotificationPreferenceEntity } from './entities/user-notification-preference.entity';
+import { AccountDeletionRequestEntity } from './entities/account-deletion-request.entity';
 import { InitialAuthAndPostGis1740000000000 } from './migrations/1740000000000-InitialAuthAndPostGis';
 import { CreateCategoriesAndEvents1740000001000 } from './migrations/1740000001000-CreateCategoriesAndEvents';
 import { CreateEventMedia1740000002000 } from './migrations/1740000002000-CreateEventMedia';
 import { CreateEventFeedbackAndReputationLogs1740000003000 } from './migrations/1740000003000-CreateEventFeedbackAndReputationLogs';
 import { CreateNotificationsAndPushTokens1740000004000 } from './migrations/1740000004000-CreateNotificationsAndPushTokens';
+import { CreateAccountDeletionAndAudit1740000006000 } from './migrations/1740000006000-CreateAccountDeletionAndAudit';
 
 @Global()
 @Module({
@@ -42,6 +44,7 @@ import { CreateNotificationsAndPushTokens1740000004000 } from './migrations/1740
           UserNotificationEntity,
           DevicePushTokenEntity,
           UserNotificationPreferenceEntity,
+          AccountDeletionRequestEntity,
         ],
         migrations: [
           InitialAuthAndPostGis1740000000000,
@@ -49,6 +52,7 @@ import { CreateNotificationsAndPushTokens1740000004000 } from './migrations/1740
           CreateEventMedia1740000002000,
           CreateEventFeedbackAndReputationLogs1740000003000,
           CreateNotificationsAndPushTokens1740000004000,
+          CreateAccountDeletionAndAudit1740000006000,
         ],
         synchronize: false,
         logging: config.get<boolean>('DB_LOGGING', false),
@@ -69,6 +73,7 @@ import { CreateNotificationsAndPushTokens1740000004000 } from './migrations/1740
       UserNotificationEntity,
       DevicePushTokenEntity,
       UserNotificationPreferenceEntity,
+      AccountDeletionRequestEntity,
     ]),
   ],
   exports: [TypeOrmModule],

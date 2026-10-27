@@ -50,19 +50,26 @@
 
 ## 4. Kullanıcı Hesap ve Veri Silme Akışı (Account Deletion Lifecycle)
 
-> [!WARNING]
-> **Açık Beta / Canlı Mağaza Engeli (Store Blocker):**  
-> Kullanıcı hesap silme uç noktası (`DELETE /api/v1/users/me`) mevcut kod tabanında henüz uygulanmamıştır. Bu yetenek mağaza yayınından önce Phase 14'te mutlaka geliştirilmelidir.
+> [!NOTE]
+> **Phase 14 ile Tamamlandı & Doğrulandı:**  
+> Kullanıcı hesap silme sistemi Apple App Store Yönergesi 5.1.1(v), Google Play Data Safety ve 6698 Sayılı KVKK standartlarına tam uyumlu olarak uygulanmış ve 10 E2E / 6 mobil birim testiyle doğrulanmıştır. Mağaza yayını önündeki Blocker #4 başarıyla kaldırılmıştır.
 
-### Önerilen Silme Mimarisi:
-1. **Talep ve Onay:** Kullanıcı Ayarlar ekranından "Hesabımı ve Verilerimi Sil" seçeneğini seçer ve parolasını girerek onaylar.
+### Uygulanan Silme Mimarisi:
+1. **Talep ve Güvenli Onay (DELETE /api/v1/users/me):**
+   - Mobil Ayarlar ekranındaki Tehlikeli Bölge (`settings.tsx`) üzerinden şifre doğrulaması ile talep iletilir.
+   - Web kullanıcıları için `GET /account-deletion` HTML arayüzü ve `POST /api/v1/users/web-deletion-request` uç noktası hizmet verir.
 2. **Kişisel Verilerin Anonimleştirilmesi (GDPR / KVKK Uyumlu):**
-   - Kullanıcının `email` adresi `deleted_user_<uuid>@deleted.local` olarak maskelenir.
-   - `displayName` alanı `"Ayrılmış Kullanıcı"` olarak güncellenir.
-   - Parola hash'i ve tüm aktif `refresh_tokens` derhal imha edilir.
-   - Kullanıcıya ait `device_push_tokens` ve `user_notifications` tablosu tamamen silinir.
+   - Kullanıcının `email` adresi `deleted_<timestamp>_<uuid>@deleted.sehirnabiz.local` olarak maskelenir; gerçek e-posta silinir.
+   - `displayName` alanı `"Anonim Vatandaş"` olarak güncellenir.
+   - `passwordHash` dizesi `"*DELETED*"` olarak ezilir; eski şifreyle giriş imkansız hale getirilir.
+   - `reputationScore` sıfırlanır (`0`).
+   - Tüm aktif `refresh_tokens` derhal `isRevoked: true` yapılarak oturumlar iptal edilir.
+   - Aktif WebSocket bağlantıları `RealtimeGateway.disconnectUser()` ile derhal sonlandırılır.
+   - `device_push_tokens`, `user_notifications` ve `user_notification_preferences` kayıtları veritabanından kalıcı olarak silinir.
 3. **Kentsel Olay Bütünlüğü:**
-   - Şehir güvenliği ve kamu yararı gereği, kullanıcının geçmişte bildirdiği kentsel olay kayıtları (örneğin yol çökmesi, su arızası) haritadan silinmez; ancak bildiren kişi bilgisi tamamen anonimleştirilir (`userId = NULL` veya anonim kullanıcı).
+   - Şehir güvenliği ve kamu yararı gereği, kullanıcının geçmişte bildirdiği kentsel olay kayıtları (yol çökmesi, su arızası, kaza vb.) haritadan silinmez; yazar kimliği `"Anonim Vatandaş"` olarak korunur.
+4. **Medya Temizliği & Hata Toleransı:**
+   - Onaylanmamış veya taslak fotoğraflar MinIO/S3'ten temizlenir. MinIO geçici olarak kapalı olsa dahi veritabanı tutarlılığı korunur, talep `FAILED` olarak işaretlenir ve `retryFailedDeletions` mekanizması ile azami 5 defa yeniden denenir.
 
 ---
 

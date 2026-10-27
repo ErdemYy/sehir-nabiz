@@ -5,6 +5,8 @@ import {
   Switch,
   ActivityIndicator,
   Alert,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -18,6 +20,8 @@ import {
   Info,
   EyeOff,
   CheckCircle2,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react-native';
 import {
   AppScreen,
@@ -28,13 +32,65 @@ import {
 } from '../../src/components/ui';
 import { useAppTheme, type ThemeMode } from '../../src/theme';
 import { useAuthStore } from '../../src/features/auth';
+import { authApi } from '../../src/features/auth/services/authApi';
 import { useNotificationPreferences } from '../../src/features/notifications';
 
 export default function SettingsScreen(): React.ReactElement {
   const router = useRouter();
   const { theme, spacing, radii, themeMode, setThemeMode } = useAppTheme();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, accessToken, getValidAccessToken, logout } = useAuthStore();
   const { preferences, updatePreferences, isUpdating } = useNotificationPreferences();
+
+  // Hesap silme modal durumları
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteReason, setDeleteReason] = useState('');
+  const [isImmediate, setIsImmediate] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleDeleteAccount = async () => {
+    if (!deletePassword.trim()) {
+      setDeleteError('Hesap şifrenizi girmeniz zorunludur.');
+      return;
+    }
+
+    const token = (await getValidAccessToken()) || accessToken;
+    if (!token) {
+      setDeleteError('Oturum anahtarı bulunamadı.');
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      setDeleteError(null);
+
+      const res = await authApi.deleteAccount(token, {
+        password: deletePassword,
+        reason: deleteReason,
+        immediate: isImmediate,
+      });
+
+      setIsDeleteModalOpen(false);
+      Alert.alert(
+        'Hesap Silme İşlemi',
+        res.message || 'Hesabınız ve tüm kişisel verileriniz başarıyla silindi ve anonimleştirildi.',
+        [
+          {
+            text: 'Tamam',
+            onPress: async () => {
+              await logout();
+              router.replace('/');
+            },
+          },
+        ],
+      );
+    } catch (err: any) {
+      setDeleteError(err.message || 'Hesap silme işlemi gerçekleştirilemedi.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Yerel tercihler fallback'i (misafir kullanıcı veya yükleme anı için)
   const [localPrefs, setLocalPrefs] = useState({
@@ -291,7 +347,58 @@ export default function SettingsScreen(): React.ReactElement {
           </View>
         </AppCard>
 
-        {/* 4. Uygulama Hakkında */}
+        {/* 4. Hesap Yönetimi & Tehlikeli Bölge (Danger Zone — Phase 14) */}
+        {isAuthenticated && (
+          <AppCard
+            style={{
+              marginBottom: spacing.lg,
+              padding: spacing.md,
+              borderColor: 'rgba(239, 68, 68, 0.3)',
+              borderWidth: 1,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.xs }}>
+              <AlertTriangle size={18} color="#EF4444" />
+              <AppText variant="headingM" weight="bold" color="#EF4444">
+                Hesap Yönetimi & Veri Silme
+              </AppText>
+            </View>
+
+            <AppText variant="caption" color={theme.textSecondary} style={{ marginBottom: spacing.md, fontSize: 12 }}>
+              6698 Sayılı KVKK ve mağaza güvenlik politikaları uyarınca hesabınızı ve kişisel verilerinizi dilediğiniz an kalıcı olarak silebilirsiniz.
+            </AppText>
+
+            <TouchableOpacity
+              onPress={() => {
+                setDeleteError(null);
+                setDeletePassword('');
+                setIsDeleteModalOpen(true);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Hesabımı ve Verilerimi Sil"
+              style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                borderColor: '#EF4444',
+                borderWidth: 1,
+                borderRadius: radii.full,
+                paddingVertical: 12,
+                paddingHorizontal: spacing.md,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: spacing.xs,
+                minHeight: 48,
+              }}
+            >
+              <Trash2 size={16} color="#EF4444" />
+              <AppText variant="bodyM" weight="bold" color="#EF4444">
+                Hesabımı ve Verilerimi Sil
+              </AppText>
+            </TouchableOpacity>
+          </AppCard>
+        )}
+
+        {/* 5. Uygulama Hakkında */}
         <AppCard style={{ marginBottom: spacing.lg, padding: spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.sm }}>
             <Info size={18} color={theme.textSecondary} />
@@ -336,6 +443,179 @@ export default function SettingsScreen(): React.ReactElement {
           </View>
         </AppCard>
       </View>
+
+      {/* Hesap Silme Onay Modalı (Phase 14) */}
+      <Modal
+        visible={isDeleteModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          if (!isDeleting) {
+            setIsDeleteModalOpen(false);
+          }
+        }}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: spacing.lg,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: theme.card,
+              borderRadius: radii.xl,
+              borderWidth: 1,
+              borderColor: theme.border,
+              padding: spacing.lg,
+              width: '100%',
+              maxWidth: 440,
+              gap: spacing.md,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+              <AlertTriangle size={22} color="#EF4444" />
+              <AppText variant="headingM" weight="bold" color="#EF4444">
+                Hesabınızı Silmek İstiyor Musunuz?
+              </AppText>
+            </View>
+
+            <View
+              style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                padding: spacing.sm,
+                borderRadius: radii.md,
+                borderColor: 'rgba(239, 68, 68, 0.2)',
+                borderWidth: 1,
+              }}
+            >
+              <AppText variant="caption" color={theme.textSecondary} style={{ fontSize: 12, lineHeight: 18 }}>
+                Hesabınız silindiğinde kimlik bilgileriniz, bildirim tercihleriniz, oturumlarınız ve push belirteçleriniz kalıcı olarak imha edilir. Kentsel olay bildirimleri kamu güvenliği adına anonimleştirilerek korunur.
+              </AppText>
+            </View>
+
+            {deleteError && (
+              <View
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                  padding: spacing.sm,
+                  borderRadius: radii.sm,
+                }}
+              >
+                <AppText variant="caption" color="#EF4444" weight="semibold">
+                  {deleteError}
+                </AppText>
+              </View>
+            )}
+
+            <View style={{ gap: 6 }}>
+              <AppText variant="bodyS" weight="semibold">
+                Onaylamak İçin Şifrenizi Giriniz:
+              </AppText>
+              <TextInput
+                value={deletePassword}
+                onChangeText={setDeletePassword}
+                secureTextEntry
+                placeholder="Mevcut şifreniz"
+                placeholderTextColor={theme.textSecondary}
+                style={{
+                  backgroundColor: theme.background,
+                  borderColor: theme.border,
+                  borderWidth: 1,
+                  borderRadius: radii.md,
+                  paddingHorizontal: 12,
+                  paddingVertical: 10,
+                  color: theme.text,
+                  fontSize: 14,
+                }}
+              />
+            </View>
+
+            <View style={{ gap: 6 }}>
+              <AppText variant="bodyS" weight="semibold">
+                Silme Gerekçesi (İsteğe Bağlı):
+              </AppText>
+              <TextInput
+                value={deleteReason}
+                onChangeText={setDeleteReason}
+                placeholder="Örn: Artık kullanmıyorum"
+                placeholderTextColor={theme.textSecondary}
+                style={{
+                  backgroundColor: theme.background,
+                  borderColor: theme.border,
+                  borderWidth: 1,
+                  borderRadius: radii.md,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  color: theme.text,
+                  fontSize: 13,
+                }}
+              />
+            </View>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <AppText variant="caption" color={theme.textSecondary}>
+                Hemen Kalıcı Olarak Sil
+              </AppText>
+              <Switch
+                value={isImmediate}
+                onValueChange={setIsImmediate}
+                trackColor={{ false: theme.border, true: '#EF4444' }}
+              />
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs }}>
+              <TouchableOpacity
+                onPress={() => setIsDeleteModalOpen(false)}
+                disabled={isDeleting}
+                accessibilityRole="button"
+                accessibilityLabel="Vazgeç"
+                style={{
+                  flex: 1,
+                  paddingVertical: 12,
+                  borderRadius: radii.full,
+                  borderWidth: 1,
+                  borderColor: theme.border,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: 44,
+                }}
+              >
+                <AppText variant="bodyM" weight="semibold" color={theme.textSecondary}>
+                  Vazgeç
+                </AppText>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleDeleteAccount}
+                disabled={isDeleting}
+                accessibilityRole="button"
+                accessibilityLabel="Hesabımı Sil"
+                style={{
+                  flex: 1,
+                  backgroundColor: '#EF4444',
+                  paddingVertical: 12,
+                  borderRadius: radii.full,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: 44,
+                }}
+              >
+                {isDeleting ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <AppText variant="bodyM" weight="bold" color="#fff">
+                    Hesabımı Sil
+                  </AppText>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </AppScreen>
   );
 }

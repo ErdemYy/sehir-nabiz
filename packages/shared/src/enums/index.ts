@@ -105,6 +105,28 @@ export enum AccountStatus {
   ACTIVE = 'ACTIVE',
   SUSPENDED = 'SUSPENDED',
   PENDING_VERIFICATION = 'PENDING_VERIFICATION',
+  PENDING_DELETION = 'PENDING_DELETION',
+  DELETED = 'DELETED',
+}
+
+/**
+ * Hesap Silme Talebi Yaşam Döngüsü Durumu (Phase 14)
+ */
+export enum DeletionRequestStatus {
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+  FAILED = 'FAILED',
+}
+
+/**
+ * Hesap Silme Talebi Kaynağı (Phase 14)
+ */
+export enum DeletionClientSource {
+  MOBILE_APP = 'MOBILE_APP',
+  WEB_REQUEST = 'WEB_REQUEST',
+  ADMIN_ACTION = 'ADMIN_ACTION',
 }
 
 /**

@@ -26,8 +26,10 @@ async function bootstrap(): Promise<void> {
     credentials: true,
   });
 
-  // Global Prefix
-  app.setGlobalPrefix(apiPrefix.replace(/^\//, ''));
+  // Global Prefix (exclude account-deletion web page)
+  app.setGlobalPrefix(apiPrefix.replace(/^\//, ''), {
+    exclude: ['account-deletion'],
+  });
 
   // Global Request Validation
   app.useGlobalPipes(

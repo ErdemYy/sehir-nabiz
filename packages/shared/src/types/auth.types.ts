@@ -1,4 +1,4 @@
-import { UserRole, AccountStatus } from '../enums';
+import { UserRole, AccountStatus, DeletionRequestStatus } from '../enums';
 
 /**
  * Kullanıcı Açık Yanıt Modeli (Hassas bilgiler asla dönülmez)
@@ -40,4 +40,29 @@ export interface JwtPayload {
   role: UserRole;
   iat?: number;
   exp?: number;
+}
+
+/**
+ * Hesap Silme Yanıt Modeli (Phase 14)
+ */
+export interface AccountDeletionResponseDto {
+  success: boolean;
+  message: string;
+  requestId: string;
+  status: DeletionRequestStatus;
+  scheduledFor: string;
+  completedAt?: string | null;
+  anonymizedDisplayName?: string;
+}
+
+/**
+ * Hesap Silme Durum Bilgisi (Phase 14)
+ */
+export interface AccountDeletionStatusDto {
+  hasPendingDeletion: boolean;
+  status?: DeletionRequestStatus;
+  requestId?: string;
+  scheduledFor?: string;
+  createdAt?: string;
+  canCancel: boolean;
 }

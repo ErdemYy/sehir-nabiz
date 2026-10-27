@@ -86,6 +86,30 @@ export class RealtimeGateway
   }
 
   /**
+   * Kullanıcının tüm aktif WebSocket oturumlarını sonlandırır ve bağlantılarını keser (Phase 14)
+   */
+  disconnectUser(userId: string): number {
+    let count = 0;
+    for (const [clientId, info] of this.activeClients.entries()) {
+      if (info.userId === userId) {
+        count++;
+        if (this.server?.sockets?.sockets) {
+          const socket = this.server.sockets.sockets.get(clientId);
+          if (socket) {
+            socket.emit('auth:revoked', {
+              reason: 'Hesabınız silinmiş veya oturumunuz sonlandırılmıştır.',
+            });
+            socket.disconnect(true);
+          }
+        }
+        this.activeClients.delete(clientId);
+      }
+    }
+    this.logger.log(`[RealtimeGateway] Kullanıcı bağlantıları kesildi: userId=${userId}, count=${count}`);
+    return count;
+  }
+
+  /**
    * Genel olaylar kanalına abone olma
    */
   @SubscribeMessage('subscribe_events')

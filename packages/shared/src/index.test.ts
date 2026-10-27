@@ -202,3 +202,56 @@ test('Phase 10: StatsOverviewQuerySchema, HeatmapQuerySchema ve SearchEventsQuer
   assert.equal(myEventsValid.limit, 10);
 });
 
+test('Phase 14: Account Deletion enums ve şemaları doğrulamalı', () => {
+  const {
+    AccountStatus,
+    DeletionRequestStatus,
+    DeletionClientSource,
+    DeleteAccountInputSchema,
+    WebDeleteAccountInputSchema,
+    CancelDeletionInputSchema,
+  } = require('./index');
+
+  assert.equal(AccountStatus.PENDING_DELETION, 'PENDING_DELETION');
+  assert.equal(AccountStatus.DELETED, 'DELETED');
+  assert.equal(DeletionRequestStatus.PENDING, 'PENDING');
+  assert.equal(DeletionRequestStatus.PROCESSING, 'PROCESSING');
+  assert.equal(DeletionRequestStatus.COMPLETED, 'COMPLETED');
+  assert.equal(DeletionRequestStatus.CANCELLED, 'CANCELLED');
+  assert.equal(DeletionRequestStatus.FAILED, 'FAILED');
+  assert.equal(DeletionClientSource.MOBILE_APP, 'MOBILE_APP');
+  assert.equal(DeletionClientSource.WEB_REQUEST, 'WEB_REQUEST');
+
+  // Mobil silme şeması
+  const validMobile = {
+    password: 'Password123!',
+    reason: 'Artık kullanmıyorum.',
+    immediate: true,
+  };
+  const resMobile = DeleteAccountInputSchema.safeParse(validMobile);
+  assert.equal(resMobile.success, true);
+
+  const invalidMobile = { reason: 'Şifresiz silinemez' };
+  const resMobileInvalid = DeleteAccountInputSchema.safeParse(invalidMobile);
+  assert.equal(resMobileInvalid.success, false);
+
+  // Web silme şeması
+  const validWeb = {
+    email: 'vatandas@sehirnabiz.local',
+    password: 'Password123!',
+    reason: 'Web talep formu',
+  };
+  const resWeb = WebDeleteAccountInputSchema.safeParse(validWeb);
+  assert.equal(resWeb.success, true);
+
+  const invalidWeb = {
+    email: 'not-an-email',
+    password: 'pass',
+  };
+  assert.equal(WebDeleteAccountInputSchema.safeParse(invalidWeb).success, false);
+
+  // İptal şeması
+  assert.equal(CancelDeletionInputSchema.safeParse({ password: 'pass' }).success, true);
+  assert.equal(CancelDeletionInputSchema.safeParse({}).success, false);
+});
+

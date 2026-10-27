@@ -125,4 +125,63 @@ export const authApi = {
 
     return data as UserResponse;
   },
+
+  /**
+   * Hesap ve Kişisel Verileri Kalıcı Olarak Silme Talebi (DELETE /users/me) (Phase 14)
+   */
+  async deleteAccount(
+    token: string,
+    input: { password: string; reason?: string; immediate?: boolean }
+  ): Promise<any> {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/users/me`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(input),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new AuthApiError(
+        response.status,
+        data.message || 'Hesap silme işlemi gerçekleştirilemedi.',
+        data
+      );
+    }
+
+    return data;
+  },
+
+  /**
+   * Silme Talebini İptal Etme (POST /users/cancel-deletion) (Phase 14)
+   */
+  async cancelDeletion(
+    email: string,
+    password: string
+  ): Promise<{ success: boolean; message: string }> {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/users/cancel-deletion`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new AuthApiError(
+        response.status,
+        data.message || 'Silme talebi iptal edilemedi.',
+        data
+      );
+    }
+
+    return data;
+  },
 };

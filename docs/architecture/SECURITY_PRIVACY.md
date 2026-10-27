@@ -255,4 +255,35 @@ Gerçek zamanlı harita ve anlık bildirim kanalları, kullanıcı mahremiyetini
 ### 10.4 Türkçe Karakter Duyarsız Arama (unaccent)
 - PostgreSQL `unaccent` extension ile büyük/küçük `ı/i`, `İ/I`, `ş/s`, `ç/c`, `ö/o`, `ü/u`, `ğ/g` harfleri için arama zırhı oluşturulmuştur.
 
+---
+
+## 11. Phase 14: Güvenli Hesap Silme, Veri Yaşam Döngüsü ve KVKK / GDPR Uyum Sertleştirmesi
+
+### 11.1 KVKK 6698, GDPR ve Mağaza Kılavuzları Uyumu
+Apple App Store Guideline 5.1.1(v) ve Google Play Data Safety kuralları uyarınca kullanıcılara hem uygulama içinden (`DELETE /api/v1/users/me`) hem de harici web üzerinden (`GET /account-deletion` & `POST /api/v1/users/web-deletion-request`) hesaplarını ve kişisel verilerini geri dönülemez biçimde silme yetkisi tanınmıştır.
+
+### 11.2 Veri Maskeleme ve Anonimleştirme Politikası (PII Masking)
+Veri tabanında hard-delete yapmak yerine kamu yararı ve teknik bütünlük gereği iki aşamalı bir yaşam döngüsü işletilir:
+1. **Kişisel Verilerin (PII) İmhası:**
+   - `email`: `deleted_<timestamp>_<uuid>@deleted.sehirnabiz.local` formatına dönüştürülerek benzersiz indeks (`UQ_users_email`) korunur ve gerçek e-posta silinir.
+   - `displayName`: `"Anonim Vatandaş"` olarak sabitlenir.
+   - `passwordHash`: `"*DELETED*"` dizesi ile ezilir; eski şifre ile giriş imkânsız kılınır.
+   - `reputationScore`: Sıfırlanır (`0`).
+   - `accountStatus`: `AccountStatus.DELETED` durumuna geçirilir.
+2. **Kentsel Güvenlik Olaylarının Korunması:**
+   - Kullanıcının açtığı kaza, sel, çukur gibi kamusal olaylar (`events`) silinmez; kentin afet ve güvenlik hafızası korunur.
+   - Olayın yazar bilgisi maskelenmiş anonim profile (`"Anonim Vatandaş"`) bağlı kalır; kimlik tespiti yapılamaz.
+
+### 11.3 Oturum İptali ve Ağ İzolasyonu
+- **JWT Refresh Token İptali:** `refresh_tokens` tablosundaki tüm aktif oturumlar anında `DELETE` edilir.
+- **Aktif JWT Yetkisizleştirme:** `JwtStrategy`, `DELETED` veya `PENDING_DELETION` durumundaki hesaplardan gelen her isteği anında `401 Unauthorized` ile reddeder.
+- **Gerçek Zamanlı WebSocket İzolasyonu:** `RealtimeGateway.disconnectUser()` çağrılarak kullanıcının bağlı tüm aktif soketlerine `auth:revoked` olayı gönderilir ve soket bağlantıları sonlandırılır.
+- **Push Token & Bildirim Temizliği:** `device_push_tokens`, `user_notifications` ve `user_notification_preferences` kayıtları silinir; cihaza bildirim gitmesi engellenir.
+
+### 11.4 Soğuma Süresi (Grace Period) ve İptal Mekanizması
+- Kullanıcı varsayılan olarak hesabı sildiğinde 14 günlük soğuma süresi (`AccountStatus.PENDING_DELETION`) başlatılır.
+- Bu süre zarfında kullanıcı dilerse `POST /api/v1/users/cancel-deletion` uç noktasıyla silme talebini geri çekebilir (`AccountStatus.ACTIVE`).
+- Kullanıcı dilerse `immediate: true` seçeneğiyle soğuma süresini atlayarak anında veri anonimleştirmesi gerçekleştirebilir.
+
+
 

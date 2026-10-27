@@ -47,3 +47,35 @@ export const RefreshTokenInputSchema = z.object({
 });
 
 export type RefreshTokenInput = z.infer<typeof RefreshTokenInputSchema>;
+
+/**
+ * Mobil Uygulama İçi Hesap Silme Şeması (Phase 14)
+ */
+export const DeleteAccountInputSchema = z.object({
+  password: z.string().min(1, 'Mevcut şifrenizi girmeniz zorunludur'),
+  reason: z.string().max(500, 'Silme gerekçesi en fazla 500 karakter olabilir').optional(),
+  immediate: z.boolean().optional().default(false),
+});
+
+export type DeleteAccountInput = z.infer<typeof DeleteAccountInputSchema>;
+
+/**
+ * Web Üzerinden Hesap Silme Şeması (Phase 14)
+ */
+export const WebDeleteAccountInputSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Geçerli bir e-posta adresi giriniz'),
+  password: z.string().min(1, 'Şifre zorunludur'),
+  reason: z.string().max(500, 'Silme gerekçesi en fazla 500 karakter olabilir').optional(),
+  immediate: z.boolean().optional().default(false),
+});
+
+export type WebDeleteAccountInput = z.infer<typeof WebDeleteAccountInputSchema>;
+
+/**
+ * Silme İsteğini İptal Etme Şeması (Phase 14)
+ */
+export const CancelDeletionInputSchema = z.object({
+  password: z.string().min(1, 'İptal işlemi için şifre zorunludur'),
+});
+
+export type CancelDeletionInput = z.infer<typeof CancelDeletionInputSchema>;
