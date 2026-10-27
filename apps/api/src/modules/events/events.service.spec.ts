@@ -736,5 +736,51 @@ describe('EventsService (Unit Tests)', () => {
         expect.anything(),
       );
     });
+
+    it('Phase 11: Arama sorgusu 100 karakteri aştığında BadRequestException fırlatmalı', async () => {
+      const longQuery = 'a'.repeat(101);
+      await expect(service.searchEvents({ q: longQuery })).rejects.toThrow(BadRequestException);
+    });
+
+    it('Phase 11: Başlangıç tarihi bitiş tarihinden sonra olduğunda BadRequestException fırlatmalı', async () => {
+      await expect(
+        service.searchEvents({
+          q: 'kaza',
+          startDate: '2026-10-20T00:00:00Z',
+          endDate: '2026-10-10T00:00:00Z',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('Phase 11: Tarih aralığı 366 günü aştığında BadRequestException fırlatmalı', async () => {
+      await expect(
+        service.searchEvents({
+          q: 'kaza',
+          startDate: '2024-01-01T00:00:00Z',
+          endDate: '2026-01-01T00:00:00Z',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('Phase 11: Geçersiz veya bozuk cursor parametresi verildiğinde BadRequestException fırlatmalı', async () => {
+      const malformedCursor = Buffer.from('invalid_cursor_without_uuid').toString('base64');
+      await expect(
+        service.searchEvents({
+          q: 'kaza',
+          cursor: malformedCursor,
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('Phase 11: Türkçe unaccent ve ILIKE arama kalıbını doğru oluşturmalı', async () => {
+      dataSource.query = vi.fn().mockResolvedValue([]);
+
+      await service.searchEvents({ q: 'ışık' });
+
+      expect(dataSource.query).toHaveBeenCalledWith(
+        expect.stringContaining('unaccent(LOWER(e.title)) ILIKE unaccent(LOWER($1))'),
+        expect.arrayContaining(['%ışık%']),
+      );
+    });
   });
 });

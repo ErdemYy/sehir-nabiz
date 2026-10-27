@@ -54,6 +54,9 @@ export class UserNotificationEntity {
   @Column({ type: 'timestamptz', nullable: true })
   expiresAt?: Date | null;
 
+  @Column({ name: 'idempotency_key', type: 'varchar', length: 255, nullable: true, unique: true })
+  idempotencyKey?: string | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;
 }

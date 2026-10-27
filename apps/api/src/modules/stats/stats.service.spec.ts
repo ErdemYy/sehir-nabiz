@@ -141,6 +141,30 @@ describe('StatsService (Unit Tests)', () => {
       expect(result.points[1]?.weight).toBe(0.5); // 10 / 20 = 0.5
       expect(result.points[2]?.weight).toBe(0.1); // min weight
       expect(result.disclaimer).toContain('resmî tehlike veya risk haritası değildir');
+      expect(result.disclaimer).toContain('gizlilik korumalı mekânsal agregasyonla üretilmektedir');
+    });
+
+    it('k-Anonymity eşiği (minCount) altında kalan seyrek ızgara hücrelerini bastırmalı (suppress)', async () => {
+      vi.mocked(mockDataSource.query!).mockResolvedValueOnce([
+        { latitude: 38.72, longitude: 35.48, count: 15, category_code: 'TRAFFIC_ACCIDENT' },
+        { latitude: 38.73, longitude: 35.49, count: 5, category_code: 'ROAD_WORK' },
+        { latitude: 38.70, longitude: 35.45, count: 1, category_code: 'WATER_OUTAGE' }, // Seyrek tekil nokta
+      ]);
+
+      const result = await service.getHeatmap({
+        minLng: 35.4,
+        minLat: 38.6,
+        maxLng: 35.6,
+        maxLat: 38.8,
+        period: '30d',
+        minCount: 2, // En az 2 olay kuralı
+      });
+
+      expect(result.totalPoints).toBe(21);
+      expect(result.aggregatedClusterCount).toBe(2); // 1 olaylı hücre gizlendi
+      expect(result.suppressedPoints).toBe(1);
+      expect(result.kAnonymityThreshold).toBe(2);
+      expect(result.points.find(p => p.count === 1)).toBeUndefined();
     });
   });
 });

@@ -253,10 +253,10 @@ export default function SettingsScreen(): React.ReactElement {
               <EyeOff size={16} color={theme.primary} style={{ marginTop: 2 }} />
               <View style={{ flex: 1 }}>
                 <AppText variant="bodyS" weight="semibold">
-                  150 Metre Konum Bulanıklaştırma
+                  Cihaz Konumu Asla Saklanmaz
                 </AppText>
                 <AppText variant="caption" color={theme.textSecondary} style={{ fontSize: 11 }}>
-                  Hassas özel mülk alanlarında ev/iş konumu doğrudan ifşa edilmez; güvenli yarıçap uygulanır.
+                  Yalnızca haritada işaretlediğiniz olay koordinatı kaydedilir. Cihazınızın anlık GPS konumu, hareket rotası veya geçmişi sunucuda tutulmaz.
                 </AppText>
               </View>
             </View>
@@ -277,10 +277,10 @@ export default function SettingsScreen(): React.ReactElement {
               <Lock size={16} color={theme.accentBlue} style={{ marginTop: 2 }} />
               <View style={{ flex: 1 }}>
                 <AppText variant="bodyS" weight="semibold">
-                  Kişisel Konum Takibi Yapılmaz
+                  Yoğunluk Haritası k-Anonymity
                 </AppText>
                 <AppText variant="caption" color={theme.textSecondary} style={{ fontSize: 11 }}>
-                  GPS konumu yalnızca o anki olay noktasını belirlemek için kullanılır; rota geçmişi tutulmaz.
+                  Isı haritasında tekil olayların konumu doğrudan gösterilmez; ızgara tabanlı mekânsal agregasyon ve seyrek hücre koruması uygulanır.
                 </AppText>
               </View>
             </View>

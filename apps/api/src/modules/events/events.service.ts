@@ -16,6 +16,7 @@ import { EventFeedbackEntity } from '../../database/entities/event-feedback.enti
 import { UserReputationLogEntity } from '../../database/entities/user-reputation-log.entity';
 import { RealtimeService } from '../realtime/realtime.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { OutboxService, OutboxProcessorService } from '../outbox';
 import {
   EventStatus,
   EventSeverity,
@@ -62,6 +63,10 @@ export class EventsService {
     private readonly realtimeService?: RealtimeService,
     @Optional()
     private readonly notificationsService?: NotificationsService,
+    @Optional()
+    private readonly outboxService?: OutboxService,
+    @Optional()
+    private readonly outboxProcessor?: OutboxProcessorService,
   ) {}
 
   /**
@@ -100,8 +105,7 @@ export class EventsService {
     const sanitizedTitle = dto.title.trim().replace(/<[^>]*>?/gm, '');
     const sanitizedDescription = dto.description.trim().replace(/<[^>]*>?/gm, '');
 
-    const insertResult = await this.dataSource.query(
-      `
+    const insertSql = `
       INSERT INTO "events" (
         "authorId", "categoryId", "title", "description", "severity", "status",
         "location", "addressText", "city", "district", "expiresAt", "isDemo",
@@ -113,24 +117,47 @@ export class EventsService {
         0, 0, 1.0, NOW(), NOW()
       )
       RETURNING id, "createdAt", "updatedAt";
-      `,
-      [
-        authorId,
-        category.id,
-        sanitizedTitle,
-        sanitizedDescription,
-        dto.severity || EventSeverity.MEDIUM,
-        EventStatus.PENDING_REVIEW, // Normal kullanıcı bildirimi daima PENDING_REVIEW başlar
-        dto.longitude,
-        dto.latitude,
-        dto.addressText || null,
-        dto.city || null,
-        dto.district || null,
-        expiresAt,
-      ],
-    );
+    `;
+    const insertParams = [
+      authorId,
+      category.id,
+      sanitizedTitle,
+      sanitizedDescription,
+      dto.severity || EventSeverity.MEDIUM,
+      EventStatus.PENDING_REVIEW, // Normal kullanıcı bildirimi daima PENDING_REVIEW başlar
+      dto.longitude,
+      dto.latitude,
+      dto.addressText || null,
+      dto.city || null,
+      dto.district || null,
+      expiresAt,
+    ];
 
-    const createdEventId = insertResult[0].id;
+    let createdEventId: string;
+    if (this.outboxService) {
+      createdEventId = await this.dataSource.transaction(async manager => {
+        const insertResult = await manager.query(insertSql, insertParams);
+        const eventId = insertResult[0].id;
+        await this.outboxService!.createOutboxEvent(
+          manager,
+          'Event',
+          eventId,
+          'EVENT_CREATED',
+          {
+            eventId,
+            authorId,
+            status: EventStatus.PENDING_REVIEW,
+            title: sanitizedTitle,
+          },
+        );
+        return eventId;
+      });
+      this.outboxProcessor?.triggerProcess();
+    } else {
+      const insertResult = await this.dataSource.query(insertSql, insertParams);
+      createdEventId = insertResult[0].id;
+    }
+
     const event = await this.findById(createdEventId, { sub: authorId, role: user.role } as JwtPayload);
 
     if (duplicateCandidate) {
@@ -152,11 +179,13 @@ export class EventsService {
       };
     }
 
-    // Gerçek zamanlı bildirim ve yayın (WebSocket)
-    if (event.status === EventStatus.PENDING_REVIEW) {
-      this.realtimeService?.notifyModerationQueue(event);
-    } else if (event.status === EventStatus.ACTIVE) {
-      this.realtimeService?.broadcastEventCreated(event);
+    // Gerçek zamanlı bildirim ve yayın (WebSocket / Outbox harici fallback)
+    if (!this.outboxService) {
+      if (event.status === EventStatus.PENDING_REVIEW) {
+        this.realtimeService?.notifyModerationQueue(event);
+      } else if (event.status === EventStatus.ACTIVE) {
+        this.realtimeService?.broadcastEventCreated(event);
+      }
     }
 
     return event;
@@ -211,21 +240,25 @@ export class EventsService {
       try {
         const decoded = Buffer.from(query.cursor, 'base64').toString('utf8');
         const [cursorDistance, cursorId] = decoded.split('_');
-        if (cursorDistance && cursorId) {
-          cursorClause = `
-            AND (
-              ST_Distance(e.location::geography, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography) > $${paramIndex}
-              OR (
-                ST_Distance(e.location::geography, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography) = $${paramIndex}
-                AND e.id > $${paramIndex + 1}
-              )
-            )
-          `;
-          params.push(parseFloat(cursorDistance), cursorId);
-          paramIndex += 2;
+        const distNum = parseFloat(cursorDistance || '');
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (isNaN(distNum) || !cursorId || !uuidRegex.test(cursorId)) {
+          throw new BadRequestException('Geçersiz cursor parametresi.');
         }
-      } catch (err) {
-        this.logger.warn(`Geçersiz cursor parametresi: ${query.cursor}`);
+        cursorClause = `
+          AND (
+            ST_Distance(e.location::geography, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography) > $${paramIndex}
+            OR (
+              ST_Distance(e.location::geography, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography) = $${paramIndex}
+              AND e.id > $${paramIndex + 1}
+            )
+          )
+        `;
+        params.push(distNum, cursorId);
+        paramIndex += 2;
+      } catch (err: any) {
+        if (err instanceof BadRequestException) throw err;
+        throw new BadRequestException('Geçersiz cursor parametresi.');
       }
     }
 
@@ -350,18 +383,22 @@ export class EventsService {
       try {
         const decoded = Buffer.from(query.cursor, 'base64').toString('utf8');
         const [cursorDate, cursorId] = decoded.split('_');
-        if (cursorDate && cursorId) {
-          cursorClause = `
-            AND (
-              e."createdAt" < $${paramIndex}
-              OR (e."createdAt" = $${paramIndex} AND e.id > $${paramIndex + 1})
-            )
-          `;
-          params.push(new Date(cursorDate), cursorId);
-          paramIndex += 2;
+        const parsedDate = new Date(cursorDate || '');
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!cursorDate || !cursorId || isNaN(parsedDate.getTime()) || !uuidRegex.test(cursorId)) {
+          throw new BadRequestException('Geçersiz cursor parametresi.');
         }
-      } catch (err) {
-        this.logger.warn(`Geçersiz bbox cursor: ${query.cursor}`);
+        cursorClause = `
+          AND (
+            e."createdAt" < $${paramIndex}
+            OR (e."createdAt" = $${paramIndex} AND e.id > $${paramIndex + 1})
+          )
+        `;
+        params.push(parsedDate, cursorId);
+        paramIndex += 2;
+      } catch (err: any) {
+        if (err instanceof BadRequestException) throw err;
+        throw new BadRequestException('Geçersiz cursor parametresi.');
       }
     }
 
@@ -425,6 +462,25 @@ export class EventsService {
     if (rawQ.length < 2) {
       throw new BadRequestException('Arama terimi en az 2 karakter olmalıdır.');
     }
+    if (rawQ.length > 100) {
+      throw new BadRequestException('Arama terimi maksimum 100 karakter olabilir.');
+    }
+
+    // Tarih aralığı katı doğrulaması (Maksimum 366 gün / 1 yıl)
+    if (query.startDate && query.endDate) {
+      const start = new Date(query.startDate);
+      const end = new Date(query.endDate);
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        throw new BadRequestException('Geçersiz tarih formatı.');
+      }
+      if (start > end) {
+        throw new BadRequestException('Başlangıç tarihi bitiş tarihinden sonra olamaz.');
+      }
+      const diffDays = (end.getTime() - start.getTime()) / (1000 * 3600 * 24);
+      if (diffDays > 366) {
+        throw new BadRequestException('Tarih aralığı en fazla 366 gün (1 yıl) olabilir.');
+      }
+    }
 
     const limit = Math.min(Math.max(query.limit || 20, 1), 50);
     const isModerator =
@@ -434,12 +490,16 @@ export class EventsService {
     const params: unknown[] = [];
     let paramIndex = 1;
 
-    // Arama koşulu: Başlık, açıklama, adres, ilçe (Türkçe duyarsız ILIKE)
+    // Arama koşulu: Başlık, açıklama, adres, ilçe (Türkçe unaccent duyarsız arama + standart ILIKE)
     const searchParam = `%${rawQ}%`;
     const searchClause = `(
-      e.title ILIKE $${paramIndex}
+      unaccent(LOWER(e.title)) ILIKE unaccent(LOWER($${paramIndex}))
+      OR e.title ILIKE $${paramIndex}
+      OR unaccent(LOWER(e.description)) ILIKE unaccent(LOWER($${paramIndex}))
       OR e.description ILIKE $${paramIndex}
+      OR unaccent(LOWER(e."addressText")) ILIKE unaccent(LOWER($${paramIndex}))
       OR e."addressText" ILIKE $${paramIndex}
+      OR unaccent(LOWER(e.district)) ILIKE unaccent(LOWER($${paramIndex}))
       OR e.district ILIKE $${paramIndex}
     )`;
     params.push(searchParam);
@@ -462,7 +522,7 @@ export class EventsService {
     // Şehir filtresi
     let cityClause = '';
     if (query.city) {
-      cityClause = `AND e.city ILIKE $${paramIndex}`;
+      cityClause = `AND (unaccent(LOWER(e.city)) ILIKE unaccent(LOWER($${paramIndex})) OR e.city ILIKE $${paramIndex})`;
       params.push(`%${query.city.trim()}%`);
       paramIndex++;
     }
@@ -470,7 +530,7 @@ export class EventsService {
     // İlçe filtresi
     let districtClause = '';
     if (query.district) {
-      districtClause = `AND e.district ILIKE $${paramIndex}`;
+      districtClause = `AND (unaccent(LOWER(e.district)) ILIKE unaccent(LOWER($${paramIndex})) OR e.district ILIKE $${paramIndex})`;
       params.push(`%${query.district.trim()}%`);
       paramIndex++;
     }
@@ -494,18 +554,22 @@ export class EventsService {
       try {
         const decoded = Buffer.from(query.cursor, 'base64').toString('utf8');
         const [cursorDate, cursorId] = decoded.split('_');
-        if (cursorDate && cursorId) {
-          cursorClause = `
-            AND (
-              e."createdAt" < $${paramIndex}
-              OR (e."createdAt" = $${paramIndex} AND e.id > $${paramIndex + 1})
-            )
-          `;
-          params.push(new Date(cursorDate), cursorId);
-          paramIndex += 2;
+        const parsedDate = new Date(cursorDate || '');
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!cursorDate || !cursorId || isNaN(parsedDate.getTime()) || !uuidRegex.test(cursorId)) {
+          throw new BadRequestException('Geçersiz cursor parametresi.');
         }
-      } catch (err) {
-        this.logger.warn(`Geçersiz search cursor: ${query.cursor}`);
+        cursorClause = `
+          AND (
+            e."createdAt" < $${paramIndex}
+            OR (e."createdAt" = $${paramIndex} AND e.id > $${paramIndex + 1})
+          )
+        `;
+        params.push(parsedDate, cursorId);
+        paramIndex += 2;
+      } catch (err: any) {
+        if (err instanceof BadRequestException) throw err;
+        throw new BadRequestException('Geçersiz cursor parametresi.');
       }
     }
 
@@ -664,6 +728,26 @@ export class EventsService {
           reason: dto.reason || null,
         }),
       );
+
+      // Transactional Outbox Kaydı (Phase 11: Atomic Event & Outbox)
+      if (this.outboxService) {
+        await this.outboxService.createOutboxEvent(
+          manager,
+          'Event',
+          id,
+          'EVENT_STATUS_CHANGED',
+          {
+            eventId: id,
+            previousStatus: currentStatus,
+            newStatus,
+            authorId: event.authorId,
+            title: event.title,
+            reason: dto.reason || null,
+            updatedBy: user.sub,
+            updatedByRole: user.role,
+          },
+        );
+      }
     });
 
     this.logger.log(
@@ -672,50 +756,58 @@ export class EventsService {
 
     const updatedEvent = await this.findById(id, user);
 
-    // Gerçek zamanlı WebSocket yayını
-    this.realtimeService?.broadcastEventStatusChanged(updatedEvent);
+    // Outbox processor tetiklemesi
+    if (this.outboxProcessor) {
+      this.outboxProcessor.triggerProcess();
+    }
 
-    // Akıllı bildirim üretimi (Section 12)
-    if (newStatus === EventStatus.ACTIVE) {
-      this.notificationsService
-        ?.createNotification({
-          userId: event.authorId,
-          type: NotificationType.EVENT_APPROVED,
-          title: 'Bildiriminiz yayınlandı',
-          body: `"${event.title}" başlıklı bildiriminiz onaylandı ve yayına alındı.`,
-          eventId: id,
-        })
-        .catch(() => {});
-    } else if (newStatus === EventStatus.REJECTED) {
-      this.notificationsService
-        ?.createNotification({
-          userId: event.authorId,
-          type: NotificationType.EVENT_REJECTED,
-          title: 'Bildiriminiz hakkında bir moderasyon kararı verildi',
-          body: `"${event.title}" başlıklı bildiriminiz moderasyon tarafından onaylanmadı.${dto.reason ? ` Gerekçe: ${dto.reason}` : ''}`,
-          eventId: id,
-        })
-        .catch(() => {});
-    } else if (newStatus === EventStatus.RESOLVED) {
-      this.notificationsService
-        ?.createNotification({
-          userId: event.authorId,
-          type: NotificationType.EVENT_RESOLVED,
-          title: 'Takip ettiğiniz gelişme çözüldü olarak işaretlendi',
-          body: `"${event.title}" başlıklı aksaklık çözüldü olarak işaretlendi.`,
-          eventId: id,
-        })
-        .catch(() => {});
-    } else if (newStatus === EventStatus.DISPUTED) {
-      this.notificationsService
-        ?.createNotification({
-          userId: event.authorId,
-          type: NotificationType.EVENT_DISPUTED,
-          title: 'Katkıda bulunduğunuz olaya itiraz edildi',
-          body: `"${event.title}" başlıklı olay hakkında ihtilaf kaydı oluşturuldu.`,
-          eventId: id,
-        })
-        .catch(() => {});
+    // Outbox devrede değilse doğrudan ilet (Unit testler ve geriye uyumluluk)
+    if (!this.outboxService) {
+      // Gerçek zamanlı WebSocket yayını
+      this.realtimeService?.broadcastEventStatusChanged(updatedEvent);
+
+      // Akıllı bildirim üretimi
+      if (newStatus === EventStatus.ACTIVE) {
+        this.notificationsService
+          ?.createNotification({
+            userId: event.authorId,
+            type: NotificationType.EVENT_APPROVED,
+            title: 'Bildiriminiz yayınlandı',
+            body: `"${event.title}" başlıklı bildiriminiz onaylandı ve yayına alındı.`,
+            eventId: id,
+          })
+          .catch(() => {});
+      } else if (newStatus === EventStatus.REJECTED) {
+        this.notificationsService
+          ?.createNotification({
+            userId: event.authorId,
+            type: NotificationType.EVENT_REJECTED,
+            title: 'Bildiriminiz hakkında bir moderasyon kararı verildi',
+            body: `"${event.title}" başlıklı bildiriminiz moderasyon tarafından onaylanmadı.${dto.reason ? ` Gerekçe: ${dto.reason}` : ''}`,
+            eventId: id,
+          })
+          .catch(() => {});
+      } else if (newStatus === EventStatus.RESOLVED) {
+        this.notificationsService
+          ?.createNotification({
+            userId: event.authorId,
+            type: NotificationType.EVENT_RESOLVED,
+            title: 'Takip ettiğiniz gelişme çözüldü olarak işaretlendi',
+            body: `"${event.title}" başlıklı aksaklık çözüldü olarak işaretlendi.`,
+            eventId: id,
+          })
+          .catch(() => {});
+      } else if (newStatus === EventStatus.DISPUTED) {
+        this.notificationsService
+          ?.createNotification({
+            userId: event.authorId,
+            type: NotificationType.EVENT_DISPUTED,
+            title: 'Katkıda bulunduğunuz olaya itiraz edildi',
+            body: `"${event.title}" başlıklı olay hakkında ihtilaf kaydı oluşturuldu.`,
+            eventId: id,
+          })
+          .catch(() => {});
+      }
     }
 
     return updatedEvent;
@@ -925,45 +1017,74 @@ export class EventsService {
         resolvedReportCount: resolvedCount,
         updatedAt: new Date(),
       });
+
+      // Transactional Outbox (Phase 11)
+      if (this.outboxService) {
+        await this.outboxService.createOutboxEvent(
+          manager,
+          'Event',
+          eventId,
+          'EVENT_FEEDBACK_SUBMITTED',
+          {
+            eventId,
+            feedbackType: dto.type,
+            reason: dto.reason ? dto.reason.trim() : null,
+            voterId: userId,
+            eventAuthorId: event.authorId,
+            confirmationCount: confirmCount,
+            denialCount: disputeCount,
+            disputeCount,
+            resolvedReportCount: resolvedCount,
+          },
+        );
+      }
     });
 
     this.logger.log(
       `Geri bildirim kaydedildi: Olay: ${eventId}, Kullanıcı: ${userId}, Tür: ${dto.type}`,
     );
 
+    // Outbox Processor tetiklemesi
+    if (this.outboxProcessor) {
+      this.outboxProcessor.triggerProcess();
+    }
+
     const summary = await this.getFeedbackSummary(eventId, userId);
 
-    // Gerçek zamanlı WebSocket yayını
-    this.realtimeService?.broadcastFeedbackUpdated({
-      id: eventId,
-      confirmationCount: summary.confirmCount,
-      disputeCount: summary.disputeCount,
-      resolvedReportCount: summary.resolvedReportCount,
-      reliabilityScore: 1.0,
-    });
+    // Outbox devrede değilse doğrudan ilet (Unit testler ve geriye uyumluluk)
+    if (!this.outboxService) {
+      // Gerçek zamanlı WebSocket yayını
+      this.realtimeService?.broadcastFeedbackUpdated({
+        id: eventId,
+        confirmationCount: summary.confirmCount,
+        disputeCount: summary.disputeCount,
+        resolvedReportCount: summary.resolvedReportCount,
+        reliabilityScore: 1.0,
+      });
 
-    // Olay sahibine bildirim iletimi (Anti-spam kurallarıyla)
-    if (event.authorId !== userId) {
-      if (dto.type === FeedbackType.CONFIRM) {
-        this.notificationsService
-          ?.createNotification({
-            userId: event.authorId,
-            type: NotificationType.EVENT_FEEDBACK,
-            title: 'Bildirdiğiniz olay teyit edildi',
-            body: `"${event.title}" başlıklı bildiriminiz bir mahalle sakini tarafından görüldü olarak teyit edildi.`,
-            eventId,
-          })
-          .catch(() => {});
-      } else if (dto.type === FeedbackType.DISPUTE) {
-        this.notificationsService
-          ?.createNotification({
-            userId: event.authorId,
-            type: NotificationType.EVENT_DISPUTED,
-            title: 'Bildiriminize itiraz edildi',
-            body: `"${event.title}" başlıklı bildiriminize bilgi yanlışı veya yanıltıcı ihbar gerekçesiyle itiraz edildi.`,
-            eventId,
-          })
-          .catch(() => {});
+      // Olay sahibine bildirim iletimi (Anti-spam kurallarıyla)
+      if (event.authorId !== userId) {
+        if (dto.type === FeedbackType.CONFIRM) {
+          this.notificationsService
+            ?.createNotification({
+              userId: event.authorId,
+              type: NotificationType.EVENT_FEEDBACK,
+              title: 'Bildirdiğiniz olay teyit edildi',
+              body: `"${event.title}" başlıklı bildiriminiz bir mahalle sakini tarafından görüldü olarak teyit edildi.`,
+              eventId,
+            })
+            .catch(() => {});
+        } else if (dto.type === FeedbackType.DISPUTE) {
+          this.notificationsService
+            ?.createNotification({
+              userId: event.authorId,
+              type: NotificationType.EVENT_DISPUTED,
+              title: 'Bildiriminize itiraz edildi',
+              body: `"${event.title}" başlıklı bildiriminize bilgi yanlışı veya yanıltıcı ihbar gerekçesiyle itiraz edildi.`,
+              eventId,
+            })
+            .catch(() => {});
+        }
       }
     }
 
@@ -1025,19 +1146,45 @@ export class EventsService {
         resolvedReportCount: resolvedCount,
         updatedAt: new Date(),
       });
+
+      // Transactional Outbox (Phase 11)
+      if (this.outboxService) {
+        await this.outboxService.createOutboxEvent(
+          manager,
+          'Event',
+          eventId,
+          'EVENT_FEEDBACK_REMOVED',
+          {
+            eventId,
+            voterId: userId,
+            eventAuthorId: event.authorId,
+            confirmationCount: confirmCount,
+            denialCount: disputeCount,
+            disputeCount,
+            resolvedReportCount: resolvedCount,
+          },
+        );
+      }
     });
 
     this.logger.log(`Geri bildirim geri çekildi: Olay: ${eventId}, Kullanıcı: ${userId}`);
 
+    // Outbox Processor tetiklemesi
+    if (this.outboxProcessor) {
+      this.outboxProcessor.triggerProcess();
+    }
+
     const summary = await this.getFeedbackSummary(eventId, userId);
 
-    this.realtimeService?.broadcastFeedbackUpdated({
-      id: eventId,
-      confirmationCount: summary.confirmCount,
-      disputeCount: summary.disputeCount,
-      resolvedReportCount: summary.resolvedReportCount,
-      reliabilityScore: 1.0,
-    });
+    if (!this.outboxService) {
+      this.realtimeService?.broadcastFeedbackUpdated({
+        id: eventId,
+        confirmationCount: summary.confirmCount,
+        disputeCount: summary.disputeCount,
+        resolvedReportCount: summary.resolvedReportCount,
+        reliabilityScore: 1.0,
+      });
+    }
 
     return summary;
   }

@@ -143,8 +143,19 @@ export class NotificationsService {
     body: string;
     eventId?: string | null;
     expiresAt?: Date | null;
+    idempotencyKey?: string | null;
   }): Promise<UserNotificationDto | null> {
-    const { userId, type, title, body, eventId, expiresAt } = params;
+    const { userId, type, title, body, eventId, expiresAt, idempotencyKey } = params;
+
+    // İdempotency Denetimi: Aynı idempotencyKey daha önce işlendiyse mükerrer kayıt oluşturma
+    if (idempotencyKey) {
+      const existing = await this.notificationRepository.findOne({
+        where: { idempotencyKey },
+      });
+      if (existing) {
+        return this.mapToDto(existing);
+      }
+    }
 
     // Kullanıcı tercihlerini denetle
     const prefs = await this.getPreferences(userId);
@@ -191,13 +202,23 @@ export class NotificationsService {
       body,
       eventId: eventId ?? null,
       expiresAt: expiresAt ?? null,
+      idempotencyKey: idempotencyKey ?? null,
     });
 
-    const saved = await this.notificationRepository.save(notification);
+    let saved: UserNotificationEntity;
+    try {
+      saved = await this.notificationRepository.save(notification);
+    } catch (err: any) {
+      if (idempotencyKey && (err.code === '23505' || err.message?.includes('UQ_user_notifications_idempotency'))) {
+        const existing = await this.notificationRepository.findOne({ where: { idempotencyKey } });
+        if (existing) return this.mapToDto(existing);
+      }
+      throw err;
+    }
     const dto = this.mapToDto(saved);
 
     // 1. In-App Realtime İletim (WebSocket üzerinden)
-    if (prefs.inAppEnabled) {
+    if (prefs.inAppEnabled && this.realtimeService) {
       this.realtimeService.sendNotificationToUser(userId, dto);
     }
 

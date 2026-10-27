@@ -215,6 +215,32 @@ CREATE TABLE user_reputation_logs (
 );
 
 CREATE INDEX idx_user_reputation_logs_user_id ON user_reputation_logs ("userId");
+
+-- 8. Transactional Outbox Olayları (Phase 11 Uygulaması)
+CREATE TYPE outbox_status_enum AS ENUM ('PENDING', 'PROCESSING', 'PROCESSED', 'FAILED');
+
+CREATE TABLE outbox_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    aggregate_type VARCHAR(64) NOT NULL,
+    aggregate_id UUID NOT NULL,
+    event_type VARCHAR(64) NOT NULL,
+    payload JSONB NOT NULL,
+    status outbox_status_enum NOT NULL DEFAULT 'PENDING',
+    attempts INT NOT NULL DEFAULT 0,
+    next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    processed_at TIMESTAMPTZ,
+    lock_lease_expires_at TIMESTAMPTZ,
+    last_error TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_outbox_events_status_next_attempt ON outbox_events (status, next_attempt_at);
+CREATE INDEX idx_outbox_events_aggregate ON outbox_events (aggregate_type, aggregate_id);
+
+-- 9. Tüketici İdempotans Sütunu (Phase 11)
+ALTER TABLE user_notifications ADD COLUMN IF NOT EXISTS idempotency_key VARCHAR(128);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_user_notifications_idempotency_key 
+    ON user_notifications (idempotency_key) WHERE idempotency_key IS NOT NULL;
 ```
 
 ---

@@ -9,3 +9,4 @@ export * from './user-reputation-log.entity';
 export * from './user-notification.entity';
 export * from './device-push-token.entity';
 export * from './user-notification-preference.entity';
+export * from './outbox-event.entity';

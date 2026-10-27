@@ -72,6 +72,8 @@ export interface HeatmapResponseDto {
   aggregatedClusterCount: number;
   points: HeatmapPointDto[];
   disclaimer: string;
+  suppressedPoints?: number;
+  kAnonymityThreshold?: number;
 }
 
 /**

@@ -10,6 +10,7 @@ import { EventsService } from './events.service';
 import { EventsController } from './events.controller';
 import { CategoriesModule } from '../categories/categories.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { OutboxModule } from '../outbox/outbox.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     ]),
     CategoriesModule,
     NotificationsModule,
+    OutboxModule,
   ],
   controllers: [EventsController],
   providers: [EventsService],

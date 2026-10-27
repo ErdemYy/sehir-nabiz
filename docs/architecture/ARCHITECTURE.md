@@ -30,6 +30,7 @@ flowchart TD
         AuthModule["Auth & Identity Modülü"]
         EventModule["Event & Geo Modülü"]
         VerifyModule["Moderation & Karma Engine"]
+        OutboxModule["Transactional Outbox & Worker"]
         RealtimeGW["WebSocket Gateway (Socket.io)"]
         QueueWorker["BullMQ Worker (Arka Plan Görevleri)"]
     end
@@ -47,6 +48,10 @@ flowchart TD
     Gateway --> AuthModule
     Gateway --> EventModule
     Gateway --> VerifyModule
+    EventModule --> OutboxModule
+    OutboxModule --> Postgres
+    OutboxModule --> RealtimeGW
+    OutboxModule --> Redis
     EventModule --> Postgres
     EventModule --> Redis
     VerifyModule --> Postgres

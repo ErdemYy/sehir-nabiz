@@ -233,3 +233,26 @@ Gerçek zamanlı harita ve anlık bildirim kanalları, kullanıcı mahremiyetini
 2. **Oturum Kapatma & Veri Temizliği:**
    - Kullanıcı ayarlar veya profil ekranından çıkış yaptığında SecureStore'daki tokenlar temizlenir, sunucudaki push token pasife alınır ve yerel önbellek sıfırlanır.
 
+---
+
+## 10. Phase 11 Sertleştirmesi: Outbox Atomisitesi, k-Anonymity ve Koordinat İzolasyonu
+
+### 10.1 Dört Farklı Koordinat Türü Ayrımı
+1. **Bildiren Cihaz Konumu (Reporter Device Location):** Donanım GPS'i asla veritabanına yazılmaz, loglanmaz veya dışarı sızdırılmaz.
+2. **Olay Konumu:** Kullanıcının seçtiği olay koordinatıdır; PostGIS geometry formatında saklanır.
+3. **Kamuya Açık Koordinatlar:** Yalnızca onaylanmış olaylar kamusal haritada gösterilir.
+4. **Agregasyon Koordinatları:** Isı haritasında 110m ızgara merkezine yuvarlanır.
+- Detaylar [PRIVACY_DATA_FLOW.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/PRIVACY_DATA_FLOW.md) belgesindedir.
+
+### 10.2 Heatmap k-Anonymity / Sparse Cell Suppression
+- Seyrek bölgelerdeki tekil olayların konumunun doğrudan okunmasını engellemek için, bir ızgara hücresindeki olay sayısı belirlenen eşiğin altındaysa ($k < 2$), o hücre gizlenir (`suppressedPoints`).
+
+### 10.3 Transactional Outbox & Çift Yazma Koruması
+- Veritabanı durum değişikliği ile harici bildirimler PostgreSQL Transactional Outbox deseniyle atomikleştirilmiştir (`outbox_events`).
+- `FOR UPDATE SKIP LOCKED` ile worker kilit yönetimi ve `user_notifications.idempotency_key` ile tüketici idempotansı sağlanmıştır.
+- Detaylar [TRANSACTIONAL_OUTBOX.md](file:///C:/Users/Okul/OneDrive/Belgeler/ŞehirNabız/docs/TRANSACTIONAL_OUTBOX.md) belgesindedir.
+
+### 10.4 Türkçe Karakter Duyarsız Arama (unaccent)
+- PostgreSQL `unaccent` extension ile büyük/küçük `ı/i`, `İ/I`, `ş/s`, `ç/c`, `ö/o`, `ü/u`, `ğ/g` harfleri için arama zırhı oluşturulmuştur.
+
+

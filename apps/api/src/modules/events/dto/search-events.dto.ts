@@ -1,10 +1,11 @@
 import type { EventCategory } from '@sehir-nabiz/shared';
-import { IsString, IsOptional, MinLength, IsNumber, Min, Max } from 'class-validator';
+import { IsString, IsOptional, MinLength, MaxLength, IsNumber, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class SearchEventsDto {
   @IsString()
   @MinLength(2)
+  @MaxLength(100)
   q!: string;
 
   @IsOptional()

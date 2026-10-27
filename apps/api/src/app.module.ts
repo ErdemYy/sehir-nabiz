@@ -15,6 +15,7 @@ import { RealtimeModule } from './modules/realtime/realtime.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { StatsModule } from './modules/stats/stats.module';
 import { UsersModule } from './modules/users/users.module';
+import { OutboxModule } from './modules/outbox/outbox.module';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 
 @Module({
@@ -40,6 +41,7 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     NotificationsModule,
     StatsModule,
     UsersModule,
+    OutboxModule,
     AuthModule,
     CategoriesModule,
     EventsModule,

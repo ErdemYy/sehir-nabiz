@@ -1,5 +1,5 @@
 import type { EventCategory, StatsPeriod } from '@sehir-nabiz/shared';
-import { IsNumber, IsOptional, IsString, IsIn } from 'class-validator';
+import { IsNumber, IsOptional, IsString, IsIn, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class HeatmapQueryDto {
@@ -31,4 +31,10 @@ export class HeatmapQueryDto {
   @IsOptional()
   @IsNumber()
   precision?: number;
+
+  @Type(() => Number)
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  minCount?: number;
 }

@@ -246,17 +246,26 @@ export class StatsService {
       params,
     );
 
+    const threshold = query.minCount && query.minCount > 1 ? query.minCount : 1;
     let maxCount = 1;
     let totalPoints = 0;
+    let suppressedPoints = 0;
+    const filteredRows: any[] = [];
+
     for (const row of clusterRows) {
       totalPoints += row.count;
-      if (row.count > maxCount) {
-        maxCount = row.count;
+      if (row.count < threshold) {
+        suppressedPoints += row.count;
+      } else {
+        filteredRows.push(row);
+        if (row.count > maxCount) {
+          maxCount = row.count;
+        }
       }
     }
 
     // Normalleştirilmiş ağırlık hesabı (0.1 - 1.0)
-    const points: HeatmapPointDto[] = clusterRows.map((r: any) => {
+    const points: HeatmapPointDto[] = filteredRows.map((r: any) => {
       const weight = Math.min(1.0, Math.max(0.1, Math.round((r.count / maxCount) * 100) / 100));
       return {
         latitude: r.latitude,
@@ -271,8 +280,10 @@ export class StatsService {
       totalPoints,
       aggregatedClusterCount: points.length,
       points,
+      suppressedPoints,
+      kAnonymityThreshold: threshold,
       disclaimer:
-        'Yoğunluk haritası ŞehirNabız üzerinde yayınlanmış kullanıcı bildirimlerinin coğrafi dağılımını gösterir; resmî tehlike veya risk haritası değildir.',
+        'Yoğunluk haritası gizlilik korumalı mekânsal agregasyonla üretilmektedir; tekil olay konumlarını doğrudan temsil etmez ve resmî tehlike veya risk haritası değildir.',
     };
   }
 }

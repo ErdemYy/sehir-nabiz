@@ -10,11 +10,13 @@ import { UserReputationLogEntity } from './entities/user-reputation-log.entity';
 import { UserNotificationEntity } from './entities/user-notification.entity';
 import { DevicePushTokenEntity } from './entities/device-push-token.entity';
 import { UserNotificationPreferenceEntity } from './entities/user-notification-preference.entity';
+import { OutboxEventEntity } from './entities/outbox-event.entity';
 import { InitialAuthAndPostGis1740000000000 } from './migrations/1740000000000-InitialAuthAndPostGis';
 import { CreateCategoriesAndEvents1740000001000 } from './migrations/1740000001000-CreateCategoriesAndEvents';
 import { CreateEventMedia1740000002000 } from './migrations/1740000002000-CreateEventMedia';
 import { CreateEventFeedbackAndReputationLogs1740000003000 } from './migrations/1740000003000-CreateEventFeedbackAndReputationLogs';
 import { CreateNotificationsAndPushTokens1740000004000 } from './migrations/1740000004000-CreateNotificationsAndPushTokens';
+import { CreateOutboxEventsAndIdempotency1740000005000 } from './migrations/1740000005000-CreateOutboxEventsAndIdempotency';
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
@@ -35,6 +37,7 @@ export const dataSourceOptions: DataSourceOptions = {
     UserNotificationEntity,
     DevicePushTokenEntity,
     UserNotificationPreferenceEntity,
+    OutboxEventEntity,
   ],
   migrations: [
     InitialAuthAndPostGis1740000000000,
@@ -42,6 +45,7 @@ export const dataSourceOptions: DataSourceOptions = {
     CreateEventMedia1740000002000,
     CreateEventFeedbackAndReputationLogs1740000003000,
     CreateNotificationsAndPushTokens1740000004000,
+    CreateOutboxEventsAndIdempotency1740000005000,
   ],
   synchronize: false,
   logging: process.env.DB_LOGGING === 'true',
