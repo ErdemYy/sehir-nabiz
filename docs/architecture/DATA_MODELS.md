@@ -186,28 +186,35 @@ CREATE TABLE event_media (
 CREATE INDEX idx_event_media_event_id ON event_media(event_id);
 CREATE INDEX idx_event_media_status ON event_media(status);
 
--- 6. Olay Doğrulama / Oylama (Event Verification) Tablosu
-CREATE TABLE event_verifications (
+-- 6. Topluluk Geri Bildirimi (Event Feedback) Tablosu (Phase 8 Uygulaması)
+CREATE TYPE feedback_type AS ENUM ('CONFIRM', 'DISPUTE', 'RESOLVED_REPORT');
+
+CREATE TABLE event_feedbacks (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    verification_type verification_type NOT NULL,
-    comment TEXT,
-    user_location_at_vote GEOMETRY(Point, 4326),
-    is_within_radius BOOLEAN NOT NULL DEFAULT false,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT uq_event_user_vote UNIQUE (event_id, user_id)
+    "eventId" UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    "userId" UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    type feedback_type NOT NULL,
+    reason VARCHAR(500),
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_event_feedback_event_user UNIQUE ("eventId", "userId")
 );
 
--- 7. Kullanıcı İtibar Logları (Reputation Logs)
+CREATE INDEX idx_event_feedback_event_id ON event_feedbacks ("eventId");
+CREATE INDEX idx_event_feedback_user_id ON event_feedbacks ("userId");
+CREATE INDEX idx_event_feedback_type ON event_feedbacks (type);
+
+-- 7. Kullanıcı İtibar Logları (Reputation Logs) (Phase 8 Uygulaması)
 CREATE TABLE user_reputation_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    "userId" UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     delta INT NOT NULL,
     reason VARCHAR(150) NOT NULL,
-    reference_id UUID,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    "referenceId" UUID,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX idx_user_reputation_logs_user_id ON user_reputation_logs ("userId");
 ```
 
 ---

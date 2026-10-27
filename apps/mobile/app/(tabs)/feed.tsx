@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Clock, MapPin, ThumbsUp } from 'lucide-react-native';
 import {
   AppScreen,
@@ -56,6 +57,7 @@ const MOCK_FEED_EVENTS = [
 ];
 
 export default function FeedScreen(): React.ReactElement {
+  const router = useRouter();
   const { theme, spacing } = useAppTheme();
   const [activeFilter, setActiveFilter] = useState<'all' | 'nearby' | 'critical'>('all');
 
@@ -93,7 +95,12 @@ export default function FeedScreen(): React.ReactElement {
 
       <View style={{ paddingHorizontal: spacing.lg, gap: spacing.md }}>
         {MOCK_FEED_EVENTS.map((event) => (
-          <AppCard key={event.id}>
+          <TouchableOpacity
+            key={event.id}
+            activeOpacity={0.85}
+            onPress={() => router.push(`/events/${event.id}`)}
+          >
+            <AppCard>
             <View
               style={{
                 flexDirection: 'row',
@@ -154,7 +161,8 @@ export default function FeedScreen(): React.ReactElement {
                 </AppText>
               </View>
             </View>
-          </AppCard>
+            </AppCard>
+          </TouchableOpacity>
         ))}
       </View>
     </AppScreen>

@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -22,17 +23,20 @@ import {
   NearbyEventsQuerySchema,
   BBoxEventsQuerySchema,
   UpdateEventStatusSchema,
+  CreateFeedbackSchema,
 } from '@sehir-nabiz/shared';
 import type {
   JwtPayload,
   EventResponseDto,
   PaginatedEventsResponse,
+  FeedbackSummaryDto,
 } from '@sehir-nabiz/shared';
 import {
   CreateEventDto,
   NearbyEventsDto,
   BBoxEventsDto,
   UpdateEventStatusDto,
+  CreateFeedbackDto,
 } from './dto';
 
 @Controller('events')
@@ -110,5 +114,48 @@ export class EventsController {
   ): Promise<EventResponseDto> {
     const user = req.user as JwtPayload;
     return this.eventsService.updateStatus(id, dto, user);
+  }
+
+  /**
+   * Topluluk Geri Bildirimi Ekle / Güncelle (POST /events/:id/feedback)
+   */
+  @Post(':id/feedback')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async submitFeedback(
+    @Req() req: Request,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body(new ZodValidationPipe(CreateFeedbackSchema)) dto: CreateFeedbackDto,
+  ): Promise<FeedbackSummaryDto> {
+    const user = req.user as JwtPayload;
+    return this.eventsService.submitFeedback(id, user.sub, dto);
+  }
+
+  /**
+   * Topluluk Geri Bildirimini Geri Çek (DELETE /events/:id/feedback)
+   */
+  @Delete(':id/feedback')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async removeFeedback(
+    @Req() req: Request,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<FeedbackSummaryDto> {
+    const user = req.user as JwtPayload;
+    return this.eventsService.removeFeedback(id, user.sub);
+  }
+
+  /**
+   * Topluluk Geri Bildirim Özeti Getir (GET /events/:id/feedback/summary)
+   */
+  @Get(':id/feedback/summary')
+  @UseGuards(OptionalJwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async getFeedbackSummary(
+    @Req() req: Request,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<FeedbackSummaryDto> {
+    const user = (req.user as JwtPayload) || undefined;
+    return this.eventsService.getFeedbackSummary(id, user?.sub, user);
   }
 }

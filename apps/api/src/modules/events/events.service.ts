@@ -11,6 +11,8 @@ import { EventEntity } from '../../database/entities/event.entity';
 import { UserEntity } from '../../database/entities/user.entity';
 import { CategoryEntity } from '../../database/entities/category.entity';
 import { EventModerationLogEntity } from '../../database/entities/event-moderation-log.entity';
+import { EventFeedbackEntity } from '../../database/entities/event-feedback.entity';
+import { UserReputationLogEntity } from '../../database/entities/user-reputation-log.entity';
 import {
   EventStatus,
   EventSeverity,
@@ -19,12 +21,18 @@ import {
   JwtPayload,
   EventResponseDto,
   PaginatedEventsResponse,
+  FeedbackType,
+  FeedbackSummaryDto,
+  ModerationEventItemDto,
+  PaginatedModerationEventsResponse,
 } from '@sehir-nabiz/shared';
 import {
   CreateEventDto,
   NearbyEventsDto,
   BBoxEventsDto,
   UpdateEventStatusDto,
+  CreateFeedbackDto,
+  ModerationEventsQueryDto,
 } from './dto';
 
 @Injectable()
@@ -40,6 +48,10 @@ export class EventsService {
     private readonly categoryRepository: Repository<CategoryEntity>,
     @InjectRepository(EventModerationLogEntity)
     private readonly moderationLogRepository: Repository<EventModerationLogEntity>,
+    @InjectRepository(EventFeedbackEntity)
+    private readonly feedbackRepository: Repository<EventFeedbackEntity>,
+    @InjectRepository(UserReputationLogEntity)
+    private readonly reputationLogRepository: Repository<UserReputationLogEntity>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -586,6 +598,25 @@ export class EventsService {
       throw new ForbiddenException('İtirazlı bir olayı yalnızca yetkililer çözüldü yapabilir.');
     }
 
+    // 4b. DISPUTED -> ACTIVE | REJECTED: Yalnızca Moderatör / Admin
+    if (
+      current === EventStatus.DISPUTED &&
+      (target === EventStatus.ACTIVE || target === EventStatus.REJECTED)
+    ) {
+      if (!isModeratorOrAdmin) {
+        throw new ForbiddenException('İtirazlı olayı yeniden yayınlama veya reddetme yetkisi moderatörlere aittir.');
+      }
+      return;
+    }
+
+    // 4c. ACTIVE -> REJECTED: Yalnızca Moderatör / Admin
+    if (current === EventStatus.ACTIVE && target === EventStatus.REJECTED) {
+      if (!isModeratorOrAdmin) {
+        throw new ForbiddenException('Yayındaki bir olayı yalnızca moderatörler reddedebilir.');
+      }
+      return;
+    }
+
     // 5. ACTIVE -> EXPIRED: Moderatör veya Admin
     if (current === EventStatus.ACTIVE && target === EventStatus.EXPIRED) {
       if (!isModeratorOrAdmin) {
@@ -597,6 +628,438 @@ export class EventsService {
     throw new BadRequestException(
       `Geçersiz durum geçişi: ${current} durumundaki bir olay ${target} durumuna geçirilemez.`,
     );
+  }
+
+  /**
+   * Topluluk Geri Bildirimi Gönderme / Güncelleme (POST /events/:id/feedback)
+   * - JWT ve aktif hesap zorunlu
+   * - Gizli olaylar için 404 (bilgi sızıntısını önler)
+   * - Kullanıcı kendi olayını teyit edemez (400 BadRequest)
+   * - Eşzamanlı istekler DB unique kısıtı ile korunur
+   * - Transaction içinde sayaçlar güncellenir
+   */
+  async submitFeedback(
+    eventId: string,
+    userId: string,
+    dto: CreateFeedbackDto,
+  ): Promise<FeedbackSummaryDto> {
+    // 1. Kullanıcı aktiflik kontrolü
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user || user.accountStatus !== AccountStatus.ACTIVE) {
+      throw new ForbiddenException('Hesabınız aktif değil veya geri bildirim yetkiniz kısıtlanmış.');
+    }
+
+    // 2. Olay varlık kontrolü
+    const event = await this.eventRepository.findOne({ where: { id: eventId } });
+    if (!event) {
+      throw new NotFoundException('Olay bulunamadı.');
+    }
+
+    // 3. Kullanıcı kendi olayına geri bildirim veremez (Yazar denetimi)
+    if (event.authorId === userId) {
+      throw new BadRequestException('Kendi bildirdiğiniz olaya geri bildirim veremezsiniz.');
+    }
+
+    // Gizli / Reddedilmiş olay koruması: Sadece moderatör/admin erişebilir; normal vatandaşa 404
+    const isModerator = user.role === UserRole.MODERATOR || user.role === UserRole.ADMIN;
+    if (
+      (event.status === EventStatus.PENDING_REVIEW || event.status === EventStatus.REJECTED) &&
+      !isModerator
+    ) {
+      throw new NotFoundException('Olay bulunamadı.');
+    }
+
+    // 4. Transaction ile güvenli upsert ve sayaç güncelleme
+    await this.dataSource.transaction(async manager => {
+      const feedbackRepo = manager.getRepository(EventFeedbackEntity);
+      let feedback = await feedbackRepo.findOne({ where: { eventId, userId } });
+
+      if (feedback) {
+        feedback.type = dto.type;
+        feedback.reason = dto.reason ? dto.reason.trim() : null;
+        feedback.updatedAt = new Date();
+        await feedbackRepo.save(feedback);
+      } else {
+        feedback = feedbackRepo.create({
+          eventId,
+          userId,
+          type: dto.type,
+          reason: dto.reason ? dto.reason.trim() : null,
+        });
+        await feedbackRepo.save(feedback);
+      }
+
+      // 5. Güncel sayaçları hesapla ve olayı atomik güncelle
+      const countsRaw = await manager.query(
+        `
+        SELECT 
+          COUNT(*) FILTER (WHERE "type" = 'CONFIRM')::int AS confirm_count,
+          COUNT(*) FILTER (WHERE "type" = 'DISPUTE')::int AS dispute_count,
+          COUNT(*) FILTER (WHERE "type" = 'RESOLVED_REPORT')::int AS resolved_count
+        FROM "event_feedbacks"
+        WHERE "eventId" = $1;
+        `,
+        [eventId],
+      );
+
+      const confirmCount = countsRaw[0]?.confirm_count || 0;
+      const disputeCount = countsRaw[0]?.dispute_count || 0;
+      const resolvedCount = countsRaw[0]?.resolved_count || 0;
+
+      await manager.update(EventEntity, { id: eventId }, {
+        confirmationCount: confirmCount,
+        denialCount: disputeCount,
+        disputeCount: disputeCount,
+        resolvedReportCount: resolvedCount,
+        updatedAt: new Date(),
+      });
+    });
+
+    this.logger.log(
+      `Geri bildirim kaydedildi: Olay: ${eventId}, Kullanıcı: ${userId}, Tür: ${dto.type}`,
+    );
+
+    return this.getFeedbackSummary(eventId, userId);
+  }
+
+  /**
+   * Topluluk Geri Bildirimini Geri Çekme (DELETE /events/:id/feedback)
+   */
+  async removeFeedback(eventId: string, userId: string): Promise<FeedbackSummaryDto> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user || user.accountStatus !== AccountStatus.ACTIVE) {
+      throw new ForbiddenException('Hesabınız aktif değil veya işlem yetkiniz yok.');
+    }
+
+    const event = await this.eventRepository.findOne({ where: { id: eventId } });
+    if (!event) {
+      throw new NotFoundException('Olay bulunamadı.');
+    }
+
+    const isModerator = user.role === UserRole.MODERATOR || user.role === UserRole.ADMIN;
+    if (
+      (event.status === EventStatus.PENDING_REVIEW || event.status === EventStatus.REJECTED) &&
+      !isModerator
+    ) {
+      throw new NotFoundException('Olay bulunamadı.');
+    }
+
+    await this.dataSource.transaction(async manager => {
+      const feedbackRepo = manager.getRepository(EventFeedbackEntity);
+      const existing = await feedbackRepo.findOne({ where: { eventId, userId } });
+      if (!existing) {
+        throw new NotFoundException('Geri çekilecek bir geri bildirim bulunamadı.');
+      }
+
+      await feedbackRepo.remove(existing);
+
+      // Sayaçları güncelle
+      const countsRaw = await manager.query(
+        `
+        SELECT 
+          COUNT(*) FILTER (WHERE "type" = 'CONFIRM')::int AS confirm_count,
+          COUNT(*) FILTER (WHERE "type" = 'DISPUTE')::int AS dispute_count,
+          COUNT(*) FILTER (WHERE "type" = 'RESOLVED_REPORT')::int AS resolved_count
+        FROM "event_feedbacks"
+        WHERE "eventId" = $1;
+        `,
+        [eventId],
+      );
+
+      const confirmCount = countsRaw[0]?.confirm_count || 0;
+      const disputeCount = countsRaw[0]?.dispute_count || 0;
+      const resolvedCount = countsRaw[0]?.resolved_count || 0;
+
+      await manager.update(EventEntity, { id: eventId }, {
+        confirmationCount: confirmCount,
+        denialCount: disputeCount,
+        disputeCount: disputeCount,
+        resolvedReportCount: resolvedCount,
+        updatedAt: new Date(),
+      });
+    });
+
+    this.logger.log(`Geri bildirim geri çekildi: Olay: ${eventId}, Kullanıcı: ${userId}`);
+
+    return this.getFeedbackSummary(eventId, userId);
+  }
+
+  /**
+   * Topluluk Geri Bildirim Özeti (GET /events/:id/feedback/summary)
+   * Açıklanabilir metin ve sahte kesinlik barındırmayan gösterge
+   */
+  async getFeedbackSummary(
+    eventId: string,
+    userId?: string,
+    requestingUser?: JwtPayload,
+  ): Promise<FeedbackSummaryDto> {
+    const event = await this.eventRepository.findOne({ where: { id: eventId } });
+    if (!event) {
+      throw new NotFoundException('Olay bulunamadı.');
+    }
+
+    const isAuthor = requestingUser && requestingUser.sub === event.authorId;
+    const isModerator =
+      requestingUser &&
+      (requestingUser.role === UserRole.MODERATOR || requestingUser.role === UserRole.ADMIN);
+
+    if (
+      (event.status === EventStatus.PENDING_REVIEW || event.status === EventStatus.REJECTED) &&
+      !isAuthor &&
+      !isModerator
+    ) {
+      throw new NotFoundException('Olay bulunamadı.');
+    }
+
+    const countsRaw = await this.dataSource.query(
+      `
+      SELECT 
+        COUNT(*) FILTER (WHERE "type" = 'CONFIRM')::int AS confirm_count,
+        COUNT(*) FILTER (WHERE "type" = 'DISPUTE')::int AS dispute_count,
+        COUNT(*) FILTER (WHERE "type" = 'RESOLVED_REPORT')::int AS resolved_count
+      FROM "event_feedbacks"
+      WHERE "eventId" = $1;
+      `,
+      [eventId],
+    );
+
+    const confirmCount = countsRaw[0]?.confirm_count || 0;
+    const disputeCount = countsRaw[0]?.dispute_count || 0;
+    const resolvedReportCount = countsRaw[0]?.resolved_count || 0;
+    const totalCount = confirmCount + disputeCount + resolvedReportCount;
+
+    let userFeedback: { type: FeedbackType; reason?: string | null; createdAt: string } | null = null;
+    if (userId) {
+      const fb = await this.feedbackRepository.findOne({ where: { eventId, userId } });
+      if (fb) {
+        userFeedback = {
+          type: fb.type,
+          reason: fb.reason || null,
+          createdAt: fb.createdAt.toISOString(),
+        };
+      }
+    }
+
+    // Açıklanabilir topluluk değerlendirmesi
+    const hasSufficientSample = totalCount >= 3;
+    let communityAssessment: string;
+
+    if (!hasSufficientSample) {
+      communityAssessment = 'Topluluk değerlendirmesi henüz oluşmadı (en az 3 bağımsız bildirim gereklidir).';
+    } else {
+      const parts: string[] = [];
+      if (confirmCount > 0) parts.push(`${confirmCount} kişi gördüğünü bildirdi`);
+      if (disputeCount > 0) parts.push(`${disputeCount} kişi bilgiye itiraz etti`);
+      if (resolvedReportCount > 0) parts.push(`${resolvedReportCount} kişi çözüldüğünü düşünüyor`);
+      communityAssessment = parts.join(', ');
+    }
+
+    return {
+      eventId,
+      confirmCount,
+      disputeCount,
+      resolvedReportCount,
+      totalCount,
+      userFeedback,
+      hasSufficientSample,
+      communityAssessment,
+      disclaimer: 'Topluluk bildirimleri kamuoyunu bilgilendirme amaçlıdır; resmî doğrulama niteliği taşımaz.',
+    };
+  }
+
+  /**
+   * Moderasyon Olayları Listesi (GET /moderation/events)
+   * Yalnızca MODERATOR ve ADMIN rollerine açık
+   */
+  async getModerationEvents(query: ModerationEventsQueryDto): Promise<PaginatedModerationEventsResponse> {
+    const limit = query.limit || 20;
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    let statusClause = '';
+    if (query.status) {
+      statusClause = `e.status = $${paramIndex++}`;
+      params.push(query.status);
+    } else {
+      // Varsayılan: inceleme bekleyen veya ihtilaflı olaylar öncelikli
+      statusClause = `e.status IN ('PENDING_REVIEW', 'DISPUTED')`;
+    }
+
+    let categoryClause = '';
+    if (query.category) {
+      categoryClause = `AND (c.code = $${paramIndex} OR c.id::text = $${paramIndex})`;
+      params.push(query.category);
+      paramIndex++;
+    }
+
+    let severityClause = '';
+    if (query.severity) {
+      severityClause = `AND e.severity = $${paramIndex++}`;
+      params.push(query.severity);
+    }
+
+    let cityClause = '';
+    if (query.city) {
+      cityClause = `AND e.city ILIKE $${paramIndex++}`;
+      params.push(`%${query.city}%`);
+    }
+
+    let cursorClause = '';
+    if (query.cursor) {
+      try {
+        const decoded = Buffer.from(query.cursor, 'base64').toString('utf8');
+        const [cursorDate, cursorId] = decoded.split('_');
+        if (cursorDate && cursorId) {
+          cursorClause = `
+            AND (
+              e."createdAt" < $${paramIndex}
+              OR (e."createdAt" = $${paramIndex} AND e.id > $${paramIndex + 1})
+            )
+          `;
+          params.push(new Date(cursorDate), cursorId);
+          paramIndex += 2;
+        }
+      } catch (err) {
+        this.logger.warn(`Geçersiz moderation cursor: ${query.cursor}`);
+      }
+    }
+
+    params.push(limit + 1);
+    const limitParam = `$${paramIndex}`;
+
+    const rawRows = await this.dataSource.query(
+      `
+      SELECT 
+        e.id, e.title, e.description, e.severity, e.status,
+        e."addressText", e.city, e.district, e."isDemo",
+        e."confirmationCount", e."denialCount", e."disputeCount", e."resolvedReportCount",
+        e."reliabilityScore",
+        e."createdAt", e."updatedAt", e."expiresAt", e."resolvedAt",
+        ST_X(e.location) AS longitude,
+        ST_Y(e.location) AS latitude,
+        c.id AS category_id, c.code AS category_code, c.name_tr AS category_name_tr,
+        c.description_tr AS category_description_tr, c.icon AS category_icon,
+        c.color_hex AS category_color_hex, c.default_duration_hours AS category_default_duration_hours,
+        u.id AS author_id, u."displayName" AS author_display_name, u."reputationScore" AS author_reputation_score,
+        u.email AS author_email
+      FROM "events" e
+      INNER JOIN "categories" c ON c.id = e."categoryId"
+      INNER JOIN "users" u ON u.id = e."authorId"
+      WHERE ${statusClause}
+        ${categoryClause}
+        ${severityClause}
+        ${cityClause}
+        ${cursorClause}
+      ORDER BY e."createdAt" DESC, e.id ASC
+      LIMIT ${limitParam};
+      `,
+      params,
+    );
+
+    const hasMore = rawRows.length > limit;
+    const itemsRows = hasMore ? rawRows.slice(0, limit) : rawRows;
+
+    let nextCursor: string | null = null;
+    if (hasMore && itemsRows.length > 0) {
+      const last = itemsRows[itemsRows.length - 1];
+      nextCursor = Buffer.from(`${new Date(last.createdAt).toISOString()}_${last.id}`).toString('base64');
+    }
+
+    const items: ModerationEventItemDto[] = itemsRows.map((r: any) => {
+      const baseDto = this.mapRawToDto(r);
+      return {
+        ...baseDto,
+        feedbackSummary: {
+          confirmCount: r.confirmationCount || 0,
+          disputeCount: r.disputeCount || r.denialCount || 0,
+          resolvedReportCount: r.resolvedReportCount || 0,
+          totalCount: (r.confirmationCount || 0) + (r.disputeCount || r.denialCount || 0) + (r.resolvedReportCount || 0),
+        },
+      };
+    });
+
+    return {
+      items,
+      nextCursor,
+      hasMore,
+    };
+  }
+
+  /**
+   * Moderatör İçin Olay Detayı (GET /moderation/events/:id)
+   */
+  async getModerationEventById(id: string): Promise<any> {
+    const eventDto = await this.findById(id, { sub: 'moderator-internal', role: UserRole.MODERATOR } as JwtPayload);
+    const moderationLogs = await this.getModerationLogs(id);
+    const feedbackSummary = await this.getFeedbackSummary(id);
+
+    // Son 20 geri bildirimi listele
+    const recentFeedbacks = await this.dataSource.query(
+      `
+      SELECT 
+        f.id, f."type", f.reason, f."createdAt",
+        u.id AS user_id, u."displayName" AS user_display_name, u."reputationScore" AS user_reputation_score
+      FROM "event_feedbacks" f
+      INNER JOIN "users" u ON u.id = f."userId"
+      WHERE f."eventId" = $1
+      ORDER BY f."createdAt" DESC
+      LIMIT 20;
+      `,
+      [id],
+    );
+
+    return {
+      ...eventDto,
+      feedbackSummary,
+      moderationLogs,
+      recentFeedbacks: recentFeedbacks.map((f: any) => ({
+        id: f.id,
+        type: f.type,
+        reason: f.reason,
+        createdAt: new Date(f.createdAt).toISOString(),
+        user: {
+          id: f.user_id,
+          displayName: f.user_display_name,
+          reputationScore: f.user_reputation_score,
+        },
+      })),
+    };
+  }
+
+  /**
+   * Kullanıcı İtibar Değişikliğini Audit Trail Olarak Kaydet (Phase 8)
+   */
+  async recordReputationChange(
+    userId: string,
+    delta: number,
+    reason: string,
+    referenceId?: string,
+  ): Promise<void> {
+    await this.dataSource.transaction(async manager => {
+      const user = await manager.findOne(UserEntity, { where: { id: userId } });
+      if (!user) return;
+
+      user.reputationScore = Math.max(0, user.reputationScore + delta);
+      await manager.save(UserEntity, user);
+
+      const log = manager.create(UserReputationLogEntity, {
+        userId,
+        delta,
+        reason,
+        referenceId: referenceId || null,
+      });
+      await manager.save(UserReputationLogEntity, log);
+    });
+  }
+
+  /**
+   * Kullanıcının İtibar Denetim Kayıtlarını Getir (Phase 8)
+   */
+  async getUserReputationLogs(userId: string): Promise<UserReputationLogEntity[]> {
+    return this.reputationLogRepository.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   /**

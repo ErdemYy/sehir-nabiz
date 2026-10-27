@@ -5,12 +5,14 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
   Index,
 } from 'typeorm';
 import { EventSeverity, EventStatus } from '@sehir-nabiz/shared';
 import { UserEntity } from './user.entity';
 import { CategoryEntity } from './category.entity';
+import { EventFeedbackEntity } from './event-feedback.entity';
 
 @Entity('events')
 export class EventEntity {
@@ -80,6 +82,15 @@ export class EventEntity {
 
   @Column({ type: 'int', default: 0 })
   denialCount!: number;
+
+  @Column({ type: 'int', default: 0 })
+  disputeCount!: number;
+
+  @Column({ type: 'int', default: 0 })
+  resolvedReportCount!: number;
+
+  @OneToMany(() => EventFeedbackEntity, feedback => feedback.event)
+  feedbacks?: EventFeedbackEntity[];
 
   @Column({ type: 'double precision', default: 1.0 })
   reliabilityScore!: number;

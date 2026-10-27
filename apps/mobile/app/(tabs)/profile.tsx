@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Moon, Sun, Monitor, Shield, Sparkles, ChevronRight, MapPin } from 'lucide-react-native';
+import { Moon, Sun, Monitor, Shield, Sparkles, ChevronRight, MapPin, ShieldAlert } from 'lucide-react-native';
 import {
   AppScreen,
   AppHeader,
@@ -11,10 +11,18 @@ import {
   AppBadge,
 } from '../../src/components/ui';
 import { useAppTheme, type ThemeMode } from '../../src/theme';
+import { useAuthStore } from '../../src/features/auth';
+import { UserRole } from '@sehir-nabiz/shared';
 
 export default function ProfileScreen(): React.ReactElement {
   const router = useRouter();
   const { theme, spacing, radii, themeMode, setThemeMode } = useAppTheme();
+  const { user, isAuthenticated } = useAuthStore();
+
+  const isModeratorOrAdmin =
+    isAuthenticated &&
+    user &&
+    (user.role === UserRole.MODERATOR || user.role === UserRole.ADMIN);
 
   return (
     <AppScreen scrollable contentContainerStyle={{ paddingBottom: 100 }}>
@@ -134,6 +142,39 @@ export default function ProfileScreen(): React.ReactElement {
             </AppText>
           </View>
         </AppCard>
+
+        {/* Yetkili Moderatör Paneli Bağlantısı */}
+        {isModeratorOrAdmin || __DEV__ ? (
+          <AppCard
+            onPress={() => router.push('/moderation')}
+            style={{
+              marginBottom: spacing.lg,
+              borderColor: '#F59E0B',
+              backgroundColor: '#FEF3C7',
+            }}
+          >
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                <ShieldAlert size={20} color="#B45309" />
+                <View>
+                  <AppText variant="bodyM" weight="bold" color="#92400E">
+                    Moderatör Yönetim Paneli
+                  </AppText>
+                  <AppText variant="caption" color="#B45309">
+                    Topluluk olaylarını incele, onayla veya reddet
+                  </AppText>
+                </View>
+              </View>
+              <ChevronRight size={18} color="#B45309" />
+            </View>
+          </AppCard>
+        ) : null}
 
         {/* Geliştirici UI Showcase Bağlantısı */}
         {__DEV__ ? (

@@ -136,3 +136,29 @@ Kullanıcıların olaylara yüklediği görsellerin güvenliği ve kişisel veri
 ### 6.4 Erişim Denetimi ve Olay Gizliliği
 - İncelenmekte olan (`PENDING_REVIEW`) veya reddedilen (`REJECTED`) olayların fotoğrafları genel kullanıcılar tarafından görüntülenemez (`404 Not Found`). Sadece olay sahibi veya moderatörler erişebilir.
 - Olay başına en fazla 3 aktif/bekleyen fotoğraf kuralı pessimistic locking (`SELECT ... FOR UPDATE`) ile garanti edilir.
+
+---
+
+## 7. Topluluk Teyit Güvenliği ve Moderasyon İlkeleri (Phase 8 Uygulaması)
+
+Topluluk odaklı kentsel platformların en kırılgan tarafı bot orduları, organize manipülasyonlar ve sahte panik ihbarlarıdır:
+
+### 7.1 Organize Oy ve Bot Koruması
+1. **Tek Aktif Oy ve Çift Oy Engeli:** Veritabanında `UNIQUE("eventId", "userId")` kısıtı uygulanmıştır. Kullanıcı dilediğinde oyunu değiştirebilir veya geri çekebilir; ancak mükerrer oy veremez.
+2. **Kendi Olayını Teyit Etme Yasağı:** Olayı bildiren yazar kendi olayına teyit veya itiraz veremez (`event.authorId === userId -> 400 Bad Request`).
+3. **Aktif Hesap Zorunluluğu:** Yalnızca `AccountStatus.ACTIVE` durumundaki doğrulanmış hesaplar geri bildirim gönderebilir; askıya alınmış veya pasif hesaplar engellenir.
+4. **Sınırsız İtibar Puanı Kasmayı Önleme:** İlk sürümde sırf oy vererek sonsuz itibar kazanılmasına izin verilmez; itibar ekonomisi manipülasyondan izole tutulur.
+
+### 7.2 Konum Mahremiyeti ve GPS İzolasyonu
+- Olay teyidi vermek için kullanıcıdan zorunlu GPS konumu talep edilmez.
+- Teyit veren vatandaşların anlık kesin koordinatları sunucuda saklanmaz veya veritabanına kaydedilmez.
+- GPS spoofing riskine karşı sahte konum ağırlıklandırması uygulanmaz.
+
+### 7.3 Gizlilik Kalkanı ve Bilgi Sızıntısını Önleme
+- Onaylanmamış (`PENDING_REVIEW`) veya reddedilmiş (`REJECTED`) olaylara ilişkin geri bildirim sorgulamalarında veya detay çağrılarında yetkisiz kişilere `404 Not Found` dönülür. Olayın başlığı, yazarı ve varlığı gizlenir.
+
+### 7.4 Açıklanabilir Güvenilirlik ve Sahte Kesinlik Engeli
+- Topluluk geri bildirimleri resmî belediye onayı değildir.
+- Kullanıcıya *"Bu olay %95 doğrudur"* benzeri yapay zeka veya yüzde yanılsaması oluşturacak ifadeler sunulmaz.
+- Sayısal döküm ("12 kişi gördü, 3 kişi itiraz etti") şeffafça ve yalnızca yeterli örneklem ($N \ge 3$) toplandığında açıklayıcı metinle gösterilir.
+- Olay durumu yalnızca oy sayısına bağlı olarak otomatik `ACTIVE` veya `VERIFIED` yapılamaz. Karar süreci moderatörlerin yetkisindedir.

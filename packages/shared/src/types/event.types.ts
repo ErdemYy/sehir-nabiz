@@ -1,4 +1,4 @@
-import { EventCategory, EventSeverity, EventStatus, CategoryCode } from '../enums';
+import { EventCategory, EventSeverity, EventStatus, CategoryCode, FeedbackType } from '../enums';
 import { GeoCoordinate } from './geo.types';
 
 /**
@@ -105,4 +105,50 @@ export interface EventDetail extends EventSummary {
   mediaUrls: string[];
   reporterReputation: number;
   isCurrentUserVerified?: boolean;
+}
+
+/**
+ * Kullanıcı Geri Bildirim Bilgisi (Phase 8)
+ */
+export interface UserFeedbackDto {
+  type: FeedbackType;
+  reason?: string | null;
+  createdAt: string;
+}
+
+/**
+ * Topluluk Geri Bildirim Özeti DTO'su (Phase 8)
+ */
+export interface FeedbackSummaryDto {
+  eventId: string;
+  confirmCount: number;
+  disputeCount: number;
+  resolvedReportCount: number;
+  totalCount: number;
+  userFeedback: UserFeedbackDto | null;
+  hasSufficientSample: boolean;
+  communityAssessment: string;
+  disclaimer: string;
+}
+
+/**
+ * Moderasyon Olay Listesi Öğesi DTO'su (Phase 8)
+ */
+export interface ModerationEventItemDto extends EventResponseDto {
+  feedbackSummary?: {
+    confirmCount: number;
+    disputeCount: number;
+    resolvedReportCount: number;
+    totalCount: number;
+  };
+}
+
+/**
+ * Sayfalanmış Moderasyon Olayları Yanıtı (Cursor-based)
+ */
+export interface PaginatedModerationEventsResponse {
+  items: ModerationEventItemDto[];
+  nextCursor: string | null;
+  hasMore: boolean;
+  total?: number;
 }

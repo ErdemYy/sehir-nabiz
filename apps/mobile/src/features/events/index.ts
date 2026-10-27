@@ -7,3 +7,5 @@ export * from './components/LocationPickerModal';
 export * from './components/PhotoPickerSection';
 export * from './components/DuplicateWarningModal';
 export * from './components/CreateEventFlow';
+export * from './services/feedbackApi';
+export * from './services/moderationApi';

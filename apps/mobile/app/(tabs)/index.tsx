@@ -486,10 +486,10 @@ export default function MapScreen(): React.ReactElement {
                     <Shield size={18} color={theme.primary} />
                     <View>
                       <AppText variant="caption" color={theme.textSecondary}>
-                        Güvenilirlik Puanı
+                        Topluluk Teyidi
                       </AppText>
                       <AppText variant="bodyM" weight="bold" color={theme.primary}>
-                        %{Math.round(selectedEvent.reliabilityScore * 100)}
+                        {selectedEvent.confirmationCount || selectedEvent.upvotesCount || 0} Kişi Gördü
                       </AppText>
                     </View>
                   </View>
@@ -498,14 +498,17 @@ export default function MapScreen(): React.ReactElement {
                     <ThumbsUp size={18} color={theme.primary} />
                     <View>
                       <AppText variant="caption" color={theme.textSecondary}>
-                        Topluluk Teyidi
+                        Durum
                       </AppText>
                       <AppText variant="bodyM" weight="bold">
-                        {selectedEvent.upvotesCount} Onay
+                        {selectedEvent.status === 'ACTIVE' ? 'Yayında' : selectedEvent.status}
                       </AppText>
                     </View>
                   </View>
                 </View>
+                <AppText variant="caption" color={theme.textSecondary} style={{ marginTop: 6, fontSize: 11 }}>
+                  * Topluluk bildirimleri resmî doğrulama niteliği taşımaz.
+                </AppText>
               </AppCard>
             )}
 
@@ -514,7 +517,11 @@ export default function MapScreen(): React.ReactElement {
               <AppButton
                 title="Detayı Gör"
                 variant="secondary"
-                onPress={() => setSelectedEvent(null)}
+                onPress={() => {
+                  const targetId = selectedEvent.id;
+                  setSelectedEvent(null);
+                  router.push(`/events/${targetId}`);
+                }}
                 style={{ flex: 1 }}
               />
               {selectedEvent.isDemo ? (
@@ -529,7 +536,11 @@ export default function MapScreen(): React.ReactElement {
                 <AppButton
                   title="Teyit Et"
                   variant="primary"
-                  onPress={() => setSelectedEvent(null)}
+                  onPress={() => {
+                    const targetId = selectedEvent.id;
+                    setSelectedEvent(null);
+                    router.push(`/events/${targetId}`);
+                  }}
                   style={{ flex: 1 }}
                 />
               )}

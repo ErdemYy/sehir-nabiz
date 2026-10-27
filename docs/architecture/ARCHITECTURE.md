@@ -183,3 +183,19 @@ Tüm coğrafi veriler WGS 84 (`SRID 4326`) projeksiyon sisteminde tutulur.
 
 - **Docker Compose:** Yerel geliştirme ortamında tek komutla PostgreSQL (PostGIS), Redis ve NestJS ayağa kaldırılır.
 - **Graceful Degradation (Kademeli Bozulma):** Harita karo sunucusuna erişilemediğinde offline raster önbellek devreye girer. Backend bağlantısı koptuğunda MMKV'deki son başarılı sorgu verileri kullanıcıya hissettirilmeden sunulur.
+
+---
+
+## 7. Topluluk Teyit Sistemi ve Moderasyon Mimarisi (Phase 8 Uygulaması)
+
+1. **Topluluk Katılımı ve Açıklanabilir Güvenilirlik:**
+   - Vatandaşlar sahadaki olaylar için "Ben de Gördüm" (`CONFIRM`), "Yanlış Bilgi Bildir" (`DISPUTE`) ve "Sorun Çözüldü" (`RESOLVED_REPORT`) bildirimlerinde bulunur.
+   - Her kullanıcı için olay bazında tek aktif geri bildirim kuralı uygulanır (`uq_event_feedback_event_user`).
+   - Sahte kesinlik ("%95 doğru" gibi) algoritmaları yerine şeffaf ve açıklanabilir bildirim özeti sunulur (Örnek: "12 kişi gördüğünü bildirdi, 3 kişi itiraz etti").
+   - Topluluk oyları olayı otomatik olarak onaylamaz veya kapatmaz; durum yönetimi moderatör ve yetkililere aittir.
+2. **Rol Tabanlı Moderasyon ve Denetim İzi (Audit Trail):**
+   - `MODERATOR` ve `ADMIN` rolleri bekleyen olayları inceler, topluluk itirazlarını değerlendirir ve gerekçeli kararlar alır.
+   - Her durum değişikliği transaction içerisinde `event_moderation_logs` tablosuna kalıcı denetim kaydı olarak işlenir.
+3. **Kullanıcı İtibar Denetimi:**
+   - İlk sürümde manipülasyona ve puan kasmaya karşı oylamayla sınırsız itibar kazanımı engellenmiştir.
+   - İleride moderasyon teyitli puanlama için `user_reputation_logs` audit trail altyapısı hazır tutulmaktadır.

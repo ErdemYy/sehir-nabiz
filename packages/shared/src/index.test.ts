@@ -72,3 +72,32 @@ test('RegisterInputSchema şifre karmaşıklığı ve e-posta formatını doğru
   const invalidEmailResult = RegisterInputSchema.safeParse(invalidEmailRegister);
   assert.equal(invalidEmailResult.success, false);
 });
+
+test('Phase 8: FeedbackType enum ve CreateFeedbackSchema doğrulamalı', () => {
+  const { FeedbackType, CreateFeedbackSchema } = require('./index');
+  assert.equal(FeedbackType.CONFIRM, 'CONFIRM');
+  assert.equal(FeedbackType.DISPUTE, 'DISPUTE');
+  assert.equal(FeedbackType.RESOLVED_REPORT, 'RESOLVED_REPORT');
+
+  const validConfirm = { type: FeedbackType.CONFIRM };
+  const res1 = CreateFeedbackSchema.safeParse(validConfirm);
+  assert.equal(res1.success, true);
+
+  const validDispute = {
+    type: FeedbackType.DISPUTE,
+    reason: 'Olay yeri trafiğe açılmış, kaza aracı kaldırılmış.',
+  };
+  const res2 = CreateFeedbackSchema.safeParse(validDispute);
+  assert.equal(res2.success, true);
+
+  const invalidType = { type: 'UNKNOWN_VOTE' };
+  const res3 = CreateFeedbackSchema.safeParse(invalidType);
+  assert.equal(res3.success, false);
+
+  const tooLongReason = {
+    type: FeedbackType.DISPUTE,
+    reason: 'A'.repeat(501),
+  };
+  const res4 = CreateFeedbackSchema.safeParse(tooLongReason);
+  assert.equal(res4.success, false);
+});

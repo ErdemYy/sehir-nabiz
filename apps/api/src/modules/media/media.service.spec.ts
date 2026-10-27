@@ -39,6 +39,8 @@ describe('MediaService (Unit Tests)', () => {
     location: '',
     confirmationCount: 0,
     denialCount: 0,
+    disputeCount: 0,
+    resolvedReportCount: 0,
     reliabilityScore: 1,
     expiresAt: new Date(),
     isDemo: false,

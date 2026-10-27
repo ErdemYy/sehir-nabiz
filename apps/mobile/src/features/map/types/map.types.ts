@@ -19,6 +19,9 @@ export interface MapEventProperties {
   reliabilityScore: number;
   upvotesCount: number;
   downvotesCount: number;
+  confirmationCount?: number;
+  disputeCount?: number;
+  resolvedReportCount?: number;
   isDemo: boolean;
   addressText?: string;
   city?: string;

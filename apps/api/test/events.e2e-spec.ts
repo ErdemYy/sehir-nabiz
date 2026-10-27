@@ -9,11 +9,14 @@ import { EventEntity } from '../src/database/entities/event.entity';
 import { UserEntity } from '../src/database/entities/user.entity';
 import { CategoryEntity } from '../src/database/entities/category.entity';
 import { EventModerationLogEntity } from '../src/database/entities/event-moderation-log.entity';
+import { EventFeedbackEntity } from '../src/database/entities/event-feedback.entity';
+import { UserReputationLogEntity } from '../src/database/entities/user-reputation-log.entity';
 import {
   EventStatus,
   EventSeverity,
   UserRole,
   AccountStatus,
+  FeedbackType,
 } from '@sehir-nabiz/shared';
 import { BadRequestException } from '@nestjs/common';
 
@@ -70,12 +73,16 @@ describe('Coğrafi Veri ve Olay Yönetimi Canlı PostGIS Entegrasyon Testleri (E
     const userRepo = dataSource.getRepository(UserEntity);
     const categoryRepo = dataSource.getRepository(CategoryEntity);
     const moderationLogRepo = dataSource.getRepository(EventModerationLogEntity);
+    const feedbackRepo = dataSource.getRepository(EventFeedbackEntity);
+    const reputationLogRepo = dataSource.getRepository(UserReputationLogEntity);
 
     eventsService = new EventsService(
       eventRepo,
       userRepo,
       categoryRepo,
       moderationLogRepo,
+      feedbackRepo,
+      reputationLogRepo,
       dataSource,
     );
     categoriesService = new CategoriesService(categoryRepo);
@@ -445,6 +452,135 @@ describe('Coğrafi Veri ve Olay Yönetimi Canlı PostGIS Entegrasyon Testleri (E
 
       expect(indexResult.length).toBe(1);
       expect(indexResult[0].indexdef).toContain('USING gist (location)');
+    });
+  });
+
+  describe('8. Phase 8: Topluluk Teyit Sistemi, Güvenilirlik ve Moderasyon (E2E)', () => {
+    let secondCitizen: UserEntity;
+    let targetActiveEventId: string;
+
+    beforeAll(async () => {
+      const userRepo = dataSource.getRepository(UserEntity);
+      const passwordHash = await bcrypt.hash('TestPass123!', 10);
+      secondCitizen = await userRepo.save(
+        userRepo.create({
+          email: `second-citizen-${Date.now()}@sehirnabiz.local`,
+          passwordHash,
+          displayName: 'İkinci Vatandaş',
+          role: UserRole.CITIZEN,
+          accountStatus: AccountStatus.ACTIVE,
+          reputationScore: 15,
+        }),
+      );
+
+      // Aktif olay bul veya oluştur
+      const activeEvents = await dataSource.query(`
+        SELECT id FROM "events" WHERE status = 'ACTIVE' LIMIT 1;
+      `);
+      if (activeEvents.length > 0) {
+        targetActiveEventId = activeEvents[0].id;
+      }
+    });
+
+    it('Vatandaş aktif bir olaya CONFIRM teyidi ekleyebilmeli ve sayaç güncellenmeli', async () => {
+      if (!targetActiveEventId) return;
+
+      const summary = await eventsService.submitFeedback(
+        targetActiveEventId,
+        secondCitizen.id,
+        { type: FeedbackType.CONFIRM, reason: 'Yerinde gördüm, trafik tıkalı' },
+      );
+
+      expect(summary).toBeDefined();
+      expect(summary.confirmCount).toBeGreaterThanOrEqual(1);
+      expect(summary.userFeedback).toBeDefined();
+      expect(summary.userFeedback?.type).toBe(FeedbackType.CONFIRM);
+    });
+
+    it('Aynı vatandaş oyunu DISPUTE olarak güncelleyebilmeli (Tek aktif geri bildirim kuralı)', async () => {
+      if (!targetActiveEventId) return;
+
+      const summary = await eventsService.submitFeedback(
+        targetActiveEventId,
+        secondCitizen.id,
+        { type: FeedbackType.DISPUTE, reason: 'Yol artık açılmış, yanlış ihbar' },
+      );
+
+      expect(summary.userFeedback?.type).toBe(FeedbackType.DISPUTE);
+      expect(summary.disputeCount).toBeGreaterThanOrEqual(1);
+
+      // Veritabanında tek satır olduğunu doğrula
+      const count = await dataSource.query(
+        `SELECT COUNT(*) FROM "event_feedbacks" WHERE "eventId" = $1 AND "userId" = $2;`,
+        [targetActiveEventId, secondCitizen.id],
+      );
+      expect(parseInt(count[0].count, 10)).toBe(1);
+    });
+
+    it('Vatandaş geri bildirimini başarıyla geri çekebilmeli (removeFeedback)', async () => {
+      if (!targetActiveEventId) return;
+
+      const summary = await eventsService.removeFeedback(targetActiveEventId, secondCitizen.id);
+      expect(summary.userFeedback).toBeNull();
+
+      const count = await dataSource.query(
+        `SELECT COUNT(*) FROM "event_feedbacks" WHERE "eventId" = $1 AND "userId" = $2;`,
+        [targetActiveEventId, secondCitizen.id],
+      );
+      expect(parseInt(count[0].count, 10)).toBe(0);
+    });
+
+    it('Yazarın kendi olayını teyit etmesi BadRequestException ile engellenmeli', async () => {
+      const ownEvent = await dataSource.query(
+        `SELECT id FROM "events" WHERE "authorId" = $1 LIMIT 1;`,
+        [testUser.id],
+      );
+      if (ownEvent.length > 0) {
+        await expect(
+          eventsService.submitFeedback(ownEvent[0].id, testUser.id, {
+            type: FeedbackType.CONFIRM,
+          }),
+        ).rejects.toThrow(BadRequestException);
+      }
+    });
+
+    it('Moderatör olayları listesini ve geri bildirim sayaçlarını çekebilmeli', async () => {
+      const result = await eventsService.getModerationEvents({
+        limit: 10,
+      });
+
+      expect(result).toBeDefined();
+      expect(Array.isArray(result.items)).toBe(true);
+      if (result.items.length > 0 && result.items[0]) {
+        expect(result.items[0].feedbackSummary).toBeDefined();
+        expect(result.items[0].feedbackSummary?.totalCount).toBeDefined();
+      }
+    });
+
+    it('Moderatör tam olay detayını, denetim loglarını ve geri bildirimleri görebilmeli', async () => {
+      if (!targetActiveEventId) return;
+
+      const detail = await eventsService.getModerationEventById(targetActiveEventId);
+      expect(detail).toBeDefined();
+      expect(detail.id).toBe(targetActiveEventId);
+      expect(detail.feedbackSummary).toBeDefined();
+      expect(Array.isArray(detail.moderationLogs)).toBe(true);
+      expect(Array.isArray(detail.recentFeedbacks)).toBe(true);
+    });
+
+    it('Moderatör olayı DISPUTED durumuna alabilmeli ve denetim logu yazılmalı', async () => {
+      if (!targetActiveEventId) return;
+
+      const updated = await eventsService.updateStatus(
+        targetActiveEventId,
+        { status: EventStatus.DISPUTED, reason: 'Topluluk itirazları inceleniyor' },
+        { sub: testModerator.id, role: UserRole.MODERATOR, email: testModerator.email },
+      );
+
+      expect(updated.status).toBe(EventStatus.DISPUTED);
+
+      const logs = await eventsService.getModerationLogs(targetActiveEventId);
+      expect(logs[0]?.newStatus).toBe(EventStatus.DISPUTED);
     });
   });
 });

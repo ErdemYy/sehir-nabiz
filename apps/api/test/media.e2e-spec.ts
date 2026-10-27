@@ -13,6 +13,8 @@ import { EventEntity } from '../src/database/entities/event.entity';
 import { UserEntity } from '../src/database/entities/user.entity';
 import { CategoryEntity } from '../src/database/entities/category.entity';
 import { EventModerationLogEntity } from '../src/database/entities/event-moderation-log.entity';
+import { EventFeedbackEntity } from '../src/database/entities/event-feedback.entity';
+import { UserReputationLogEntity } from '../src/database/entities/user-reputation-log.entity';
 import {
   MediaStatus,
   EventSeverity,
@@ -78,6 +80,8 @@ describe('Güvenli Medya Yükleme ve MinIO Object Storage Canlı Testleri (E2E)'
     const userRepo = dataSource.getRepository(UserEntity);
     const categoryRepo = dataSource.getRepository(CategoryEntity);
     const moderationLogRepo = dataSource.getRepository(EventModerationLogEntity);
+    const feedbackRepo = dataSource.getRepository(EventFeedbackEntity);
+    const reputationLogRepo = dataSource.getRepository(UserReputationLogEntity);
 
     const configService = {
       get: (key: string, defaultVal: any) => {
@@ -98,7 +102,15 @@ describe('Güvenli Medya Yükleme ve MinIO Object Storage Canlı Testleri (E2E)'
     await storageService.onModuleInit();
 
     mediaService = new MediaService(mediaRepo, eventRepo, storageService, dataSource);
-    eventsService = new EventsService(eventRepo, userRepo, categoryRepo, moderationLogRepo, dataSource);
+    eventsService = new EventsService(
+      eventRepo,
+      userRepo,
+      categoryRepo,
+      moderationLogRepo,
+      feedbackRepo,
+      reputationLogRepo,
+      dataSource,
+    );
 
     // Test Kullanıcıları
     const passwordHash = await bcrypt.hash('SecureMedia123!', 10);

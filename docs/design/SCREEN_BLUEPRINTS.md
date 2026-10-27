@@ -177,22 +177,55 @@ AppScreen (scrollable)
 
 ---
 
-## 6. Olay Detay ve Teyit Ekranı (Planlanan Detay Ekranı)
+## 6. Olay Detay ve Teyit Ekranı (`/events/[id]` — Phase 8 Uygulaması)
 
 ### Ekran Amacı:
-Seçilen bir olayın tüm fotoğraflarını, tam açıklamasını, harita üzerindeki konumunu, güvenilirlik skorunu ve topluluk teyit oylarını görüntülemek.
+Seçilen bir olayın tüm detaylarını, konumunu, açıklamasını, topluluk değerlendirme özetini incelemek ve "Gördüm", "İtiraz", "Çözüldü" geri bildirimleri vermek.
 
 ### Bileşen Hiyerarşisi:
 ```text
 AppScreen (scrollable)
-├── AppHeader (Geri butonu, Paylaş butonu)
-├── Media Carousel (Maksimum 3 adet temizlenmiş WebP fotoğraf)
-├── Event Meta Card (Kategori, Şiddet, Durum, Yayınlanma Zamanı)
-├── Description & Address Block
-├── Mini Map Preview (Olayın 500m çevresini gösteren statik harita)
-├── Verification Bar (Topluluk Güvenilirlik Skoru %85 Doğrulandı)
-└── Action Buttons Floating Footer
-    ├── AppButton ("Doğru / Olay Yerindeyim", primary)
-    ├── AppButton ("Yanlış / Sahte", outline destructive)
-    └── AppButton ("Çözüldü / Bitti", secondary)
+├── AppHeader ("Olay Detayı", Geri Butonu, Paylaş Eylemi)
+├── Success Banner (Geri bildirim başarıyla kaydedildi/kaldırıldı bildirimi)
+├── Demo Warning Banner (Eğer isDemo ise sentetik veri bilgilendirmesi)
+├── Event Meta Row (Category AppBadge, StatusBadge, Önem Derecesi, Saat)
+├── Title (AppText headingXL bold)
+├── Location Card (İlçe, Şehir, Açık Adres, Koordinat Rozeti)
+├── Description Card (AppText bodyM)
+├── Author Identity Row (Avatar, Yazar Adı, İtibar Puanı)
+├── Community Assessment Card
+│   ├── Shield Icon & Header ("Topluluk Değerlendirmesi", Toplam Oy Sayısı)
+│   ├── Metrics Grid (Yeşil: Gördüm, Kırmızı: İtiraz, Mavi: Çözüldü)
+│   ├── Explanation Text (N>=3 ise açıklanabilir metin, N<3 ise yetersiz örneklem uyarısı)
+│   └── Legal Disclaimer ("Topluluk bildirimleri resmî doğrulama niteliği taşımaz")
+├── Feedback Action Buttons
+│   ├── AppButton ("Ben de Gördüm", CheckCircle2)
+│   ├── AppButton ("Yanlış Bilgi Bildir", AlertTriangle)
+│   └── AppButton ("Sorun Çözüldü Bildir", CheckCheck)
+├── Withdraw Action (Kullanıcının mevcut oyunu geri çekme bağlantısı)
+└── AuthModal (Anonim kullanıcılar oy vermek istediğinde açılan oturum modalı)
+```
+
+---
+
+## 7. Moderatör Paneli Ekranı (`/moderation` — Phase 8 Uygulaması)
+
+### Ekran Amacı:
+Yetkili moderatör ve yöneticilerin inceleme bekleyen veya itiraz edilen olayları incelemesi, topluluk geri bildirimlerini denetlemesi ve gerekçeli kararlarla olayı onaylaması/reddetmesi.
+
+### Bileşen Hiyerarşisi:
+```text
+AppScreen (scrollable)
+├── AppHeader ("Moderatör Paneli", "Topluluk bildirimleri ve inceleme kuyruğu")
+├── Filter Tabs ("İnceleme Bekleyenler", "İtiraz Edilenler", "Tümü")
+├── Event Moderation Cards (N adet)
+│   ├── Header (Kategori, StatusBadge, Zaman)
+│   ├── Title & Description
+│   ├── Author & Location Info
+│   ├── Feedback Counts Summary (Gördüm, İtiraz, Çözüldü)
+│   └── Decision Action Area
+│       ├── "Detay & Karar Ver" Butonu
+│       ├── Moderasyon Gerekçesi TextInput (Audit Trail)
+│       └── Decision Buttons ("Yayınla", "Reddet (Spam)", "İhtilaflı Yap", "Çözüldü Yap")
+└── Security Shield (Yetkisiz CITIZEN erişiminde EmptyState kalkanı ve ana sayfaya dönüş)
 ```

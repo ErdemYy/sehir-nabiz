@@ -67,12 +67,24 @@ export enum EventStatus {
 }
 
 /**
- * Topluluk Teyit / Oylama Türü
+ * Topluluk Teyit / Oylama Türü (Geriye dönük uyumluluk)
  */
 export enum VerificationType {
   CONFIRM = 'CONFIRM',
   DENY = 'DENY',
   RESOLVED = 'RESOLVED',
+}
+
+/**
+ * Topluluk Geri Bildirim Türü (Phase 8)
+ * - CONFIRM: Ben de gördüm
+ * - DISPUTE: Bilgi yanlış veya yanıltıcı
+ * - RESOLVED_REPORT: Sorun çözülmüş olabilir
+ */
+export enum FeedbackType {
+  CONFIRM = 'CONFIRM',
+  DISPUTE = 'DISPUTE',
+  RESOLVED_REPORT = 'RESOLVED_REPORT',
 }
 
 /**

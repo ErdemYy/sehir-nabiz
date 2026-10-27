@@ -206,4 +206,37 @@ Phase 7 ile birlikte kullanıcının kentsel aksaklıkları bildirmesini sağlay
    - Misafir kullanıcının gönderim anında oturum açabilmesi için Giriş / Kayıt Ol sekmeli yüzer modal.
    - Zod doğrulamalı e-posta ve şifre giriş alanları, hata mesajları ve güvenli token saklama (`expo-secure-store`).
 
+---
+
+## 11. Topluluk Teyit Sistemi ve Moderasyon Arayüzü (Phase 8)
+
+Phase 8 ile birlikte kullanıcının olayları teyit etmesini, itiraz bildirmesini ve moderatörlerin güvenle karar vermesini sağlayan Urban Floating UI bileşenleri eklenmiştir:
+
+1. **Topluluk Geri Bildirim Butonları (Feedback Action Buttons):**
+   - **`CONFIRM` ("Ben de Gördüm"):** Başarı yeşili (`#10B981` / `theme.success`), Lucide `CheckCircle2` ikonu. Kullanıcının aktif oyu olduğunda dolu zemin veya belirgin çerçeve ile vurgulanır.
+   - **`DISPUTE` ("Yanlış Bilgi Bildir"):** Uyarı kırmızısı (`#EF4444` / `theme.error`), Lucide `AlertTriangle` ikonu. Yanıltıcı veya sahte ihbarları işaretlemek için kullanılır.
+   - **`RESOLVED_REPORT` ("Çözüldü Bildir"):** Şehir turkuazı (`#0D9488` / `theme.primary`), Lucide `HelpCircle` ikonu. Sahadaki sorunun giderildiğini belirten topluluk sinyali.
+   - **Geri Çekme Mekanizması:** Kullanıcı önceden verdiği oyu dilediğinde "Geri Çek" butonu ile iptal edebilir veya farklı bir oyla değiştirebilir.
+
+2. **Açıklanabilir Topluluk Güvenilirlik Kartı (`CommunityAssessmentCard`):**
+   - **Sahte Kesinlik Yasağı:** "Bu olay %95 doğrudur" gibi yanıltıcı yüzdeler yerine nesnel sayısal döküm: "12 kişi gördü", "3 kişi itiraz etti", "2 kişi çözüldü bildirdi".
+   - **Örneklem Eşiği ($N \ge 3$):** Toplam geri bildirim 3'ün altında olduğunda "Henüz yeterli topluluk geri bildirimi bulunmuyor" bilgilendirmesi gösterilir.
+   - **Resmî Doğrulama Feragatnamesi (Disclaimer):** Kartın altında "Topluluk bildirimleri resmî belediye doğrulaması niteliği taşımaz" uyarısı yer alır.
+
+3. **Olay Detay Ekranı (`/events/[id]`):**
+   - `AppHeader` (Geri dönüş butonu ve paylaşma ikonu).
+   - Kategori rozeti, durum ve önem seviyesi hapları (pills).
+   - Başlık, açıklama metni ve olay bildirim zamanı (Türkçe tarih formatı).
+   - Mini `PulseMapView` harita önizlemesi ve koordinat bilgisi.
+   - Fotoğraf galerisi yatay kaydırma listesi (varsa).
+   - Açıklanabilir topluluk değerlendirme kartı ve etkileşimli geri bildirim aksiyonları.
+   - Olay sahibinin kendi olayına oy vermesini engelleyen koruma bildirimi.
+
+4. **Moderatör Paneli ve Karar Arayüzü (`/moderation`):**
+   - **Yetki Kalkanı (Unauthorized Shield):** `MODERATOR` veya `ADMIN` rolü olmayan kullanıcılara kırmızı kilit simgesi, açıklama ve "Ana Sayfaya Dön" butonu sunulur.
+   - **Filtre Sekmeleri:** `Bekleyenler` (`PENDING_REVIEW`), `İhtilaflılar` (`DISPUTED`), `Yayındakiler` (`ACTIVE`).
+   - **Olay Kartı Dökümü:** Kategori, başlık, bildiren kullanıcı bilgisi, teyit/itiraz sayıları ve harita koordinatları.
+   - **Karar Aksiyonları ve Onay Diyaloğu:** "Yayınla / Onayla" (Yeşil buton), "Reddet" (Kırmızı buton), "İhtilaflı Yap" (Turuncu buton). Kritik kararlarda gerekçe notu girişi desteklenir.
+
+
 

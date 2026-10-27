@@ -9,6 +9,8 @@ import {
 } from 'typeorm';
 import { UserRole, AccountStatus } from '@sehir-nabiz/shared';
 import { RefreshTokenEntity } from './refresh-token.entity';
+import { EventFeedbackEntity } from './event-feedback.entity';
+import { UserReputationLogEntity } from './user-reputation-log.entity';
 
 @Entity('users')
 export class UserEntity {
@@ -44,6 +46,12 @@ export class UserEntity {
 
   @OneToMany(() => RefreshTokenEntity, token => token.user, { cascade: true })
   refreshTokens?: RefreshTokenEntity[];
+
+  @OneToMany(() => EventFeedbackEntity, feedback => feedback.user)
+  feedbacks?: EventFeedbackEntity[];
+
+  @OneToMany(() => UserReputationLogEntity, log => log.user)
+  reputationLogs?: UserReputationLogEntity[];
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { EventCategory, EventSeverity, EventStatus, VerificationType, CategoryCode } from '../enums';
+import { EventCategory, EventSeverity, EventStatus, VerificationType, FeedbackType, CategoryCode } from '../enums';
 import { GeoCoordinateSchema } from './geo.schema';
 
 export const EventSeveritySchema = z.nativeEnum(EventSeverity);
@@ -7,6 +7,7 @@ export const CategoryCodeSchema = z.nativeEnum(CategoryCode);
 export const EventCategorySchema = z.nativeEnum(EventCategory);
 export const EventStatusSchema = z.nativeEnum(EventStatus);
 export const VerificationTypeSchema = z.nativeEnum(VerificationType);
+export const FeedbackTypeSchema = z.nativeEnum(FeedbackType);
 
 /**
  * Phase 3: Olay Oluşturma Giriş Şeması
@@ -122,3 +123,32 @@ export const VerifyEventInputSchema = z.object({
 });
 
 export type VerifyEventInput = z.infer<typeof VerifyEventInputSchema>;
+
+/**
+ * Phase 8: Topluluk Geri Bildirimi Giriş Şeması
+ */
+export const CreateFeedbackSchema = z.object({
+  type: FeedbackTypeSchema,
+  reason: z
+    .string()
+    .trim()
+    .max(500, 'Gerekçe en fazla 500 karakter olabilir')
+    .nullable()
+    .optional(),
+});
+
+export type CreateFeedbackInput = z.infer<typeof CreateFeedbackSchema>;
+
+/**
+ * Phase 8: Moderasyon Olayları Listeleme Sorgu Şeması
+ */
+export const ModerationEventsQuerySchema = z.object({
+  status: EventStatusSchema.optional(),
+  category: z.string().optional(),
+  severity: EventSeveritySchema.optional(),
+  city: z.string().trim().optional(),
+  limit: z.coerce.number().min(1).max(100).default(20),
+  cursor: z.string().optional(),
+});
+
+export type ModerationEventsQueryInput = z.infer<typeof ModerationEventsQuerySchema>;

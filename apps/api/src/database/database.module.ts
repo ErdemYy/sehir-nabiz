@@ -7,9 +7,12 @@ import { CategoryEntity } from './entities/category.entity';
 import { EventEntity } from './entities/event.entity';
 import { EventModerationLogEntity } from './entities/event-moderation-log.entity';
 import { EventMediaEntity } from './entities/event-media.entity';
+import { EventFeedbackEntity } from './entities/event-feedback.entity';
+import { UserReputationLogEntity } from './entities/user-reputation-log.entity';
 import { InitialAuthAndPostGis1740000000000 } from './migrations/1740000000000-InitialAuthAndPostGis';
 import { CreateCategoriesAndEvents1740000001000 } from './migrations/1740000001000-CreateCategoriesAndEvents';
 import { CreateEventMedia1740000002000 } from './migrations/1740000002000-CreateEventMedia';
+import { CreateEventFeedbackAndReputationLogs1740000003000 } from './migrations/1740000003000-CreateEventFeedbackAndReputationLogs';
 
 @Global()
 @Module({
@@ -30,11 +33,14 @@ import { CreateEventMedia1740000002000 } from './migrations/1740000002000-Create
           EventEntity,
           EventModerationLogEntity,
           EventMediaEntity,
+          EventFeedbackEntity,
+          UserReputationLogEntity,
         ],
         migrations: [
           InitialAuthAndPostGis1740000000000,
           CreateCategoriesAndEvents1740000001000,
           CreateEventMedia1740000002000,
+          CreateEventFeedbackAndReputationLogs1740000003000,
         ],
         synchronize: false,
         logging: config.get<boolean>('DB_LOGGING', false),
