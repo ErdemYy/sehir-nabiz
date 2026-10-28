@@ -1,8 +1,8 @@
 # ŞehirNabız — Bilinen Sorunlar ve Teknik Borç Envanteri (Known Issues)
 
 **Tarih:** 28 Ekim 2026  
-**Faz:** Phase 15 — Account Deletion Verification, Privacy Hardening & Staging Readiness  
-**Son Durum:** Staging Dağıtımına Hazır, Beta Öncesi Kalan Blockerlar Açıkça Belgelendi  
+**Faz:** Phase 16 — Staging Dry-Run, Load Testing, Security Verification & Production Hardening  
+**Son Durum:** Yerel Staging Ortamı ve Yük Testleri Tamamlandı; Üretim Öncesi Kalan Blockerlar Açıkça Belgelendi  
 
 ---
 
@@ -19,13 +19,13 @@ Bu belge, ŞehirNabız projesinde mevcut bilinen sınırları, ertelenen maddele
 #### 1. Fiziksel Cihaz Donanım Doğrulaması Yapılmadı
 - **Açıklama:** Uygulama Expo Dev Client, Metro bundler ve simülatör/web ortamlarında test edilmiştir. Farklı ekran boyutlarına, GPU yongalarına (Adreno, Mali) ve RAM kısıtlarına sahip gerçek fiziksel Android ve iOS cihazlarında kapsamlı alan testleri henüz gerçekleştirilmemiştir.
 - **Risk:** Eski donanımlı Android cihazlarda MapLibre GPU yükü altında FPS düşüşü veya batarya tüketimi yaşanabilir.
-- **Çözüm Planı:** Faz 16 kapsamında fiziksel Android ve iOS cihazlarında termal ve bellek profillemesi (Android Studio Profiler / Xcode Instruments) yapılmalıdır.
+- **Çözüm Planı:** Faz 17 veya mağaza yayını öncesinde fiziksel Android ve iOS cihazlarında termal ve bellek profillemesi (Android Studio Profiler / Xcode Instruments) yapılmalıdır.
 - **Geçici Çözüm:** Beta testleri kontrollü simülatör veya yüksek güçlü test cihazlarıyla sınırlandırılmalıdır.
 
 #### 2. Bağımsız Android APK / AAB ve iOS IPA Üretimi Ertelendi
 - **Açıklama:** Kapsam sınırları uyarınca APK/AAB/IPA oluşturulmamış, mağazalara gönderilmemiştir.
 - **Risk:** Üretim (production) derleme bayraklarında ProGuard veya Hermes bytecode optimizasyonlarından kaynaklanan beklenmedik kütüphane çakışmaları oluşabilir.
-- **Çözüm Planı:** Staging doğrulamasının ardından EAS Build veya yerel Gradle pipeline (`cd apps/mobile/android && ./gradlew assembleRelease`) çalıştırılarak imzalı ilk paketler üretilmelidir.
+- **Çözüm Planı:** EAS Build veya yerel Gradle pipeline (`cd apps/mobile/android && ./gradlew assembleRelease`) çalıştırılarak imzalı ilk paketler üretilmelidir.
 
 #### 3. Gerçek Push Bildirim (FCM / APNs) Canlı Teslimatı Ertelendi
 - **Açıklama:** Push bildirim veritabanı şeması, token kaydı, outbox entegrasyonu ve geliştirici simülasyon adaptörü hazırdır; ancak Apple Developer Program ve Google Firebase Cloud Messaging canlı üretim sertifikaları / anahtarları henüz yüklenmemiştir.
@@ -33,24 +33,30 @@ Bu belge, ŞehirNabız projesinde mevcut bilinen sınırları, ertelenen maddele
 - **Çözüm Planı:** Canlı sunucu ortam değişkenlerine `FIREBASE_SERVICE_ACCOUNT` ve `APNS_KEY_ID` tanımlanarak uçtan uca bildirim iletimi test edilmelidir.
 
 #### 4. Canlı API ve Web Alan Adı DNS/SSL Kurulumu
-- **Açıklama:** Üretim HTTPS API (`api.sehirnabiz.com`) DNS/SSL provizyonu yapılmamıştır. Staging reverse proxy yapılandırması (`docker/staging/nginx.conf`) ve `.env.staging.example` hazırlanmış ancak canlıya geçirilmemiştir.
+- **Açıklama:** Üretim HTTPS API (`api.sehirnabiz.com`) DNS/SSL provizyonu yapılmamıştır. Staging reverse proxy yapılandırması (`docker/staging/nginx.conf`) ve `.env.staging` yerel kendinden imzalı sertifikayla doğrulanmış ancak harici canlı sunucuya kurulmamıştır.
 
 ---
 
-### 🟢 Çözülen Blockerlar (Phase 14 & Phase 15)
+### 🟢 Çözülen Blockerlar ve İyileştirmeler (Phase 14, 15 & 16)
 
-#### [ÇÖZÜLDÜ] Kullanıcı Hesap ve Kişisel Veri Silme Akışı (Right to Be Forgotten)
-- **Açıklama:** Apple App Store Review Guideline 5.1.1(v) ve KVKK Madde 7 gereğince hesap oluşturulabilen her uygulamada doğrudan mobil uygulama içinden ve kamuya açık bir web URL'inden hesap silme seçeneği sunulmalıdır.
-- **Phase 14-15 Doğrulamaları:**
-  - Gerçek MinIO nesne deposu üzerinde fiziksel silme kanıtlandı (S3 404 doğrulaması).
-  - `PENDING_DELETION` yetkilendirme kalkanı (`@AllowPendingDeletion`) ile silme sürecindeki kullanıcının normal işlemleri engellenirken iptal ve sorgulama yetkileri korundu.
-  - Kamusal olayların (kaza, afet) korunması ve taslak bildirimlerin kişisel verilerden arındırılması sağlandı.
-  - Transactional Outbox görev izolasyonu ve push token imhası tamamlandı.
-  - Otomatik `AccountDeletionProcessorService` worker'ı ve azami 5 deneme sonrası Dead-Letter operasyonel uyarısı kuruldu.
-  - Raporlama tutarsızlığı (329 vs 330) netleştirildi, test tabanı 353 teste (%100 yeşil) ulaştırıldı.
+#### [ÇÖZÜLDÜ - Phase 16] Yerel Staging Mimarisinin Fiilen Çalıştırılması (Dry-Run)
+- İzole Docker staging ortamı (Nginx, API, PostgreSQL 16/PostGIS, Redis, MinIO) dev konteynerlerine zarar vermeden ayağa kaldırıldı, tüm migration'lar çalıştırıldı ve 12 adımlı yaşam döngüsü E2E testi başarıyla tamamlandı.
 
-#### [ÇÖZÜLDÜ] Staging Mimari Hazırlığı ve Güvenlik Altyapısı
-- Staging Docker Compose (`docker-compose.staging.yml`), `.env.staging.example`, Nginx reverse proxy konfigürasyonu (`docker/staging/nginx.conf`), migration ve backup/restore betikleri eksiksiz oluşturuldu ve boş veritabanında test edildi.
+#### [ÇÖZÜLDÜ - Phase 16] WebSocket Yük ve PostGIS Performans Doğrulaması
+- 50'den 500'e kadar eşzamanlı WebSocket bağlantısı test edildi (%100 başarı, p95: 108ms).
+- 1.000 tohum olay ile PostGIS BBox sorgusu (0.45 ms GIST indeks taraması) ve analitik benchmark'ları tamamlandı.
+
+#### [ÇÖZÜLDÜ - Phase 16] Diagnostics Uç Noktası Güvenlik Kalkanı
+- `GET /health/diagnostics` verileri `DiagnosticsGuard` ile admin rolü ve `x-diagnostics-key` şartına bağlandı; yetkisiz erişimler 403 ile engellendi.
+
+#### [ÇÖZÜLDÜ - Phase 16] Hesap Silme İptal Güvenliği ve Süresi Dolan Token Kurtarması
+- Access token süresi dolmuş kullanıcının silme iptali için `POST /auth/reauthenticate-deletion` kısıtlı oturumu tasarlandı. Parola hash uyumluluğu (Bcrypt) doğrulandı.
+
+#### [ÇÖZÜLDÜ - Phase 16] Kamusal Olaylarda Metin İçi Kişisel Veri Arındırma (PII Scrubbing)
+- Hesap silme sırasında kullanıcının `ACTIVE`/`RESOLVED` olaylarının açıklamasındaki telefon numaraları ve e-postalar regex ile `[Telefon Gizlendi]` ve `[E-posta Gizlendi]` şeklinde maskelendi.
+
+#### [ÇÖZÜLDÜ - Phase 14 & 15] Gerçek MinIO Fiziksel Medya Temizliği ve @AllowPendingDeletion Kalkanı
+- Gerçek S3 nesnelerinin fiziksel olarak silindiği ve 404 NoSuchKey döndüğü E2E ile kanıtlandı.
 
 ---
 
@@ -58,29 +64,3 @@ Bu belge, ŞehirNabız projesinde mevcut bilinen sınırları, ertelenen maddele
 
 #### 5. Web Tarayıcılarında MapLibre WebGL Uyumluluğu
 - **Açıklama:** Proje birincil olarak mobil odaklıdır (React Native + Expo). Masaüstü tarayıcılarda (`pnpm run web`) MapLibre native modülü yerine canvas veya fallback katmanı gerekmektedir.
-- **Risk:** Masaüstü web üzerinden harita incelenirken tarayıcının WebGL desteğine bağlı olarak harita kararması yaşanabilir.
-- **Çözüm Planı:** Web ortamı için `maplibre-gl-js` köprüsü ile conditional render yapılması.
-
----
-
-### 🟡 Medium (Orta Öncelikli İyileştirmeler)
-
-#### 6. Çevrimdışı Harita Karo Önbelleği (Offline Tile Cache Sınırı)
-- **Açıklama:** MapLibre vektör karoları SQLite tabanlı yerel önbellekte tutulmaktadır. Depolama alanı aşırı düşük (örn. <500MB boş yer kalan) cihazlarda otomatik temizleme (pruning) tetiklenebilir.
-- **Çözüm Planı:** Harita ayarlarından "Önbelleği Temizle" seçeneği sunulması.
-
-#### 7. Hareketi Azalt (Reduced Motion) Desteği
-- **Açıklama:** Haritada kullanıcı konumuna giderken veya arama sonucunda pin merkezlenirken yapılan kamera animasyonları, sistem "Hareketi Azalt" seçeneği açık olan kullanıcılar için henüz kapatılmamaktadır.
-- **Çözüm Planı:** `AccessibilityInfo.isReduceMotionEnabled` hook'u ile animasyon süresinin sıfıra indirilmesi.
-
----
-
-### 🟢 Low (Düşük Öncelikli / Kozmetik)
-
-#### 8. Haptik Titreşim Eksikliği
-- **Açıklama:** Teyit, itiraz veya olay gönderme işlemlerinde kullanıcıya yalnızca görsel geri bildirim verilmektedir.
-- **Çözüm Planı:** `expo-haptics` ile hafif titreşim geri bildirimi eklenmesi.
-
-#### 9. İstatistik Grafikleri Yatay Döndürme
-- **Açıklama:** Şehir istatistikleri dikey (portrait) modda optimize edilmiştir; cihaz yatay çevrildiğinde (landscape) çubuk grafikler sıkışabilmektedir.
-- **Geçici Çözüm:** Mobil uygulamada ekran yönü dikey (portrait) olarak kilitlenmiştir.

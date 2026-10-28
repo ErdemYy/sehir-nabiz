@@ -18,9 +18,15 @@ build/
 
 # Environment variables
 .env
+.env.staging
 .env.local
 .env.*.local
 !.env.example
+!.env.staging.example
+
+# Local SSL certificates
+docker/staging/ssl/*.crt
+docker/staging/ssl/*.key
 
 # Logs & Debug
 npm-debug.log*

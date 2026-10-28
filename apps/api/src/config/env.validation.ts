@@ -1,10 +1,11 @@
 import { z } from 'zod';
 
 export const EnvironmentSchema = z.object({
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  NODE_ENV: z.enum(['development', 'production', 'test', 'staging']).default('development'),
   PORT: z.coerce.number().default(3001),
   API_PREFIX: z.string().default('/api/v1'),
   CORS_ORIGIN: z.string().default('*'),
+  DIAGNOSTICS_SECRET: z.string().optional().default('default_internal_diagnostics_secret'),
 
   // PostgreSQL Veritabanı
   DATABASE_URL: z

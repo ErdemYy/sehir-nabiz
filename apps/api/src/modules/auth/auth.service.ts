@@ -3,10 +3,11 @@ import {
   ConflictException,
   UnauthorizedException,
   NotFoundException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, In } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
@@ -14,6 +15,7 @@ import { createHash, randomBytes } from 'crypto';
 import {
   UserRole,
   AccountStatus,
+  DeletionRequestStatus,
   RegisterInput,
   LoginInput,
   AuthResponse,
@@ -21,7 +23,7 @@ import {
   UserResponse,
   JwtPayload,
 } from '@sehir-nabiz/shared';
-import { UserEntity, RefreshTokenEntity } from '../../database/entities';
+import { UserEntity, RefreshTokenEntity, AccountDeletionRequestEntity } from '../../database/entities';
 
 @Injectable()
 export class AuthService {
@@ -139,6 +141,77 @@ export class AuthService {
     return {
       user: this.toUserResponse(user),
       tokens,
+    };
+  }
+
+  /**
+   * Silme Bekleme Sürecindeki Kullanıcı İçin Sınırlı Yetkili Yeniden Doğrulama Oturumu
+   * Access token'ı dolmuş veya farklı cihazdaki kullanıcıların silme durumunu sorgulamasını
+   * ve iptal etmesini sağlar. Standart iş akışlarına (olay oluşturma vb.) erişim vermez.
+   */
+  async reauthenticateDeletion(
+    input: LoginInput,
+  ): Promise<{ accessToken: string; user: UserResponse; expiresIn: string }> {
+    const normalizedEmail = input.email.trim().toLowerCase();
+
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.passwordHash')
+      .where('user.email = :email', { email: normalizedEmail })
+      .getOne();
+
+    if (!user) {
+      throw new UnauthorizedException('Geçersiz e-posta veya şifre.');
+    }
+
+    const isPasswordValid = await this.comparePassword(input.password, user.passwordHash);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Geçersiz e-posta veya şifre.');
+    }
+
+    if (user.accountStatus !== AccountStatus.PENDING_DELETION) {
+      throw new BadRequestException(
+        'Bu hesap için beklemede olan bir silme talebi bulunmamaktadır.',
+      );
+    }
+
+    const activeReq = await this.dataSource
+      .getRepository(AccountDeletionRequestEntity)
+      .findOne({
+        where: {
+          userId: user.id,
+          status: In([DeletionRequestStatus.PENDING, DeletionRequestStatus.PROCESSING]),
+        },
+        order: { createdAt: 'DESC' },
+      });
+
+    if (activeReq && activeReq.scheduledFor && activeReq.scheduledFor.getTime() <= Date.now()) {
+      throw new BadRequestException(
+        '14 günlük cayma ve iptal süresi dolmuştur. Hesap silme süreci geri alınamaz.',
+      );
+    }
+
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      accountStatus: AccountStatus.PENDING_DELETION,
+    };
+
+    const accessSecret = this.configService.get<string>(
+      'JWT_ACCESS_SECRET',
+      'sehir_nabiz_default_access_jwt_secret_key_32chars_min!',
+    );
+
+    const accessToken = await this.jwtService.signAsync(payload, {
+      secret: accessSecret,
+      expiresIn: '15m',
+    });
+
+    return {
+      accessToken,
+      user: this.toUserResponse(user),
+      expiresIn: '15m',
     };
   }
 

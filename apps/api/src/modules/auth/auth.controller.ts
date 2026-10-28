@@ -48,6 +48,19 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
+  /**
+   * Silme Bekleme Sürecindeki Kullanıcı İçin Sınırlı Yetkili Oturum Açma
+   * (POST /auth/reauthenticate-deletion)
+   */
+  @Post('reauthenticate-deletion')
+  @UseGuards(AuthRateLimitGuard)
+  @HttpCode(HttpStatus.OK)
+  async reauthenticateDeletion(
+    @Body(new ZodValidationPipe(LoginInputSchema)) loginDto: LoginDto,
+  ): Promise<{ accessToken: string; user: UserResponse; expiresIn: string }> {
+    return this.authService.reauthenticateDeletion(loginDto);
+  }
+
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(

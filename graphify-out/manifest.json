@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "apps/api/src/config/env.validation.ts": {
-    "mtime": 1793125390.460434,
-    "seen": 1793125994.659644,
-    "ast_hash": "811a6eb2bc638430368fd07b0f654026",
+    "mtime": 1793187066.7374146,
+    "seen": 1793189676.1027715,
+    "ast_hash": "5908cd9706cd352ab488fb127d896452",
     "semantic_hash": ""
   },
   "apps/api/src/main.ts": {
@@ -72,15 +72,15 @@
     "semantic_hash": ""
   },
   "apps/api/src/modules/health/health.controller.ts": {
-    "mtime": 1793170459.154553,
-    "seen": 1793171324.7429373,
-    "ast_hash": "30c3db81b29fc36a0f2db1b071815eee",
+    "mtime": 1793187117.1413982,
+    "seen": 1793189676.1240828,
+    "ast_hash": "d4ab5fed70a2f9c454d2731ef8e45a88",
     "semantic_hash": ""
   },
   "apps/api/src/modules/health/health.module.ts": {
-    "mtime": 1792933144.4417062,
-    "seen": 1792933949.8174255,
-    "ast_hash": "dffb59943888959a8db5eedf6afacba6",
+    "mtime": 1793187121.7131603,
+    "seen": 1793189676.1240828,
+    "ast_hash": "d1caed7c694cfecde3d69db378e8b704",
     "semantic_hash": ""
   },
   "apps/api/tsconfig.build.json": {
@@ -420,9 +420,9 @@
     "semantic_hash": ""
   },
   "apps/api/src/modules/auth/auth.controller.ts": {
-    "mtime": 1792934598.120549,
-    "seen": 1792935030.672979,
-    "ast_hash": "c1a3a6c5f95ffd4010fff5c31677e116",
+    "mtime": 1793187280.885584,
+    "seen": 1793189676.1123943,
+    "ast_hash": "9d20166049a31cc3c633ee1c7c0ee2f9",
     "semantic_hash": ""
   },
   "apps/api/src/modules/auth/auth.module.ts": {
@@ -438,9 +438,9 @@
     "semantic_hash": ""
   },
   "apps/api/src/modules/auth/auth.service.ts": {
-    "mtime": 1793127783.4707515,
-    "seen": 1793129422.7405388,
-    "ast_hash": "efe76b623a7c74118148d84d591517e0",
+    "mtime": 1793187330.8767931,
+    "seen": 1793189676.1134021,
+    "ast_hash": "73bdb78428ad914c95eec9a8a99433c8",
     "semantic_hash": ""
   },
   "apps/api/src/modules/auth/dto/login.dto.ts": {
@@ -2118,9 +2118,9 @@
     "semantic_hash": ""
   },
   "apps/api/src/modules/users/account-deletion.service.ts": {
-    "mtime": 1793170682.9663682,
-    "seen": 1793171324.7429373,
-    "ast_hash": "4ae036fac0c07abc9bf3168550d62449",
+    "mtime": 1793187196.085135,
+    "seen": 1793189676.141514,
+    "ast_hash": "68a913de33c83c377c21fa2e8f66dab3",
     "semantic_hash": ""
   },
   "apps/api/test/phase_14_account_deletion.e2e-spec.ts": {
@@ -2208,9 +2208,9 @@
     "semantic_hash": ""
   },
   "docker-compose.staging.yml": {
-    "mtime": 1793170923.7800496,
-    "seen": 1793171324.7429373,
-    "ast_hash": "b6ea08e82b2c7212876f18a56069bbd4",
+    "mtime": 1793187834.4944108,
+    "seen": 1793189676.213174,
+    "ast_hash": "88db3660f2a7b4be9eb7c5fc4daa625e",
     "semantic_hash": ""
   },
   "docs/ACCOUNT_DELETION_VERIFICATION.md": {
@@ -2220,9 +2220,9 @@
     "semantic_hash": ""
   },
   "docs/PHASE_15_REPORT.md": {
-    "mtime": 1793171943.4026065,
-    "seen": 1793171981.0619857,
-    "ast_hash": "27bbc79191f8a3ea7b7ceb26a31be13b",
+    "mtime": 1793172005.136766,
+    "seen": 1793189676.219428,
+    "ast_hash": "026fdee25bfc851ee823ad51ceeb47b5",
     "semantic_hash": ""
   },
   "docs/STAGING_ARCHITECTURE.md": {
@@ -2241,6 +2241,54 @@
     "mtime": 1793171400.2250493,
     "seen": 1793171981.0619857,
     "ast_hash": "f2191adf142b549981c2ea345ab35e7a",
+    "semantic_hash": ""
+  },
+  "apps/api/src/modules/health/guards/diagnostics.guard.ts": {
+    "mtime": 1793187089.6148605,
+    "seen": 1793189676.1236668,
+    "ast_hash": "8c0de7f71c97a7503249bb6a30377f00",
+    "semantic_hash": ""
+  },
+  "apps/api/test/outbox_worker_stress.spec.ts": {
+    "mtime": 1793188980.785554,
+    "seen": 1793189676.1470487,
+    "ast_hash": "e261c8d2871c884b1893728045d28489",
+    "semantic_hash": ""
+  },
+  "apps/api/test/phase_16_security_verification.spec.ts": {
+    "mtime": 1793189554.2319627,
+    "seen": 1793189676.147571,
+    "ast_hash": "5cc094d75359ed61e2702933a9782c1c",
+    "semantic_hash": ""
+  },
+  "apps/api/test/postgis_analytics.spec.ts": {
+    "mtime": 1793189250.7388637,
+    "seen": 1793189676.147571,
+    "ast_hash": "20e910230159a02312fa4ebda94befa3",
+    "semantic_hash": ""
+  },
+  "apps/api/test/staging_lifecycle.e2e-spec.ts": {
+    "mtime": 1793189581.7754061,
+    "seen": 1793189676.147571,
+    "ast_hash": "180bc0db8292dce4aaf5e20d7a7d5e5c",
+    "semantic_hash": ""
+  },
+  "apps/api/test/websocket_load.bench-spec.ts": {
+    "mtime": 1793188416.5944698,
+    "seen": 1793189676.1490843,
+    "ast_hash": "1bcf736d0c6f7aad69d443502b8a4fd9",
+    "semantic_hash": ""
+  },
+  "apps/api/test/websocket_load.spec.ts": {
+    "mtime": 1793188495.339851,
+    "seen": 1793189676.1490843,
+    "ast_hash": "17466d54921274be11baa0e6afc4ec1e",
+    "semantic_hash": ""
+  },
+  "scripts/loadtest-websocket.ts": {
+    "mtime": 1793188378.0838678,
+    "seen": 1793189676.2096455,
+    "ast_hash": "a0f7b474a3baa017d31b3d95d9b65825",
     "semantic_hash": ""
   }
 }

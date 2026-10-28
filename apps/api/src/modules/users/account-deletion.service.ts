@@ -221,6 +221,29 @@ export class AccountDeletionService {
         );
         auditDetails.eventsSanitized = Array.isArray(sanitizedRows) ? sanitizedRows.length : 0;
 
+        // 5.1.b Kamuya açık (ACTIVE, RESOLVED) olaylardaki kişisel iletişim bilgilerini (telefon, e-posta) temizle
+        const activeEvents: Array<{ id: string; description: string }> = await manager.query(
+          `SELECT "id", "description" FROM "events" 
+           WHERE "authorId" = $1 AND "status" IN ('ACTIVE', 'RESOLVED');`,
+          [userId],
+        );
+        let piiScrubbedCount = 0;
+        for (const ev of activeEvents) {
+          if (ev.description) {
+            const scrubbed = ev.description
+              .replace(/(?:\+?90|0)?\s*[1-9]\d{2}[\s.-]?\d{3}[\s.-]?\d{2}[\s.-]?\d{2}/g, '[Telefon Gizlendi]')
+              .replace(/[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/g, '[E-posta Gizlendi]');
+            if (scrubbed !== ev.description) {
+              await manager.query(
+                `UPDATE "events" SET "description" = $1 WHERE "id" = $2;`,
+                [scrubbed, ev.id],
+              );
+              piiScrubbedCount++;
+            }
+          }
+        }
+        auditDetails.activeEventsPiiScrubbed = piiScrubbedCount;
+
         // 5.2 Silinen kullanıcıya ait bekleyen Outbox görevlerini iptal et (Outbox İzolasyonu)
         const [cancelledRows] = await manager.query(
           `UPDATE "outbox_events" 
@@ -396,21 +419,32 @@ export class AccountDeletionService {
       throw new BadRequestException('Bu hesap için aktif bir silme talebi bulunmamaktadır.');
     }
 
+    const activeRequest = await this.deletionRepo.findOne({
+      where: {
+        userId: user.id,
+        status: In([DeletionRequestStatus.PENDING, DeletionRequestStatus.PROCESSING]),
+      },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (!activeRequest) {
+      throw new BadRequestException('Bu hesap için aktif bir silme talebi bulunmamaktadır.');
+    }
+
+    // 14 günlük bekleme süresinin sonu denetimi (Grace Period Expiry Check)
+    if (activeRequest.scheduledFor && activeRequest.scheduledFor.getTime() <= Date.now()) {
+      throw new BadRequestException(
+        '14 günlük cayma ve iptal süresi dolmuştur. Hesap silme süreci geri alınamaz.',
+      );
+    }
+
     // Kullanıcı durumunu yeniden aktif yap
     user.accountStatus = AccountStatus.ACTIVE;
     await this.userRepo.save(user);
 
-    // Aktif talebi iptal olarak işaretle
-    await this.deletionRepo.update(
-      {
-        userId: user.id,
-        status: In([DeletionRequestStatus.PENDING, DeletionRequestStatus.PROCESSING]),
-      },
-      {
-        status: DeletionRequestStatus.CANCELLED,
-        cancelledAt: new Date(),
-      },
-    );
+    activeRequest.status = DeletionRequestStatus.CANCELLED;
+    activeRequest.cancelledAt = new Date();
+    await this.deletionRepo.save(activeRequest);
 
     this.logger.log(`[AccountDeletion] Silme talebi iptal edildi: User=${user.id}`);
 

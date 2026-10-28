@@ -1,9 +1,10 @@
-import { Controller, Get, Optional, Inject, Logger } from '@nestjs/common';
+import { Controller, Get, Optional, Inject, Logger, UseGuards } from '@nestjs/common';
 import type { HealthCheckResponse } from '@sehir-nabiz/shared';
 import { DataSource } from 'typeorm';
 import { RedisService } from '../redis/redis.service';
 import { StorageService } from '../storage/storage.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { DiagnosticsGuard } from './guards/diagnostics.guard';
 
 export interface ReadinessResponse {
   status: 'ok' | 'degraded' | 'error';
@@ -96,8 +97,10 @@ export class HealthController {
   /**
    * Operasyonel Görünürlük ve Teşhis Paneli (GET /health/diagnostics)
    * Kişisel veri (PII) içermeyen, sistem sağlığı ve kuyruk metriklerini sunar.
+   * Yalnızca ADMIN yetkisi veya x-diagnostics-key ile erişilebilir.
    */
   @Get('diagnostics')
+  @UseGuards(DiagnosticsGuard)
   async getDiagnostics(): Promise<DiagnosticsResponse> {
     const isDbConnected = Boolean(this.dataSource?.isInitialized);
     const isRedisConnected = Boolean(this.redisService?.isReady);

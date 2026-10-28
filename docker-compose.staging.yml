@@ -4,7 +4,7 @@
 # Kullanım: docker compose -f docker-compose.staging.yml --env-file .env.staging up -d
 # ==============================================================================
 
-version: '3.8'
+name: sehir_nabiz_staging
 
 services:
   # ----------------------------------------------------------------------------
@@ -17,7 +17,7 @@ services:
     environment:
       POSTGRES_DB: ${DB_DATABASE:-sehir_nabiz_staging}
       POSTGRES_USER: ${DB_USERNAME:-sehir_nabiz_staging_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-CHANGE_ME_STAGING_DB_PASSWORD}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-staging_db_secure_password_2026!}
     volumes:
       - staging_postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -36,11 +36,11 @@ services:
     image: redis:7-alpine
     container_name: sehir_nabiz_staging_redis
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-CHANGE_ME_STAGING_REDIS_PASSWORD}"]
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-staging_redis_secure_password_2026!}"]
     volumes:
       - staging_redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-CHANGE_ME_STAGING_REDIS_PASSWORD}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-staging_redis_secure_password_2026!}", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -58,7 +58,7 @@ services:
     command: ["server", "/data", "--console-address", ":9001"]
     environment:
       MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY:-staging_minio_admin}
-      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY:-CHANGE_ME_STAGING_MINIO_SECRET_KEY}
+      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY:-staging_minio_secure_secret_2026!}
     volumes:
       - staging_minio_data:/data
     healthcheck:
@@ -86,19 +86,24 @@ services:
       DB_HOST: staging-postgres
       DB_PORT: 5432
       DB_USERNAME: ${DB_USERNAME:-sehir_nabiz_staging_user}
-      DB_PASSWORD: ${DB_PASSWORD:-CHANGE_ME_STAGING_DB_PASSWORD}
+      DB_PASSWORD: ${DB_PASSWORD:-staging_db_secure_password_2026!}
       DB_DATABASE: ${DB_DATABASE:-sehir_nabiz_staging}
       REDIS_HOST: staging-redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-CHANGE_ME_STAGING_REDIS_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-staging_redis_secure_password_2026!}
       STORAGE_ENDPOINT: http://staging-minio:9000
       STORAGE_REGION: auto
       STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:-staging_minio_admin}
-      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:-CHANGE_ME_STAGING_MINIO_SECRET_KEY}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:-staging_minio_secure_secret_2026!}
       STORAGE_BUCKET: ${STORAGE_BUCKET:-sehir-nabiz-media-staging}
       STORAGE_FORCE_PATH_STYLE: "true"
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-CHANGE_ME_STAGING_SUPER_SECRET_ACCESS_KEY_32CHARS_MIN!}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-CHANGE_ME_STAGING_SUPER_SECRET_REFRESH_KEY_32CHARS_MIN!}
+      STORAGE_PUBLIC_URL: http://staging-minio:9000/sehir-nabiz-media-staging
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-staging_super_secret_access_key_32chars_min_2026!}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-staging_super_secret_refresh_key_32chars_min_2026!}
+      DIAGNOSTICS_SECRET: ${DIAGNOSTICS_SECRET:-staging_internal_diagnostics_secret_token_2026!}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      WEBSOCKET_CORS_ORIGIN: ${WEBSOCKET_CORS_ORIGIN:-*}
+      TRUSTED_PROXY_IPS: ${TRUSTED_PROXY_IPS:-127.0.0.1,172.16.0.0/12,10.0.0.0/8}
     depends_on:
       staging-postgres:
         condition: service_healthy
@@ -107,7 +112,7 @@ services:
       staging-minio:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health/ready"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health/ready"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -127,6 +132,7 @@ services:
       - "443:443"
     volumes:
       - ./docker/staging/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/staging/ssl:/etc/nginx/ssl:ro
       - staging_nginx_logs:/var/log/nginx
     depends_on:
       staging-api:
@@ -151,4 +157,5 @@ volumes:
 
 networks:
   sehir_nabiz_staging_network:
+    name: sehir_nabiz_staging_network
     driver: bridge
