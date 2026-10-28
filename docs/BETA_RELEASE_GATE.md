@@ -1,8 +1,8 @@
 # ŞehirNabız — Beta Sürüm Geçiş Kapısı (Beta Release Gate)
 
-**Tarih:** 27 Ekim 2026  
-**Faz:** Phase 14 — Güvenli Hesap Silme, Veri Yaşam Döngüsü ve Release Blocker Düzeltmeleri  
-**Sonuç:** 🔴 **KAPI KAPALI (BLOCKED) — 3 Kritik Önkoşul Karşılanmayı Bekliyor (Hesap Silme Engeli Çözüldü)**  
+**Tarih:** 28 Ekim 2026  
+**Faz:** Phase 15 — Account Deletion Verification, Privacy Hardening & Staging Readiness  
+**Sonuç:** 🔴 **KAPI KAPALI (BLOCKED) — 3 Kritik Önkoşul Karşılanmayı Bekliyor (Staging Hazırlığı ve Hesap Silme Doğrulaması Tamamlandı)**  
 
 ---
 
@@ -19,9 +19,9 @@ Beta Sürüm Geçiş Kapısı; uygulamanın geliştirme ve simülatör aşaması
 
 | # | Kabul Kriteri | Gerekli Kanıt Türü | Mevcut Durum | Notlar ve Gerekçe |
 | :---: | :--- | :--- | :---: | :--- |
-| **1** | **Monorepo Testleri** | CI / Turborepo Otomasyonu | 🟢 **PASS** | 329 testin tamamı (%100) yeşil geçti. Sıfır hata. |
+| **1** | **Monorepo Testleri** | CI / Turborepo Otomasyonu | 🟢 **PASS** | 353 testin tamamı (%100) yeşil geçti. Sıfır hata. |
 | **2** | **TypeScript, Lint & Build** | Turborepo Build Pipeline | 🟢 **PASS** | Strict mode tam uyumlu, lint ve paket derlemeleri hatasız. |
-| **3** | **Native Android APK/AAB Derlemesi** | Gradle / EAS Build Çıktısı | 🔴 **BLOCKED** | Kullanıcı onayı olmadan derleme başlatılmadı; henüz `.apk` üretilmedi. |
+| **3** | **Native Android APK/AAB Derlemesi** | Gradle / EAS Build Çıktısı | 🔴 **BLOCKED** | Kapsam sınırları gereği derleme başlatılmadı; henüz `.apk` üretilmedi. |
 | **4** | **Fiziksel Android Cihaz Doğrulaması** | Gerçek Donanım Çalışma Günlüğü | 🔴 **BLOCKED** | Gerçek Android telefon üzerinde termal ve bellek testi yapılmadı. |
 | **5** | **Harita Render ve Etkileşim** | MapLibre GPU / Vektör Katmanı | 🟡 **KOŞULLU PASS** | Web ve Expo Dev Client'ta doğrulandı; eski donanım testi bekliyor. |
 | **6** | **Oturum Açma/Çıkış & Veri Hijyeni** | SecureStore + Soket + Taslak | 🟢 **PASS** | Token silme, soket kapatma ve taslak temizliği doğrulandı. |
@@ -29,9 +29,9 @@ Beta Sürüm Geçiş Kapısı; uygulamanın geliştirme ve simülatör aşaması
 | **8** | **Moderatör Paneli ve Onay/Red** | Role Guards + Gerekçe Kalkanı | 🟢 **PASS** | `MODERATOR`/`ADMIN` yetkilendirmesi ve audit trail doğrulandı. |
 | **9** | **WebSocket Reconnect & Snapshot** | Monotonic Versioning + Jitter | 🟢 **PASS** | Reconnect sonrası REST mutabakatı otomatik test edildi. |
 | **10** | **Gerçek Kilit Ekranı Push Teslimatı** | FCM / APNs Canlı Teslimatı | 🔴 **BLOCKED** | Firebase ve Apple üretim sertifikaları tanımlanmadı (Ertelenmiştir). |
-| **11** | **Hesap ve Veri Silme İş Akışı** | KVKK / Store Account Deletion | 🟢 **PASS** | Phase 14'te `DELETE /users/me`, web formu, PII maskeleme ve oturum feshi tamamlandı. |
-| **12** | **Canlı Ortam Güvenli Yapılandırması** | HTTPS Domain + Prod Secrets | 🟡 **KOŞULLU PASS** | Şema ve kurallar hazır; canlı alan adı provizyonu bekleniyor. |
-| **13** | **Kritik Güvenlik Açıklarının Kapatılması** | Security Audit & Rate Limiting | 🟢 **PASS** | CORS wildcard yasağı, loopback engeli ve çıkış temizliği tamamlandı. |
+| **11** | **Hesap ve Veri Silme İş Akışı** | KVKK / Store Account Deletion | 🟢 **PASS** | Phase 15'te gerçek MinIO fiziksel silme, PENDING_DELETION kalkanı, outbox izolasyonu ve processor worker doğrulandı. |
+| **12** | **Staging Ortamı Hazırlığı** | Docker Compose + Nginx TLS | 🟢 **PASS** | Staging compose, Nginx reverse proxy, migration ve backup/restore betikleri hazırlandı. |
+| **13** | **Kritik Güvenlik Açıklarının Kapatılması** | Security Audit & Rate Limiting | 🟢 **PASS** | CORS allowlist, rate limit, trusted proxy ve Zero-PII diagnostics doğrulandı. |
 
 ---
 

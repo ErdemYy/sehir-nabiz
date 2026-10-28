@@ -40,12 +40,14 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
     if (
       user.accountStatus === AccountStatus.DELETED ||
-      user.accountStatus === AccountStatus.PENDING_DELETION ||
       user.accountStatus === AccountStatus.SUSPENDED
     ) {
       throw new UnauthorizedException('Kullanıcı hesabı aktif değil veya silinmiş.');
     }
 
-    return payload;
+    return {
+      ...payload,
+      accountStatus: user.accountStatus,
+    };
   }
 }

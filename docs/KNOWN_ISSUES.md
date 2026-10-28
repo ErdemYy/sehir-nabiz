@@ -1,8 +1,8 @@
 # ŞehirNabız — Bilinen Sorunlar ve Teknik Borç Envanteri (Known Issues)
 
-**Tarih:** 27 Ekim 2026  
-**Faz:** Phase 14 — Güvenli Hesap Silme, Veri Yaşam Döngüsü ve Release Blocker Düzeltmeleri  
-**Son Durum:** Beta Öncesi Risk Değerlendirmesi (Hesap Silme Engeli Başarıyla Çözüldü)  
+**Tarih:** 28 Ekim 2026  
+**Faz:** Phase 15 — Account Deletion Verification, Privacy Hardening & Staging Readiness  
+**Son Durum:** Staging Dağıtımına Hazır, Beta Öncesi Kalan Blockerlar Açıkça Belgelendi  
 
 ---
 
@@ -19,30 +19,38 @@ Bu belge, ŞehirNabız projesinde mevcut bilinen sınırları, ertelenen maddele
 #### 1. Fiziksel Cihaz Donanım Doğrulaması Yapılmadı
 - **Açıklama:** Uygulama Expo Dev Client, Metro bundler ve simülatör/web ortamlarında test edilmiştir. Farklı ekran boyutlarına, GPU yongalarına (Adreno, Mali) ve RAM kısıtlarına sahip gerçek fiziksel Android ve iOS cihazlarında kapsamlı alan testleri henüz gerçekleştirilmemiştir.
 - **Risk:** Eski donanımlı Android cihazlarda MapLibre GPU yükü altında FPS düşüşü veya batarya tüketimi yaşanabilir.
-- **Çözüm Planı:** Faz 15 kapsamında fiziksel Android ve iOS cihazlarında termal ve bellek profillemesi (Android Studio Profiler / Xcode Instruments) yapılmalıdır.
+- **Çözüm Planı:** Faz 16 kapsamında fiziksel Android ve iOS cihazlarında termal ve bellek profillemesi (Android Studio Profiler / Xcode Instruments) yapılmalıdır.
 - **Geçici Çözüm:** Beta testleri kontrollü simülatör veya yüksek güçlü test cihazlarıyla sınırlandırılmalıdır.
 
 #### 2. Bağımsız Android APK / AAB ve iOS IPA Üretimi Ertelendi
-- **Açıklama:** Monorepo yapısında Expo Prebuild konfigürasyonu tamamlanmış olmasına rağmen bağımsız imzalı bir `.apk` / `.aab` veya TestFlight `.ipa` paketi henüz derlenmemiştir.
+- **Açıklama:** Kapsam sınırları uyarınca APK/AAB/IPA oluşturulmamış, mağazalara gönderilmemiştir.
 - **Risk:** Üretim (production) derleme bayraklarında ProGuard veya Hermes bytecode optimizasyonlarından kaynaklanan beklenmedik kütüphane çakışmaları oluşabilir.
-- **Çözüm Planı:** EAS Build veya yerel Gradle pipeline (`cd apps/mobile/android && ./gradlew assembleRelease`) çalıştırılarak imzalı ilk beta derlemesi alınmalıdır.
+- **Çözüm Planı:** Staging doğrulamasının ardından EAS Build veya yerel Gradle pipeline (`cd apps/mobile/android && ./gradlew assembleRelease`) çalıştırılarak imzalı ilk paketler üretilmelidir.
 
 #### 3. Gerçek Push Bildirim (FCM / APNs) Canlı Teslimatı Ertelendi
 - **Açıklama:** Push bildirim veritabanı şeması, token kaydı, outbox entegrasyonu ve geliştirici simülasyon adaptörü hazırdır; ancak Apple Developer Program ve Google Firebase Cloud Messaging canlı üretim sertifikaları / anahtarları henüz yüklenmemiştir.
 - **Risk:** Uygulama kapalıyken (arka planda) kullanıcının kilit ekranına bildirim düşmesi fiziksel olarak doğrulanamamıştır.
 - **Çözüm Planı:** Canlı sunucu ortam değişkenlerine `FIREBASE_SERVICE_ACCOUNT` ve `APNS_KEY_ID` tanımlanarak uçtan uca bildirim iletimi test edilmelidir.
 
+#### 4. Canlı API ve Web Alan Adı DNS/SSL Kurulumu
+- **Açıklama:** Üretim HTTPS API (`api.sehirnabiz.com`) DNS/SSL provizyonu yapılmamıştır. Staging reverse proxy yapılandırması (`docker/staging/nginx.conf`) ve `.env.staging.example` hazırlanmış ancak canlıya geçirilmemiştir.
+
 ---
 
-### 🟢 Çözülen Blockerlar (Phase 14)
+### 🟢 Çözülen Blockerlar (Phase 14 & Phase 15)
 
 #### [ÇÖZÜLDÜ] Kullanıcı Hesap ve Kişisel Veri Silme Akışı (Right to Be Forgotten)
 - **Açıklama:** Apple App Store Review Guideline 5.1.1(v) ve KVKK Madde 7 gereğince hesap oluşturulabilen her uygulamada doğrudan mobil uygulama içinden ve kamuya açık bir web URL'inden hesap silme seçeneği sunulmalıdır.
-- **Durum:** **Phase 14 ile Tamamlandı.**
-  - Backend: `DELETE /api/v1/users/me`, `POST /api/v1/users/web-deletion-request`, `GET /account-deletion` web sayfası, `POST /api/v1/users/cancel-deletion` ve `GET /api/v1/users/me/deletion-status` geliştirildi.
-  - Veri Hijyeni: E-posta maskeleme (`deleted_<timestamp>_<uuid>@deleted.sehirnabiz.local`), parola hash ezme (`*DELETED*`), display name `"Anonim Vatandaş"`, oturum feshi, push token imhası ve MinIO medya temizliği uygulandı.
-  - Mobil: Ayarlar ekranında Tehlikeli Bölge ve şifre doğrulamalı silme modalı entegre edildi.
-  - Doğrulama: 10 E2E ve 6 mobil birim testi (%100 başarı) ile kapatıldı.
+- **Phase 14-15 Doğrulamaları:**
+  - Gerçek MinIO nesne deposu üzerinde fiziksel silme kanıtlandı (S3 404 doğrulaması).
+  - `PENDING_DELETION` yetkilendirme kalkanı (`@AllowPendingDeletion`) ile silme sürecindeki kullanıcının normal işlemleri engellenirken iptal ve sorgulama yetkileri korundu.
+  - Kamusal olayların (kaza, afet) korunması ve taslak bildirimlerin kişisel verilerden arındırılması sağlandı.
+  - Transactional Outbox görev izolasyonu ve push token imhası tamamlandı.
+  - Otomatik `AccountDeletionProcessorService` worker'ı ve azami 5 deneme sonrası Dead-Letter operasyonel uyarısı kuruldu.
+  - Raporlama tutarsızlığı (329 vs 330) netleştirildi, test tabanı 353 teste (%100 yeşil) ulaştırıldı.
+
+#### [ÇÖZÜLDÜ] Staging Mimari Hazırlığı ve Güvenlik Altyapısı
+- Staging Docker Compose (`docker-compose.staging.yml`), `.env.staging.example`, Nginx reverse proxy konfigürasyonu (`docker/staging/nginx.conf`), migration ve backup/restore betikleri eksiksiz oluşturuldu ve boş veritabanında test edildi.
 
 ---
 

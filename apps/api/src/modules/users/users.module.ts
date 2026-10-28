@@ -12,6 +12,7 @@ import { UserNotificationPreferenceEntity } from '../../database/entities/user-n
 import { EventMediaEntity } from '../../database/entities/event-media.entity';
 import { UsersService } from './users.service';
 import { AccountDeletionService } from './account-deletion.service';
+import { AccountDeletionProcessorService } from './account-deletion-processor.service';
 import { UsersController } from './users.controller';
 import { AccountDeletionWebController } from './account-deletion-web.controller';
 import { AuthModule } from '../auth/auth.module';
@@ -37,7 +38,7 @@ import { RealtimeModule } from '../realtime/realtime.module';
     RealtimeModule,
   ],
   controllers: [UsersController, AccountDeletionWebController],
-  providers: [UsersService, AccountDeletionService],
-  exports: [UsersService, AccountDeletionService],
+  providers: [UsersService, AccountDeletionService, AccountDeletionProcessorService],
+  exports: [UsersService, AccountDeletionService, AccountDeletionProcessorService],
 })
 export class UsersModule {}

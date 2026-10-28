@@ -65,7 +65,7 @@ export default function SettingsScreen(): React.ReactElement {
       setIsDeleting(true);
       setDeleteError(null);
 
-      const res = await authApi.deleteAccount(token, {
+      await authApi.deleteAccount(token, {
         password: deletePassword,
         reason: deleteReason,
         immediate: isImmediate,
@@ -74,7 +74,9 @@ export default function SettingsScreen(): React.ReactElement {
       setIsDeleteModalOpen(false);
       Alert.alert(
         'Hesap Silme İşlemi',
-        res.message || 'Hesabınız ve tüm kişisel verileriniz başarıyla silindi ve anonimleştirildi.',
+        isImmediate
+          ? 'Hesabınız ve tüm kişisel verileriniz başarıyla silindi ve anonimleştirildi.'
+          : 'Hesabınız 14 günlük bekleme moduna alındı. 14 gün içinde fikrinizi değiştirirseniz iptal edebilirsiniz.',
         [
           {
             text: 'Tamam',
@@ -490,10 +492,20 @@ export default function SettingsScreen(): React.ReactElement {
                 borderRadius: radii.md,
                 borderColor: 'rgba(239, 68, 68, 0.2)',
                 borderWidth: 1,
+                gap: 4,
               }}
             >
-              <AppText variant="caption" color={theme.textSecondary} style={{ fontSize: 12, lineHeight: 18 }}>
-                Hesabınız silindiğinde kimlik bilgileriniz, bildirim tercihleriniz, oturumlarınız ve push belirteçleriniz kalıcı olarak imha edilir. Kentsel olay bildirimleri kamu güvenliği adına anonimleştirilerek korunur.
+              <AppText variant="caption" color={theme.text} weight="semibold" style={{ fontSize: 12 }}>
+                Veri Saklama & Gizlilik Politikası:
+              </AppText>
+              <AppText variant="caption" color={theme.textSecondary} style={{ fontSize: 11, lineHeight: 16 }}>
+                • Kimlik bilgileriniz, şifreniz, bildirim tercihleriniz, aktif oturumlarınız ve push belirteçleriniz kalıcı olarak imha edilir.
+              </AppText>
+              <AppText variant="caption" color={theme.textSecondary} style={{ fontSize: 11, lineHeight: 16 }}>
+                • Henüz onaylanmamış taslak bildirimleriniz ve geçici fotoğraflarınız tamamen silinir.
+              </AppText>
+              <AppText variant="caption" color={theme.textSecondary} style={{ fontSize: 11, lineHeight: 16 }}>
+                • Onaylanmış kentsel olay kayıtları (afet, kaza, yol arşivi) kamu güvenliği adına yazar kimliği "Anonim Vatandaş" olarak anonimleştirilerek korunur.
               </AppText>
             </View>
 
@@ -556,15 +568,33 @@ export default function SettingsScreen(): React.ReactElement {
               />
             </View>
 
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <AppText variant="caption" color={theme.textSecondary}>
-                Hemen Kalıcı Olarak Sil
-              </AppText>
-              <Switch
-                value={isImmediate}
-                onValueChange={setIsImmediate}
-                trackColor={{ false: theme.border, true: '#EF4444' }}
-              />
+            <View
+              style={{
+                backgroundColor: theme.surface,
+                padding: spacing.sm,
+                borderRadius: radii.md,
+                borderColor: theme.border,
+                borderWidth: 1,
+                gap: 6,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flex: 1, paddingRight: 8 }}>
+                  <AppText variant="bodyS" weight="semibold">
+                    {isImmediate ? 'Anında Silme (Derhal İmha)' : '14 Günlük Bekleme Süresi'}
+                  </AppText>
+                  <AppText variant="caption" color={theme.textSecondary} style={{ fontSize: 11, marginTop: 2 }}>
+                    {isImmediate
+                      ? 'Verileriniz hemen kalıcı olarak silinir. Cayma veya geri alma imkânı bulunmaz.'
+                      : 'Hesabınız 14 gün dondurulur; bu süre içinde şifrenizle iptal edebilirsiniz. 14 gün sonunda otomatik silinir.'}
+                  </AppText>
+                </View>
+                <Switch
+                  value={isImmediate}
+                  onValueChange={setIsImmediate}
+                  trackColor={{ false: theme.border, true: '#EF4444' }}
+                />
+              </View>
             </View>
 
             <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs }}>

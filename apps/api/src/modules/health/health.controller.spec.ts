@@ -26,5 +26,48 @@ describe('HealthController', () => {
     expect(['ok', 'degraded', 'error']).toContain(ready.status);
     expect(['connected', 'disconnected']).toContain(ready.database);
     expect(['connected', 'disconnected']).toContain(ready.redis);
+    expect(['connected', 'disconnected']).toContain(ready.storage);
+  });
+
+  it('diagnostics endpoint operasyonel metrikleri PII içermeden dönmeli', async () => {
+    const mockDataSource = {
+      isInitialized: true,
+      query: (sql: string) => {
+        if (sql.includes('outbox_events')) {
+          return Promise.resolve([
+            { status: 'PENDING', count: '3' },
+            { status: 'PROCESSED', count: '10' },
+          ]);
+        }
+        if (sql.includes('account_deletion_requests')) {
+          return Promise.resolve([
+            { status: 'PENDING', count: '1' },
+            { status: 'COMPLETED', count: '5' },
+          ]);
+        }
+        return Promise.resolve([]);
+      },
+    };
+    const mockRedis = { isReady: true };
+    const mockStorage = { checkHealth: () => Promise.resolve(true) };
+    const mockRealtime = { getConnectedCount: () => 4 };
+
+    const diagController = new HealthController(
+      mockDataSource as any,
+      mockRedis as any,
+      mockStorage as any,
+      mockRealtime as any,
+    );
+
+    const diag = await diagController.getDiagnostics();
+    expect(diag.status).toBe('ok');
+    expect(diag.services.database).toBe(true);
+    expect(diag.services.redis).toBe(true);
+    expect(diag.services.storage).toBe(true);
+    expect(diag.metrics.websocketConnectedClients).toBe(4);
+    expect(diag.metrics.outbox.pending).toBe(3);
+    expect(diag.metrics.outbox.processed).toBe(10);
+    expect(diag.metrics.accountDeletion.pending).toBe(1);
+    expect(diag.metrics.accountDeletion.completed).toBe(5);
   });
 });

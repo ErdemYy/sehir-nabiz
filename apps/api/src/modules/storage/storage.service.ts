@@ -217,6 +217,18 @@ export class StorageService implements IStorageService, OnModuleInit {
   }
 
   /**
+   * Nesne deposunun (MinIO/S3) erişilebilirliğini denetler
+   */
+  async checkHealth(): Promise<boolean> {
+    try {
+      await this.s3Client.send(new HeadBucketCommand({ Bucket: this.bucket }));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Genel okuma URL'si
    */
   getPublicUrl(key: string): string {

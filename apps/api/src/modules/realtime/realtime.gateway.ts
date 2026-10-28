@@ -234,6 +234,13 @@ export class RealtimeGateway
   }
 
   /**
+   * Aktif bağlı websocket istemci sayısını döndürür
+   */
+  getConnectedCount(): number {
+    return this.activeClients.size;
+  }
+
+  /**
    * Handshake üzerinden token çıkarıcı
    */
   private extractToken(client: Socket): string | null {

@@ -16,6 +16,7 @@ import type { Request, Response } from 'express';
 import { UsersService } from './users.service';
 import { AccountDeletionService } from './account-deletion.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AllowPendingDeletion } from '../../common/decorators/allow-pending-deletion.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import {
   MyEventsQuerySchema,
@@ -93,6 +94,7 @@ export class UsersController {
    */
   @Get('me/deletion-status')
   @UseGuards(JwtAuthGuard)
+  @AllowPendingDeletion()
   @HttpCode(HttpStatus.OK)
   async getDeletionStatus(@Req() req: Request): Promise<AccountDeletionStatusDto> {
     const user = req.user as JwtPayload;
@@ -104,6 +106,7 @@ export class UsersController {
    */
   @Post('me/cancel-deletion')
   @UseGuards(JwtAuthGuard)
+  @AllowPendingDeletion()
   @HttpCode(HttpStatus.OK)
   async cancelDeletionAuthenticated(
     @Req() req: Request,

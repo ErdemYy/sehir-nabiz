@@ -1,0 +1,154 @@
+# ==============================================================================
+# ŞehirNabız — Staging Ortamı Docker Compose Orkestrasyonu
+# ==============================================================================
+# Kullanım: docker compose -f docker-compose.staging.yml --env-file .env.staging up -d
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. PostgreSQL 16 + PostGIS 3.4
+  # ----------------------------------------------------------------------------
+  staging-postgres:
+    image: postgis/postgis:16-3.4
+    container_name: sehir_nabiz_staging_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-sehir_nabiz_staging}
+      POSTGRES_USER: ${DB_USERNAME:-sehir_nabiz_staging_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-CHANGE_ME_STAGING_DB_PASSWORD}
+    volumes:
+      - staging_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-sehir_nabiz_staging_user} -d ${DB_DATABASE:-sehir_nabiz_staging}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - sehir_nabiz_staging_network
+
+  # ----------------------------------------------------------------------------
+  # 2. Redis 7
+  # ----------------------------------------------------------------------------
+  staging-redis:
+    image: redis:7-alpine
+    container_name: sehir_nabiz_staging_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-CHANGE_ME_STAGING_REDIS_PASSWORD}"]
+    volumes:
+      - staging_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-CHANGE_ME_STAGING_REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - sehir_nabiz_staging_network
+
+  # ----------------------------------------------------------------------------
+  # 3. MinIO S3 Nesne Depolama
+  # ----------------------------------------------------------------------------
+  staging-minio:
+    image: elestio/minio@sha256:25348a257f1ece1b192f25f6cd9854618fa86422ac87b494b5d4e629c556d4bd
+    container_name: sehir_nabiz_staging_minio
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY:-staging_minio_admin}
+      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY:-CHANGE_ME_STAGING_MINIO_SECRET_KEY}
+    volumes:
+      - staging_minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - sehir_nabiz_staging_network
+
+  # ----------------------------------------------------------------------------
+  # 4. ŞehirNabız NestJS API & WebSocket Servisi
+  # ----------------------------------------------------------------------------
+  staging-api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: runner
+    container_name: sehir_nabiz_staging_api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: staging
+      PORT: 3000
+      DB_HOST: staging-postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME:-sehir_nabiz_staging_user}
+      DB_PASSWORD: ${DB_PASSWORD:-CHANGE_ME_STAGING_DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE:-sehir_nabiz_staging}
+      REDIS_HOST: staging-redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-CHANGE_ME_STAGING_REDIS_PASSWORD}
+      STORAGE_ENDPOINT: http://staging-minio:9000
+      STORAGE_REGION: auto
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:-staging_minio_admin}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:-CHANGE_ME_STAGING_MINIO_SECRET_KEY}
+      STORAGE_BUCKET: ${STORAGE_BUCKET:-sehir-nabiz-media-staging}
+      STORAGE_FORCE_PATH_STYLE: "true"
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-CHANGE_ME_STAGING_SUPER_SECRET_ACCESS_KEY_32CHARS_MIN!}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-CHANGE_ME_STAGING_SUPER_SECRET_REFRESH_KEY_32CHARS_MIN!}
+    depends_on:
+      staging-postgres:
+        condition: service_healthy
+      staging-redis:
+        condition: service_healthy
+      staging-minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - sehir_nabiz_staging_network
+
+  # ----------------------------------------------------------------------------
+  # 5. Nginx Ters Vekil (Reverse Proxy & TLS Termination)
+  # ----------------------------------------------------------------------------
+  staging-nginx:
+    image: nginx:1.25-alpine
+    container_name: sehir_nabiz_staging_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/staging/nginx.conf:/etc/nginx/nginx.conf:ro
+      - staging_nginx_logs:/var/log/nginx
+    depends_on:
+      staging-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nginx -t || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - sehir_nabiz_staging_network
+
+volumes:
+  staging_postgres_data:
+    driver: local
+  staging_redis_data:
+    driver: local
+  staging_minio_data:
+    driver: local
+  staging_nginx_logs:
+    driver: local
+
+networks:
+  sehir_nabiz_staging_network:
+    driver: bridge

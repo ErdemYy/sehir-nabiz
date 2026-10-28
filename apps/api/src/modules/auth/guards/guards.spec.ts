@@ -9,17 +9,47 @@ describe('Auth Guards (Unit Tests)', () => {
 
     it('kullanıcı varsa nesneyi döndürmeli', () => {
       const user = { sub: '123', email: 'test@example.com' };
-      expect(guard.handleRequest(null, user)).toEqual(user);
+      expect(guard.handleRequest(null, user, null)).toEqual(user);
     });
 
     it('kullanıcı yoksa UnauthorizedException fırlatmalı', () => {
-      expect(() => guard.handleRequest(null, null)).toThrow(UnauthorizedException);
+      expect(() => guard.handleRequest(null, null, null)).toThrow(UnauthorizedException);
     });
 
     it('hata varsa UnauthorizedException fırlatmalı', () => {
-      expect(() => guard.handleRequest(new Error('Jwt Error'), null)).toThrow(
+      expect(() => guard.handleRequest(new Error('Jwt Error'), null, null)).toThrow(
         UnauthorizedException,
       );
+    });
+
+    it('PENDING_DELETION durumundaki kullanıcı izinsiz uç noktada engellenmeli', () => {
+      const mockReflector = {
+        getAllAndOverride: vi.fn().mockReturnValue(false),
+      };
+      const pendingGuard = new JwtAuthGuard(mockReflector as any);
+      const user = { sub: '123', email: 'test@example.com', accountStatus: 'PENDING_DELETION' };
+      const mockContext = {
+        getHandler: vi.fn(),
+        getClass: vi.fn(),
+      } as any;
+
+      expect(() => pendingGuard.handleRequest(null, user, null, mockContext)).toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('PENDING_DELETION kullanıcısı @AllowPendingDeletion olan uç noktada izin almalı', () => {
+      const mockReflector = {
+        getAllAndOverride: vi.fn().mockReturnValue(true),
+      };
+      const pendingGuard = new JwtAuthGuard(mockReflector as any);
+      const user = { sub: '123', email: 'test@example.com', accountStatus: 'PENDING_DELETION' };
+      const mockContext = {
+        getHandler: vi.fn(),
+        getClass: vi.fn(),
+      } as any;
+
+      expect(pendingGuard.handleRequest(null, user, null, mockContext)).toEqual(user);
     });
   });
 

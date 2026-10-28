@@ -51,25 +51,29 @@
 ## 4. Kullanıcı Hesap ve Veri Silme Akışı (Account Deletion Lifecycle)
 
 > [!NOTE]
-> **Phase 14 ile Tamamlandı & Doğrulandı:**  
-> Kullanıcı hesap silme sistemi Apple App Store Yönergesi 5.1.1(v), Google Play Data Safety ve 6698 Sayılı KVKK standartlarına tam uyumlu olarak uygulanmış ve 10 E2E / 6 mobil birim testiyle doğrulanmıştır. Mağaza yayını önündeki Blocker #4 başarıyla kaldırılmıştır.
+> **Phase 15 ile Kesin Olarak Doğrulandı & Sertleştirildi:**  
+> Kullanıcı hesap silme ve veri yaşam döngüsü mimarisi, gerçek MinIO nesne deposu üzerinde koşan fiziksel silme testleri, `PENDING_DELETION` yetkilendirme kalkanı (`@AllowPendingDeletion`), Outbox görev izolasyonu ve otomatik arka plan işleyicisi (`AccountDeletionProcessorService`) ile uçtan uca doğrulanmıştır.
 
-### Uygulanan Silme Mimarisi:
-1. **Talep ve Güvenli Onay (DELETE /api/v1/users/me):**
-   - Mobil Ayarlar ekranındaki Tehlikeli Bölge (`settings.tsx`) üzerinden şifre doğrulaması ile talep iletilir.
-   - Web kullanıcıları için `GET /account-deletion` HTML arayüzü ve `POST /api/v1/users/web-deletion-request` uç noktası hizmet verir.
+### Uygulanan Silme ve Gizlilik Politikası:
+1. **İsteğe Bağlı Bekleme Süresi vs. Anında Silme:**
+   - **14 Günlük Bekleme Süresi (`immediate: false`):** Ürünün sunduğu isteğe bağlı cayma modudur. Hesap `PENDING_DELETION` durumuna alınır, normal işlemlerden men edilir; ancak kullanıcı 14 gün içinde parolasını girerek talebini iptal edebilir. Süre sonunda arka plan worker'ı işlemi otomatik tamamlar.
+   - **Anında Silme (`immediate: true`):** Bekleme süresini atlayarak verileri derhal yok eder. Kullanıcıya geri alma imkanı bulunmadığı açıkça beyan edilir.
 2. **Kişisel Verilerin Anonimleştirilmesi (GDPR / KVKK Uyumlu):**
-   - Kullanıcının `email` adresi `deleted_<timestamp>_<uuid>@deleted.sehirnabiz.local` olarak maskelenir; gerçek e-posta silinir.
+   - Kullanıcının `email` adresi `deleted_<timestamp>_<uuid>@deleted.sehirnabiz.local` olarak maskelenir; gerçek e-posta kalıcı olarak silinir.
    - `displayName` alanı `"Anonim Vatandaş"` olarak güncellenir.
    - `passwordHash` dizesi `"*DELETED*"` olarak ezilir; eski şifreyle giriş imkansız hale getirilir.
    - `reputationScore` sıfırlanır (`0`).
    - Tüm aktif `refresh_tokens` derhal `isRevoked: true` yapılarak oturumlar iptal edilir.
    - Aktif WebSocket bağlantıları `RealtimeGateway.disconnectUser()` ile derhal sonlandırılır.
    - `device_push_tokens`, `user_notifications` ve `user_notification_preferences` kayıtları veritabanından kalıcı olarak silinir.
-3. **Kentsel Olay Bütünlüğü:**
-   - Şehir güvenliği ve kamu yararı gereği, kullanıcının geçmişte bildirdiği kentsel olay kayıtları (yol çökmesi, su arızası, kaza vb.) haritadan silinmez; yazar kimliği `"Anonim Vatandaş"` olarak korunur.
-4. **Medya Temizliği & Hata Toleransı:**
-   - Onaylanmamış veya taslak fotoğraflar MinIO/S3'ten temizlenir. MinIO geçici olarak kapalı olsa dahi veritabanı tutarlılığı korunur, talep `FAILED` olarak işaretlenir ve `retryFailedDeletions` mekanizması ile azami 5 defa yeniden denenir.
+3. **Kentsel Olay Bütünlüğü & Taslak Veri Arındırma:**
+   - **Kamusal Olaylar:** Şehir güvenliği ve kamu yararı gereği, geçmişte onaylanmış kentsel olay kayıtları (yol çökmesi, su arızası, kaza vb.) haritadan silinmez; yazar kimliği `"Anonim Vatandaş"` olarak korunur.
+   - **Taslak Olaylar:** Kullanıcının henüz onaylanmamış (`PENDING_REVIEW`, `REJECTED`) bildirimleri kişisel verilerden arındırılır (`title = 'Kişisel Veriden Arındırılmış Bildirim'`, açıklama metni maskelenir).
+4. **Transactional Outbox İzolasyonu:**
+   - Hesap silindiği anda kullanıcının bekleyen tüm Outbox bildirim görevleri iptal edilir (`status = FAILED`), push tokenları silinir ve kullanıcıya istenmeyen bildirim gitmesi engellenir.
+5. **Gerçek MinIO Fiziksel Temizliği & Hata Toleransı:**
+   - Kullanıcının onaylanmamış veya taslak fotoğrafları MinIO nesne deposundan fiziksel olarak silinir (`getObject` 404 doğrulaması).
+   - MinIO geçici erişim hatası aldığında veritabanı tutarlılığı korunur, talep `FAILED` olarak işaretlenir ve `AccountDeletionProcessorService` tarafından azami 5 defaya kadar yeniden denenir. 5 denemeyi aşan kayıtlar Dead-Letter kritik uyarısı üretir.
 
 ---
 

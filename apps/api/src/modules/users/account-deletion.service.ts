@@ -209,6 +209,27 @@ export class AccountDeletionService {
 
         // 5. Bildirim tercihlerini temizle
         await manager.delete(UserNotificationPreferenceEntity, { userId });
+
+        // 5.1 Onaylanmamış veya taslak kentsel olayları kişisel verilerden arındır (KVKK / Privacy Hardening)
+        const [sanitizedRows] = await manager.query(
+          `UPDATE "events" 
+           SET "title" = 'Kişisel Veriden Arındırılmış Bildirim', 
+               "description" = 'Bu bildirim kullanıcı hesabının silinmesi üzerine kişisel verilerden arındırılmıştır.'
+           WHERE "authorId" = $1 AND "status" IN ('PENDING_REVIEW', 'REJECTED')
+           RETURNING id;`,
+          [userId],
+        );
+        auditDetails.eventsSanitized = Array.isArray(sanitizedRows) ? sanitizedRows.length : 0;
+
+        // 5.2 Silinen kullanıcıya ait bekleyen Outbox görevlerini iptal et (Outbox İzolasyonu)
+        const [cancelledRows] = await manager.query(
+          `UPDATE "outbox_events" 
+           SET "status" = 'FAILED', "last_error" = 'Kullanıcı hesabı silindiği için görev iptal edildi'
+           WHERE "status" = 'PENDING' AND "payload"->>'userId' = $1
+           RETURNING id;`,
+          [userId],
+        );
+        auditDetails.outboxCancelled = Array.isArray(cancelledRows) ? cancelledRows.length : 0;
       });
 
       // 6. WebSocket Oturum İzolasyonu (Gerçek zamanlı bağlantıları sonlandır)

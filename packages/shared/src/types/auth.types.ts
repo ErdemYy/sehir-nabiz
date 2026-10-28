@@ -38,6 +38,7 @@ export interface JwtPayload {
   sub: string;
   email: string;
   role: UserRole;
+  accountStatus?: AccountStatus;
   iat?: number;
   exp?: number;
 }
