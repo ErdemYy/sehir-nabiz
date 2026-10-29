@@ -9,6 +9,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { UserRole } from '@sehir-nabiz/shared';
+import * as crypto from 'crypto';
 import type { Request } from 'express';
 
 @Injectable()
@@ -20,17 +21,42 @@ export class DiagnosticsGuard implements CanActivate {
     @Optional() private readonly jwtService?: JwtService,
   ) {}
 
+  /**
+   * Zamanlama saldırılarını (timing attack) önlemek için sabit zamanlı string karşılaştırması
+   */
+  private timingSafeCompare(a: string, b: string): boolean {
+    const bufA = Buffer.from(a, 'utf8');
+    const bufB = Buffer.from(b, 'utf8');
+    if (bufA.length !== bufB.length) {
+      return false;
+    }
+    return crypto.timingSafeEqual(bufA, bufB);
+  }
+
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<Request>();
-    const expectedSecret =
-      this.configService?.get<string>('DIAGNOSTICS_SECRET') ||
-      process.env.DIAGNOSTICS_SECRET ||
-      'staging_internal_diagnostics_secret_token_2026!';
+    const nodeEnv =
+      this.configService?.get<string>('NODE_ENV') ||
+      process.env.NODE_ENV ||
+      'development';
 
-    // 1. Secret Key Başlığı Denetimi (x-diagnostics-key)
+    const secretEnv =
+      this.configService?.get<string>('DIAGNOSTICS_SECRET') ||
+      process.env.DIAGNOSTICS_SECRET;
+
+    // 1. Secret Key Başlığı Denetimi (x-diagnostics-key) & Secret Rotation Desteği
     const headerKey = req.headers['x-diagnostics-key'];
-    if (headerKey && headerKey === expectedSecret) {
-      return true;
+    if (headerKey && typeof headerKey === 'string' && secretEnv) {
+      // Virgülle ayrılmış çoklu secret desteği (Zero-downtime secret rotation)
+      const validSecrets = secretEnv
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+
+      const isSecretValid = validSecrets.some(sec => this.timingSafeCompare(headerKey, sec));
+      if (isSecretValid) {
+        return true;
+      }
     }
 
     // 2. JWT Bearer Token & ADMIN Rolü Denetimi
@@ -57,7 +83,7 @@ export class DiagnosticsGuard implements CanActivate {
       }
     }
 
-    // 3. Dahili Ağ / Localhost İzin Kontrolü (Opsiyonel konfigürasyon ile)
+    // 3. Dahili Ağ / Localhost İzin Kontrolü (Yalnızca geliştirme/test ortamında açıkça etkinleştirilmişse)
     const clientIp =
       (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
       req.socket.remoteAddress ||
@@ -70,12 +96,13 @@ export class DiagnosticsGuard implements CanActivate {
       clientIp === 'localhost';
 
     const allowInternal = process.env.ALLOW_INTERNAL_DIAGNOSTICS === 'true';
-    if (isLoopback && allowInternal) {
+    if (isLoopback && allowInternal && nodeEnv !== 'production') {
       return true;
     }
 
+    // 4. Log Sanitization: Asla token, secret veya hassas başlık içeriğini loglama
     this.logger.warn(
-      `Yetkisiz diagnostics erişim denemesi: IP=${clientIp}, HasToken=${Boolean(authHeader)}, HasSecret=${Boolean(headerKey)}`,
+      `Yetkisiz diagnostics erişim denemesi: IP=${clientIp || 'unknown'}, HasAuth=${Boolean(authHeader)}, HasSecretHeader=${Boolean(headerKey)}`,
     );
 
     throw new ForbiddenException(

@@ -1,16 +1,17 @@
 # ŞehirNabız — Staging Güvenlik ve Ağ Denetim Listesi (STAGING_SECURITY_CHECKLIST.md)
 
-**Faz:** Phase 15 — Account Deletion Verification, Privacy Hardening & Staging Readiness  
-**Tarih:** 28 Ekim 2026  
-**Durum:** Denetlendi ve Doğrulandı  
+**Faz:** Phase 17 — Distributed Reliability, Outbox Delivery Assurance & Deployment Hardening  
+**Tarih:** 29 Ekim 2026  
+**Durum:** Denetlendi ve Doğrulandı (Phase 17 Sertleştirmeleri Uygulandı)  
 
 ---
 
 ## 1. Ağ ve İletişim Güvenliği
 
-- [x] **Ters Vekil (Reverse Proxy) Yalıtımı:** PostgreSQL (`5432`), Redis (`6379`) ve NestJS API (`3000`) portları dış dünyaya kapalıdır. Yalnızca Nginx portları (`80`, `443`) dış trafiği karşılar.
+- [x] **Yerel Ağ Yalıtımı ve 127.0.0.1 Bind (Phase 17):** Staging Nginx portları `0.0.0.0` yerine kesin olarak `127.0.0.1:80` ve `127.0.0.1:443`'e bağlanmıştır. Aynı yerel ağdaki (Wi-Fi/LAN) yabancı cihazların staging ortamına erişmesi engellenmiştir.
+- [x] **İç Altyapı Port İzolasyonu:** PostgreSQL (`5432`), Redis (`6379`), MinIO (`9000`) ve NestJS API (`3000`) portları Docker ana makinesine (host) ASLA expose edilmez; yalnızca izole staging bridge ağı içinde konuşurlar.
 - [x] **Trusted Proxy ve Gerçek İstemci IP'si:** Nginx, `X-Forwarded-For` ve `X-Real-IP` başlıklarını ekler. NestJS `TRUSTED_PROXY_IPS` ile yalnızca iç Docker bridge ağındaki proxy isteklerine güvenir; IP sahteciliği (spoofing) engellenir.
-- [x] **CORS İzin Listesi:** Geliştirme ortamındaki gevşek CORS kuralları kaldırılmış; `CORS_ORIGIN` ve `WEBSOCKET_CORS_ORIGIN` değişkenleri ile yalnızca yetkili staging etki alanlarına izin verilmiştir.
+- [x] **CORS İzin Listesi:** Geliştirme ortamındaki gevşek CORS kuralları kaldırılmış; `CORS_ORIGIN` ve `WEBSOCKET_CORS_ORIGIN` değişkenleri ile yalnızca yetkili staging etki alanlarına izin verilmiştir. Üretimde wildcard (`*`) fail-closed kuralıyla engellenmiştir.
 - [x] **WebSocket Orijin Doğrulaması:** `/realtime` soket el sıkışmasında (handshake) CORS ve Origin eşleşmesi denetlenir.
 
 ---
@@ -43,7 +44,11 @@
 
 ---
 
-## 5. Operasyonel Görünürlük ve Veri Gizliliği (Zero-PII)
+## 5. Teşhis, Hazırlık ve Altyapı Bilgi Sızması Koruması (Phase 17)
 
-- [x] **Teşhis Uç Noktası Koruması:** `GET /health/diagnostics` uç noktası genel internete kapalıdır; yalnızca dahili IP bloklarından (`127.0.0.1`, `172.16.0.0/12`) erişilebilir.
+- [x] **Kamuya Açık Readiness Ayrımı (`GET /health/ready`):** Kamusal istemcilere (Nginx arkasından gelen istekler) iç altyapı bileşenleri (PostgreSQL bağlantı durumu, Redis ping süresi, MinIO disk bilgisi) ASLA ifşa edilmez. Kamuya yalnızca `{ status: "ok", timestamp: "..." }` yanıtı dönülür.
+- [x] **Dahili Teşhis Koruması (`DiagnosticsGuard`):** `GET /health/diagnostics` uç noktası genel internete kapalıdır. Yalnızca `ADMIN` rolü veya `x-diagnostics-key` gizli anahtarı ile erişilebilir.
+- [x] **Timing Attack Koruması:** Gizli anahtar doğrulaması `crypto.timingSafeEqual` ile zamanlama saldırılarına karşı korunmuştur.
+- [x] **Sıfır Kesintili Secret Rotasyonu:** `DIAGNOSTICS_SECRET` virgülle ayrılmış birden fazla geçerli anahtarı kabul eder; anahtar değişiminde kesinti yaşanmaz.
+- [x] **Log Sanitizasyonu:** Günlük kayıtlarında `x-diagnostics-key` veya hassas kimlik başlıkları maskelenir (`[REDACTED]`).
 - [x] **Sıfır PII Metrikleri:** Diagnostics çıktısında kullanıcı adı, e-posta, koordinat veya olay başlığı kesinlikle yer almaz; yalnızca sistem sağlık durumları ve sayısal kuyruk metrikleri sunulur.

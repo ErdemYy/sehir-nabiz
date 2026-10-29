@@ -1,8 +1,8 @@
 # ŞehirNabız — Bilinen Sorunlar ve Teknik Borç Envanteri (Known Issues)
 
-**Tarih:** 28 Ekim 2026  
-**Faz:** Phase 16 — Staging Dry-Run, Load Testing, Security Verification & Production Hardening  
-**Son Durum:** Yerel Staging Ortamı ve Yük Testleri Tamamlandı; Üretim Öncesi Kalan Blockerlar Açıkça Belgelendi  
+**Tarih:** 29 Ekim 2026  
+**Faz:** Phase 17 — Distributed Reliability, Outbox Delivery Assurance & Deployment Hardening  
+**Son Durum:** Dağıtık Outbox Güvencesi, Çoklu Instance Gerçek Zamanlı Dağıtım ve Dağıtım Sertleştirmesi Tamamlandı  
 
 ---
 
@@ -19,7 +19,7 @@ Bu belge, ŞehirNabız projesinde mevcut bilinen sınırları, ertelenen maddele
 #### 1. Fiziksel Cihaz Donanım Doğrulaması Yapılmadı
 - **Açıklama:** Uygulama Expo Dev Client, Metro bundler ve simülatör/web ortamlarında test edilmiştir. Farklı ekran boyutlarına, GPU yongalarına (Adreno, Mali) ve RAM kısıtlarına sahip gerçek fiziksel Android ve iOS cihazlarında kapsamlı alan testleri henüz gerçekleştirilmemiştir.
 - **Risk:** Eski donanımlı Android cihazlarda MapLibre GPU yükü altında FPS düşüşü veya batarya tüketimi yaşanabilir.
-- **Çözüm Planı:** Faz 17 veya mağaza yayını öncesinde fiziksel Android ve iOS cihazlarında termal ve bellek profillemesi (Android Studio Profiler / Xcode Instruments) yapılmalıdır.
+- **Çözüm Planı:** Faz 18 veya mağaza yayını öncesinde fiziksel Android ve iOS cihazlarında termal ve bellek profillemesi (Android Studio Profiler / Xcode Instruments) yapılmalıdır.
 - **Geçici Çözüm:** Beta testleri kontrollü simülatör veya yüksek güçlü test cihazlarıyla sınırlandırılmalıdır.
 
 #### 2. Bağımsız Android APK / AAB ve iOS IPA Üretimi Ertelendi
@@ -37,23 +37,39 @@ Bu belge, ŞehirNabız projesinde mevcut bilinen sınırları, ertelenen maddele
 
 ---
 
-### 🟢 Çözülen Blockerlar ve İyileştirmeler (Phase 14, 15 & 16)
+### 🟢 Çözülen Blockerlar ve İyileştirmeler (Phase 14, 15, 16 & 17)
+
+#### [ÇÖZÜLDÜ - Phase 17] Redis Kesintisinde Outbox Teslimat Semantiği & Güvence Mimarisi
+- 5 bağımsız teslimat kanalı ayrıştırıldı (`inAppNotification`, `websocketBroadcast`, `redisPubSub`, `pushNotification`, `cacheInvalidation`).
+- `inAppNotification` zorunlu kılındı; DB hatasında Outbox ASLA `PROCESSED` yapılmaz, exponential backoff ile tekrar denenir.
+- Redis kesintisinde yerel soket yayını korunur, kanal `DEGRADED` olarak işaretlenir ve veri kaybı önlenir.
+- `idempotencyKey` koruması ile worker crash sonrası mükerrer bildirim riski tamamen ortadan kaldırıldı.
+
+#### [ÇÖZÜLDÜ - Phase 17] Çoklu API Instance (Dual-Instance) Socket.IO & Redis Adapter Doğrulaması
+- Port 3181 ve 3182 üzerinde iki bağımsız instance ile gerçek Redis adapter üzerinden çapraz yayın (4 ms teslimat gecikmesi) doğrulandı.
+- Oda bazlı izolasyon (kullanıcıya özel odalar ve moderatör odası yetkilendirmesi) ve failover reconnect kanıtlandı.
+- WebSocket-only ve Polling taşıma ayrımı ile Nginx `ip_hash` sticky-session gereksinimi analiz edildi ve belgelendi.
+
+#### [ÇÖZÜLDÜ - Phase 17] Yerel Reverse Proxy Port Güvenliği (127.0.0.1 Bind)
+- Staging Nginx portları `0.0.0.0` yerine strictly `127.0.0.1:80` ve `127.0.0.1:443`'e bağlandı.
+- PostgreSQL, Redis ve MinIO portları Docker host'una kapatıldı; yerel ağ sızıntısı engellendi.
+
+#### [ÇÖZÜLDÜ - Phase 17] Kamuya Açık Readiness Bilgi Sızıntısının Kapatılması
+- `GET /health/ready` uç noktasında kamusal istemcilere iç altyapı topology ayrıntılarının dönülmesi engellendi; yalnızca `{ status: "ok" }` sunuluyor.
+- `GET /health/diagnostics` uç noktası `crypto.timingSafeEqual` timing attack koruması, sıfır kesintili virgüllü secret rotasyonu ve log sanitizasyonu ile sertleştirildi.
+
+#### [ÇÖZÜLDÜ - Phase 17] TCKN ve Sabit Hatları Kapsayan Gelişmiş PiiScrubber & Regex Sınır Yönetimi
+- `PiiScrubber` sınıfı ile Türkiye cep telefonları, sabit hatları, 11 haneli TCKN ve e-posta adresleri maskelendi; koordinat ve tarih false-positive koruması sağlandı.
+- Regex sınırları (açık adresler, şahıs adları) belgelenerek ihbar, gizleme, silme ve inceleme kuyruğu ile güvence altına alındı.
+
+#### [ÇÖZÜLDÜ - Phase 17] Canlı Üretime Yönelik Fail-Closed Ortam Doğrulayıcısı
+- `NODE_ENV === 'production'` modunda localhost DB/Redis/S3, zayıf/varsayılan parolalar ve wildcard CORS'a karşı API'nin başlamasını engelleyen fail-closed doğrulayıcı (`env.validation.ts`) devreye alındı.
 
 #### [ÇÖZÜLDÜ - Phase 16] Yerel Staging Mimarisinin Fiilen Çalıştırılması (Dry-Run)
-- İzole Docker staging ortamı (Nginx, API, PostgreSQL 16/PostGIS, Redis, MinIO) dev konteynerlerine zarar vermeden ayağa kaldırıldı, tüm migration'lar çalıştırıldı ve 12 adımlı yaşam döngüsü E2E testi başarıyla tamamlandı.
+- İzole Docker staging ortamı ayağa kaldırıldı, tüm migration'lar çalıştırıldı ve 12 adımlı yaşam döngüsü E2E testi başarıyla tamamlandı.
 
 #### [ÇÖZÜLDÜ - Phase 16] WebSocket Yük ve PostGIS Performans Doğrulaması
-- 50'den 500'e kadar eşzamanlı WebSocket bağlantısı test edildi (%100 başarı, p95: 108ms).
-- 1.000 tohum olay ile PostGIS BBox sorgusu (0.45 ms GIST indeks taraması) ve analitik benchmark'ları tamamlandı.
-
-#### [ÇÖZÜLDÜ - Phase 16] Diagnostics Uç Noktası Güvenlik Kalkanı
-- `GET /health/diagnostics` verileri `DiagnosticsGuard` ile admin rolü ve `x-diagnostics-key` şartına bağlandı; yetkisiz erişimler 403 ile engellendi.
-
-#### [ÇÖZÜLDÜ - Phase 16] Hesap Silme İptal Güvenliği ve Süresi Dolan Token Kurtarması
-- Access token süresi dolmuş kullanıcının silme iptali için `POST /auth/reauthenticate-deletion` kısıtlı oturumu tasarlandı. Parola hash uyumluluğu (Bcrypt) doğrulandı.
-
-#### [ÇÖZÜLDÜ - Phase 16] Kamusal Olaylarda Metin İçi Kişisel Veri Arındırma (PII Scrubbing)
-- Hesap silme sırasında kullanıcının `ACTIVE`/`RESOLVED` olaylarının açıklamasındaki telefon numaraları ve e-postalar regex ile `[Telefon Gizlendi]` ve `[E-posta Gizlendi]` şeklinde maskelendi.
+- 500 eşzamanlı WebSocket bağlantısı test edildi (%100 başarı, p95: 108ms). PostGIS BBox sorgusu 0.45 ms ile tamamlandı.
 
 #### [ÇÖZÜLDÜ - Phase 14 & 15] Gerçek MinIO Fiziksel Medya Temizliği ve @AllowPendingDeletion Kalkanı
 - Gerçek S3 nesnelerinin fiziksel olarak silindiği ve 404 NoSuchKey döndüğü E2E ile kanıtlandı.

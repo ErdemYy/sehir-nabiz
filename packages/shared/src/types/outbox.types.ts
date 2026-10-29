@@ -19,12 +19,30 @@ export enum OutboxEventType {
   EVENT_FEEDBACK_SUBMITTED = 'EVENT_FEEDBACK_SUBMITTED',
 }
 
+export type DeliveryChannelState =
+  | 'PENDING'
+  | 'DELIVERED'
+  | 'FAILED'
+  | 'DEGRADED'
+  | 'SKIPPED'
+  | 'SIMULATED';
+
+export interface OutboxChannelDeliveries {
+  inAppNotification?: DeliveryChannelState;
+  websocketBroadcast?: DeliveryChannelState;
+  redisPubSub?: DeliveryChannelState;
+  pushNotification?: DeliveryChannelState;
+  cacheInvalidation?: DeliveryChannelState;
+  processedAt?: string;
+  error?: string | null;
+}
+
 export interface OutboxEventDto {
   id: string;
   aggregateType: string;
   aggregateId: string;
   eventType: OutboxEventType | string;
-  payload: Record<string, unknown>;
+  payload: Record<string, unknown> & { _channelDeliveries?: OutboxChannelDeliveries };
   status: OutboxStatus;
   attempts: number;
   nextAttemptAt: string;

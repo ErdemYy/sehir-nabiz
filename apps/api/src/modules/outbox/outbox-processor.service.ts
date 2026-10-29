@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { OutboxEventEntity } from '../../database/entities/outbox-event.entity';
-import { NotificationType, EventStatus } from '@sehir-nabiz/shared';
+import { NotificationType, EventStatus, OutboxChannelDeliveries } from '@sehir-nabiz/shared';
 import { RealtimeService } from '../realtime/realtime.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { RedisService } from '../redis/redis.service';
@@ -151,8 +151,19 @@ export class OutboxProcessorService implements OnModuleInit, OnModuleDestroy {
    * Tekil outbox kaydını güvenli bir şekilde tüketiciye iletir
    */
   async processSingleEvent(event: OutboxEventEntity): Promise<void> {
+    let channelDeliveries: OutboxChannelDeliveries = {
+      inAppNotification: 'SKIPPED',
+      websocketBroadcast: 'SKIPPED',
+      redisPubSub: 'SKIPPED',
+      pushNotification: 'SKIPPED',
+      cacheInvalidation: 'SKIPPED',
+    };
+
     try {
-      await this.dispatchToHandlers(event);
+      await this.dispatchToHandlers(event, channelDeliveries);
+      channelDeliveries.processedAt = new Date().toISOString();
+      if (!event.payload) event.payload = {};
+      event.payload._channelDeliveries = channelDeliveries;
 
       // Başarılı: PROCESSED olarak işaretle
       await this.dataSource.query(
@@ -171,6 +182,11 @@ export class OutboxProcessorService implements OnModuleInit, OnModuleDestroy {
     } catch (err: any) {
       const errorMsg = err?.message || 'Bilinmeyen outbox işleme hatası';
       this.logger.warn(`[Outbox Worker] Olay işleme hatası (ID=${event.id}, Attempt=${event.attempts}): ${errorMsg}`);
+
+      channelDeliveries.error = errorMsg;
+      channelDeliveries.processedAt = new Date().toISOString();
+      if (!event.payload) event.payload = {};
+      event.payload._channelDeliveries = channelDeliveries;
 
       if (event.attempts >= this.maxAttempts) {
         // Dead-letter / Kalıcı Başarısızlık
@@ -210,15 +226,37 @@ export class OutboxProcessorService implements OnModuleInit, OnModuleDestroy {
   /**
    * EventType'a göre ilgili domain servislerini (WebSocket, Notifications, Redis Cache) tetikler
    */
-  private async dispatchToHandlers(event: OutboxEventEntity): Promise<void> {
+  private async dispatchToHandlers(
+    event: OutboxEventEntity,
+    deliveries: OutboxChannelDeliveries = {
+      inAppNotification: 'SKIPPED',
+      websocketBroadcast: 'SKIPPED',
+      redisPubSub: 'SKIPPED',
+      pushNotification: 'SKIPPED',
+      cacheInvalidation: 'SKIPPED',
+    },
+  ): Promise<OutboxChannelDeliveries> {
     const { eventType, payload, id: outboxId } = event;
 
     switch (eventType) {
       case 'EVENT_CREATED': {
         if (payload.event) {
-          this.realtimeService?.notifyModerationQueue(payload.event);
+          try {
+            this.realtimeService?.notifyModerationQueue(payload.event);
+            deliveries.websocketBroadcast = 'DELIVERED';
+          } catch (wsErr) {
+            deliveries.websocketBroadcast = 'FAILED';
+            this.logger.warn(`[Outbox Worker] Moderasyon kuyruğu WebSocket uyarısı: ${(wsErr as Error).message}`);
+          }
+
           if (payload.event.status === EventStatus.ACTIVE) {
-            this.realtimeService?.broadcastEventCreated(payload.event);
+            try {
+              this.realtimeService?.broadcastEventCreated(payload.event);
+              deliveries.websocketBroadcast = 'DELIVERED';
+            } catch (wsErr) {
+              deliveries.websocketBroadcast = 'FAILED';
+              this.logger.warn(`[Outbox Worker] broadcastEventCreated uyarısı: ${(wsErr as Error).message}`);
+            }
           }
         }
         break;
@@ -235,12 +273,21 @@ export class OutboxProcessorService implements OnModuleInit, OnModuleDestroy {
         const eventTitle = payload.title || updatedEvent?.title || 'Kentsel Olay';
         const reason = payload.reason;
 
-        // 1. Gerçek zamanlı WebSocket yayını
+        // 1. Gerçek zamanlı WebSocket yayını (Best-effort: geçici ağ kopmalarında REST reconciliation korur)
         if (updatedEvent) {
-          this.realtimeService?.broadcastEventStatusChanged(updatedEvent);
+          try {
+            this.realtimeService?.broadcastEventStatusChanged(updatedEvent);
+            deliveries.websocketBroadcast = 'DELIVERED';
+            deliveries.redisPubSub = this.redisService?.isReady ? 'DELIVERED' : 'DEGRADED';
+          } catch (wsErr) {
+            deliveries.websocketBroadcast = 'FAILED';
+            deliveries.redisPubSub = 'FAILED';
+            this.logger.warn(`[Outbox Worker] WebSocket durum yayını uyarısı: ${(wsErr as Error).message}`);
+          }
         }
 
-        // 2. İdempotent Kullanıcı Bildirimi
+        // 2. İdempotent Kullanıcı Bildirimi (ZORUNLU - MANDATORY)
+        // Eğer veritabanına bildirim yazılamazsa bu hata yakalanmaz, yukarı fırlatılır ve outbox retry eder.
         if (this.notificationsService && authorId) {
           let notifType = NotificationType.SYSTEM;
           let title = 'Olay Durumu Güncellendi';
@@ -264,42 +311,66 @@ export class OutboxProcessorService implements OnModuleInit, OnModuleDestroy {
             body = `"${eventTitle}" başlıklı olay hakkında ihtilaf kaydı oluşturuldu.`;
           }
 
-          await this.notificationsService.createNotification({
-            userId: authorId,
-            type: notifType,
-            title,
-            body,
-            eventId: event.aggregateId,
-            idempotencyKey: `outbox:${outboxId}:${authorId}`,
-          });
+          try {
+            await this.notificationsService.createNotification({
+              userId: authorId,
+              type: notifType,
+              title,
+              body,
+              eventId: event.aggregateId,
+              idempotencyKey: `outbox:${outboxId}:${authorId}`,
+            });
+            deliveries.inAppNotification = 'DELIVERED';
+            deliveries.pushNotification = 'DELIVERED';
+          } catch (notifErr: any) {
+            deliveries.inAppNotification = 'FAILED';
+            deliveries.pushNotification = 'FAILED';
+            // ZORUNLU KANAL HATASI: Outbox PROCESSED yapılmamalı, hata yukarı fırlatılmalı
+            throw notifErr;
+          }
         }
 
-        // 3. İstatistik Redis Önbellek Temizliği (Cache Invalidation)
-        if (this.redisService?.isReady && (newStatus === EventStatus.ACTIVE || newStatus === EventStatus.RESOLVED)) {
-          try {
-            const client = (this.redisService as any).client;
-            if (client) {
-              const keys = await client.keys('stats:overview:*');
-              if (keys && keys.length > 0) {
-                await client.del(...keys);
-                this.logger.debug(`[Outbox Worker] İstatistik önbelleği temizlendi (${keys.length} anahtar)`);
+        // 3. İstatistik Redis Önbellek Temizliği (Cache Invalidation - Best Effort / Graceful Degradation)
+        if (newStatus === EventStatus.ACTIVE || newStatus === EventStatus.RESOLVED) {
+          if (this.redisService?.isReady) {
+            try {
+              const client = (this.redisService as any).client;
+              if (client) {
+                const keys = await client.keys('stats:overview:*');
+                if (keys && keys.length > 0) {
+                  await client.del(...keys);
+                  this.logger.debug(`[Outbox Worker] İstatistik önbelleği temizlendi (${keys.length} anahtar)`);
+                }
+                deliveries.cacheInvalidation = 'DELIVERED';
               }
+            } catch (cacheErr) {
+              deliveries.cacheInvalidation = 'DEGRADED';
+              this.logger.warn(`[Outbox Worker] Önbellek temizleme uyarısı (Graceful Degradation): ${(cacheErr as Error).message}`);
             }
-          } catch (cacheErr) {
-            this.logger.warn(`[Outbox Worker] Önbellek temizleme uyarısı: ${(cacheErr as Error).message}`);
+          } else {
+            deliveries.cacheInvalidation = 'DEGRADED';
+            this.logger.warn(`[Outbox Worker] Redis çevrimdışı, önbellek temizleme DEGRADED olarak işaretlendi.`);
           }
         }
         break;
       }
 
       case 'EVENT_FEEDBACK_SUBMITTED': {
-        this.realtimeService?.broadcastFeedbackUpdated({
-          id: event.aggregateId,
-          confirmationCount: payload.confirmationCount ?? 0,
-          disputeCount: payload.disputeCount ?? payload.denialCount ?? 0,
-          resolvedReportCount: payload.resolvedReportCount ?? 0,
-          reliabilityScore: 1.0,
-        });
+        try {
+          this.realtimeService?.broadcastFeedbackUpdated({
+            id: event.aggregateId,
+            confirmationCount: payload.confirmationCount ?? 0,
+            disputeCount: payload.disputeCount ?? payload.denialCount ?? 0,
+            resolvedReportCount: payload.resolvedReportCount ?? 0,
+            reliabilityScore: 1.0,
+          });
+          deliveries.websocketBroadcast = 'DELIVERED';
+          deliveries.redisPubSub = this.redisService?.isReady ? 'DELIVERED' : 'DEGRADED';
+        } catch (wsErr) {
+          deliveries.websocketBroadcast = 'FAILED';
+          deliveries.redisPubSub = 'FAILED';
+          this.logger.warn(`[Outbox Worker] Geri bildirim WebSocket uyarısı: ${(wsErr as Error).message}`);
+        }
 
         if (this.notificationsService && payload.eventAuthorId && payload.voterId !== payload.eventAuthorId) {
           const feedbackType = payload.feedbackType;
@@ -314,14 +385,22 @@ export class OutboxProcessorService implements OnModuleInit, OnModuleDestroy {
             body = `Bir vatandaş olayınız hakkında itiraz bildiriminde bulundu.`;
           }
 
-          await this.notificationsService.createNotification({
-            userId: payload.eventAuthorId,
-            type: feedbackType === 'DISPUTE' ? NotificationType.EVENT_DISPUTED : NotificationType.EVENT_FEEDBACK,
-            title,
-            body,
-            eventId: event.aggregateId,
-            idempotencyKey: `outbox:${outboxId}:${payload.eventAuthorId}`,
-          });
+          try {
+            await this.notificationsService.createNotification({
+              userId: payload.eventAuthorId,
+              type: feedbackType === 'DISPUTE' ? NotificationType.EVENT_DISPUTED : NotificationType.EVENT_FEEDBACK,
+              title,
+              body,
+              eventId: event.aggregateId,
+              idempotencyKey: `outbox:${outboxId}:${payload.eventAuthorId}`,
+            });
+            deliveries.inAppNotification = 'DELIVERED';
+            deliveries.pushNotification = 'DELIVERED';
+          } catch (notifErr: any) {
+            deliveries.inAppNotification = 'FAILED';
+            deliveries.pushNotification = 'FAILED';
+            throw notifErr;
+          }
         }
         break;
       }
@@ -329,5 +408,7 @@ export class OutboxProcessorService implements OnModuleInit, OnModuleDestroy {
       default:
         this.logger.warn(`[Outbox Worker] Tanımlanamayan eventType: ${eventType}`);
     }
+
+    return deliveries;
   }
 }

@@ -1,8 +1,8 @@
 {
   "AGENTS.md": {
-    "mtime": 1793171480.3085375,
-    "seen": 1793171981.0619857,
-    "ast_hash": "a0f6e9db5043598fda38c84854f09b75",
+    "mtime": 1793273322.1330462,
+    "seen": 1793273388.5340507,
+    "ast_hash": "3280f21d10bb67b74e56c7f6e5dde6ba",
     "semantic_hash": ""
   },
   "docs/architecture/ARCHITECTURE.md": {
@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "apps/api/src/config/env.validation.ts": {
-    "mtime": 1793187066.7374146,
-    "seen": 1793189676.1027715,
-    "ast_hash": "5908cd9706cd352ab488fb127d896452",
+    "mtime": 1793272638.4979868,
+    "seen": 1793273388.4646752,
+    "ast_hash": "ae81c3b53da9b98f80d373d8e46548f9",
     "semantic_hash": ""
   },
   "apps/api/src/main.ts": {
@@ -72,9 +72,9 @@
     "semantic_hash": ""
   },
   "apps/api/src/modules/health/health.controller.ts": {
-    "mtime": 1793187117.1413982,
-    "seen": 1793189676.1240828,
-    "ast_hash": "d4ab5fed70a2f9c454d2731ef8e45a88",
+    "mtime": 1793271681.1578963,
+    "seen": 1793273388.477795,
+    "ast_hash": "cd640bbf0c65ae62991d3920eee18aff",
     "semantic_hash": ""
   },
   "apps/api/src/modules/health/health.module.ts": {
@@ -1914,9 +1914,9 @@
     "semantic_hash": ""
   },
   "apps/api/src/modules/outbox/outbox-processor.service.ts": {
-    "mtime": 1793122402.8445647,
-    "seen": 1793122704.7535424,
-    "ast_hash": "a72277bc8dc6c26f7cd645179e87bd18",
+    "mtime": 1793272480.2363021,
+    "seen": 1793273388.4843862,
+    "ast_hash": "726b0ee98f607f0b31a1fc045e390172",
     "semantic_hash": ""
   },
   "apps/api/src/modules/outbox/outbox.module.ts": {
@@ -1968,9 +1968,9 @@
     "semantic_hash": ""
   },
   "packages/shared/src/types/outbox.types.ts": {
-    "mtime": 1793120869.9280677,
-    "seen": 1793122704.7550502,
-    "ast_hash": "b047f334de31442e0eb3f050f311b70b",
+    "mtime": 1793271112.3395307,
+    "seen": 1793273388.5325377,
+    "ast_hash": "324fdae6a0e88c773672f4570a1b850d",
     "semantic_hash": ""
   },
   "docs/PERFORMANCE_BENCHMARKS.md": {
@@ -2028,9 +2028,9 @@
     "semantic_hash": ""
   },
   "docs/KNOWN_ISSUES.md": {
-    "mtime": 1793171445.3911011,
-    "seen": 1793171981.0619857,
-    "ast_hash": "3694ad3636509e15e1fad0c5a7756262",
+    "mtime": 1793273288.9908617,
+    "seen": 1793273388.537584,
+    "ast_hash": "4f325f31bf8e3370ecdf1570457cd5b0",
     "semantic_hash": ""
   },
   "docs/MOBILE_UX_AUDIT.md": {
@@ -2052,9 +2052,9 @@
     "semantic_hash": ""
   },
   "docs/BETA_RELEASE_GATE.md": {
-    "mtime": 1793171468.204958,
-    "seen": 1793171981.0619857,
-    "ast_hash": "6dccf3527a9b160579bc5a3d014e301b",
+    "mtime": 1793273313.622199,
+    "seen": 1793273388.5365765,
+    "ast_hash": "80133b034e32475f5b7a35bcb956b0bd",
     "semantic_hash": ""
   },
   "docs/DATA_RETENTION_AND_DELETION.md": {
@@ -2118,9 +2118,9 @@
     "semantic_hash": ""
   },
   "apps/api/src/modules/users/account-deletion.service.ts": {
-    "mtime": 1793187196.085135,
-    "seen": 1793189676.141514,
-    "ast_hash": "68a913de33c83c377c21fa2e8f66dab3",
+    "mtime": 1793271789.9475012,
+    "seen": 1793273388.4896314,
+    "ast_hash": "769fbba4236ca64bfe92d31422afec86",
     "semantic_hash": ""
   },
   "apps/api/test/phase_14_account_deletion.e2e-spec.ts": {
@@ -2208,9 +2208,9 @@
     "semantic_hash": ""
   },
   "docker-compose.staging.yml": {
-    "mtime": 1793187834.4944108,
-    "seen": 1793189676.213174,
-    "ast_hash": "88db3660f2a7b4be9eb7c5fc4daa625e",
+    "mtime": 1793271585.2020366,
+    "seen": 1793273388.5350862,
+    "ast_hash": "802c05677f0c811ee29b758335f6efbf",
     "semantic_hash": ""
   },
   "docs/ACCOUNT_DELETION_VERIFICATION.md": {
@@ -2238,15 +2238,15 @@
     "semantic_hash": ""
   },
   "docs/STAGING_SECURITY_CHECKLIST.md": {
-    "mtime": 1793171400.2250493,
-    "seen": 1793171981.0619857,
-    "ast_hash": "f2191adf142b549981c2ea345ab35e7a",
+    "mtime": 1793273207.73322,
+    "seen": 1793273388.544515,
+    "ast_hash": "3034ce8fc59b991c665e29bb28f7d1e6",
     "semantic_hash": ""
   },
   "apps/api/src/modules/health/guards/diagnostics.guard.ts": {
-    "mtime": 1793187089.6148605,
-    "seen": 1793189676.1236668,
-    "ast_hash": "8c0de7f71c97a7503249bb6a30377f00",
+    "mtime": 1793271651.5186658,
+    "seen": 1793273388.477795,
+    "ast_hash": "12312a4b19402f517b9b800af447e329",
     "semantic_hash": ""
   },
   "apps/api/test/outbox_worker_stress.spec.ts": {
@@ -2268,15 +2268,9 @@
     "semantic_hash": ""
   },
   "apps/api/test/staging_lifecycle.e2e-spec.ts": {
-    "mtime": 1793189581.7754061,
-    "seen": 1793189676.147571,
-    "ast_hash": "180bc0db8292dce4aaf5e20d7a7d5e5c",
-    "semantic_hash": ""
-  },
-  "apps/api/test/websocket_load.bench-spec.ts": {
-    "mtime": 1793188416.5944698,
-    "seen": 1793189676.1490843,
-    "ast_hash": "1bcf736d0c6f7aad69d443502b8a4fd9",
+    "mtime": 1793270759.073019,
+    "seen": 1793273388.4936953,
+    "ast_hash": "222598b5cc4d317ca84f39c63197ecca",
     "semantic_hash": ""
   },
   "apps/api/test/websocket_load.spec.ts": {
@@ -2289,6 +2283,90 @@
     "mtime": 1793188378.0838678,
     "seen": 1793189676.2096455,
     "ast_hash": "a0f7b474a3baa017d31b3d95d9b65825",
+    "semantic_hash": ""
+  },
+  "apps/api/src/common/utils/pii-scrubber.util.ts": {
+    "mtime": 1793272397.988564,
+    "seen": 1793273388.4646752,
+    "ast_hash": "24ac11ef202ed44bcdd86f8b5a2b45b8",
+    "semantic_hash": ""
+  },
+  "apps/api/test/phase_17_distributed_reliability.spec.ts": {
+    "mtime": 1793272941.348413,
+    "seen": 1793273388.4936953,
+    "ast_hash": "62eaa4d4083e343d6690bfd646b2b13a",
+    "semantic_hash": ""
+  },
+  "apps/api/test/phase_17_multi_instance_socket.spec.ts": {
+    "mtime": 1793272960.320526,
+    "seen": 1793273388.4936953,
+    "ast_hash": "7d252b677de2e8c20d3eb53a0137c4f7",
+    "semantic_hash": ""
+  },
+  "docs/ACCOUNT_DELETION_SECURITY_REVIEW.md": {
+    "mtime": 1793189760.9481268,
+    "seen": 1793273388.5358183,
+    "ast_hash": "daf95ae32ddd1ff07d0f84b7cbb6ed4d",
+    "semantic_hash": ""
+  },
+  "docs/DIAGNOSTICS_SECURITY.md": {
+    "mtime": 1793189716.0190299,
+    "seen": 1793273388.537584,
+    "ast_hash": "347c9e9f1547741cb681f4bf199274df",
+    "semantic_hash": ""
+  },
+  "docs/DISTRIBUTED_DELIVERY_ARCHITECTURE.md": {
+    "mtime": 1793272848.9944744,
+    "seen": 1793273388.537584,
+    "ast_hash": "adb22bf79126155a884db8bb62705ae2",
+    "semantic_hash": ""
+  },
+  "docs/LOAD_TEST_RESULTS.md": {
+    "mtime": 1793189807.7073877,
+    "seen": 1793273388.537584,
+    "ast_hash": "8a23e378805537009f33d100fa6edc4b",
+    "semantic_hash": ""
+  },
+  "docs/MULTI_INSTANCE_REALTIME_TESTS.md": {
+    "mtime": 1793273147.8436084,
+    "seen": 1793273388.537584,
+    "ast_hash": "7842f28b17d39ecbfed34461c9e65146",
+    "semantic_hash": ""
+  },
+  "docs/OUTBOX_FAILURE_RECOVERY.md": {
+    "mtime": 1793273112.436778,
+    "seen": 1793273388.537584,
+    "ast_hash": "560583d37693adee4cfeb6a370fb2336",
+    "semantic_hash": ""
+  },
+  "docs/PHASE_16_REPORT.md": {
+    "mtime": 1793189956.8073099,
+    "seen": 1793273388.5401368,
+    "ast_hash": "9dfe4af427a04a8469839fe5120fc6fc",
+    "semantic_hash": ""
+  },
+  "docs/PHASE_17_REPORT.md": {
+    "mtime": 1793273367.776247,
+    "seen": 1793273388.5401368,
+    "ast_hash": "5dd2fa29a4ed6ce07532fa9fd0c4681f",
+    "semantic_hash": ""
+  },
+  "docs/PRIVACY_CONTENT_RETENTION.md": {
+    "mtime": 1793273242.7518716,
+    "seen": 1793273388.5435083,
+    "ast_hash": "6180f9b3e7badae484f59e43d8b74e60",
+    "semantic_hash": ""
+  },
+  "docs/PRODUCTION_CONFIGURATION_AUDIT.md": {
+    "mtime": 1793273173.5321887,
+    "seen": 1793273388.5435083,
+    "ast_hash": "54293a11c924971efcd55a285e365bbb",
+    "semantic_hash": ""
+  },
+  "docs/STAGING_VALIDATION_REPORT.md": {
+    "mtime": 1793189848.41658,
+    "seen": 1793273388.544515,
+    "ast_hash": "a2830f2f6fd030c0cb0f8bcb18d0ab3d",
     "semantic_hash": ""
   }
 }

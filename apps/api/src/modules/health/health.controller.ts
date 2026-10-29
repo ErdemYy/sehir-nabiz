@@ -1,4 +1,5 @@
-import { Controller, Get, Optional, Inject, Logger, UseGuards } from '@nestjs/common';
+import { Controller, Get, Optional, Inject, Logger, UseGuards, Req } from '@nestjs/common';
+import type { Request } from 'express';
 import type { HealthCheckResponse } from '@sehir-nabiz/shared';
 import { DataSource } from 'typeorm';
 import { RedisService } from '../redis/redis.service';
@@ -8,9 +9,9 @@ import { DiagnosticsGuard } from './guards/diagnostics.guard';
 
 export interface ReadinessResponse {
   status: 'ok' | 'degraded' | 'error';
-  database: 'connected' | 'disconnected';
-  redis: 'connected' | 'disconnected';
-  storage: 'connected' | 'disconnected';
+  database?: 'connected' | 'disconnected';
+  redis?: 'connected' | 'disconnected';
+  storage?: 'connected' | 'disconnected';
   timestamp: string;
 }
 
@@ -65,7 +66,7 @@ export class HealthController {
   }
 
   @Get('ready')
-  async getReadiness(): Promise<ReadinessResponse> {
+  async getReadiness(@Req() req?: Request): Promise<ReadinessResponse> {
     const isDbConnected = Boolean(this.dataSource?.isInitialized);
     const isRedisConnected = Boolean(this.redisService?.isReady);
 
@@ -83,6 +84,19 @@ export class HealthController {
       status = 'error';
     } else if (!isRedisConnected || !isStorageConnected) {
       status = 'degraded';
+    }
+
+    // Bilgi ifşasını önleme (Information Leakage Prevention):
+    // Kamusal ters vekil üzerinden gelen isteklere altyapı bileşenleri (DB, Redis, S3)
+    // ifşa edilmez; yalnızca üst düzey 'status' döndürülür.
+    const hasDiagnosticsKey = req?.headers?.['x-diagnostics-key'] || req?.headers?.['x-internal-token'];
+    const isExternalPublic = Boolean(req?.headers?.['x-forwarded-for']) && !hasDiagnosticsKey;
+
+    if (isExternalPublic) {
+      return {
+        status,
+        timestamp: new Date().toISOString(),
+      };
     }
 
     return {

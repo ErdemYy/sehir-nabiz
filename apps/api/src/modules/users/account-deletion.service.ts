@@ -20,6 +20,7 @@ import {
   type AccountDeletionResponseDto,
   type AccountDeletionStatusDto,
 } from '@sehir-nabiz/shared';
+import { PiiScrubber } from '../../common/utils/pii-scrubber.util';
 import {
   UserEntity,
   AccountDeletionRequestEntity,
@@ -221,25 +222,22 @@ export class AccountDeletionService {
         );
         auditDetails.eventsSanitized = Array.isArray(sanitizedRows) ? sanitizedRows.length : 0;
 
-        // 5.1.b Kamuya açık (ACTIVE, RESOLVED) olaylardaki kişisel iletişim bilgilerini (telefon, e-posta) temizle
-        const activeEvents: Array<{ id: string; description: string }> = await manager.query(
-          `SELECT "id", "description" FROM "events" 
+        // 5.1.b Kamuya açık (ACTIVE, RESOLVED) olaylardaki kişisel verileri (telefon, e-posta, TCKN) temizle
+        const activeEvents: Array<{ id: string; title: string; description: string }> = await manager.query(
+          `SELECT "id", "title", "description" FROM "events" 
            WHERE "authorId" = $1 AND "status" IN ('ACTIVE', 'RESOLVED');`,
           [userId],
         );
         let piiScrubbedCount = 0;
         for (const ev of activeEvents) {
-          if (ev.description) {
-            const scrubbed = ev.description
-              .replace(/(?:\+?90|0)?\s*[1-9]\d{2}[\s.-]?\d{3}[\s.-]?\d{2}[\s.-]?\d{2}/g, '[Telefon Gizlendi]')
-              .replace(/[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/g, '[E-posta Gizlendi]');
-            if (scrubbed !== ev.description) {
-              await manager.query(
-                `UPDATE "events" SET "description" = $1 WHERE "id" = $2;`,
-                [scrubbed, ev.id],
-              );
-              piiScrubbedCount++;
-            }
+          const scrubbedDesc = PiiScrubber.scrub(ev.description);
+          const scrubbedTitle = PiiScrubber.scrub(ev.title);
+          if (scrubbedDesc !== ev.description || scrubbedTitle !== ev.title) {
+            await manager.query(
+              `UPDATE "events" SET "title" = $1, "description" = $2 WHERE "id" = $3;`,
+              [scrubbedTitle, scrubbedDesc, ev.id],
+            );
+            piiScrubbedCount++;
           }
         }
         auditDetails.activeEventsPiiScrubbed = piiScrubbedCount;

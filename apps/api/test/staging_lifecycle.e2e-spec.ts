@@ -364,7 +364,7 @@ describe('Phase 16 — Canlı Staging Dry-Run ve 12 Adımlı Uçtan Uca Yaşam D
 
     // Kullanıcının hesabı DELETED durumunda olmalı
     const userStatusCheck = execSync(
-      `docker exec sehir_nabiz_staging_postgres psql -U sehir_nabiz_staging_user -d sehir_nabiz_staging -t -A -c "SELECT account_status FROM users WHERE id = '${citizenUserId}';"`,
+      `docker exec sehir_nabiz_staging_postgres psql -U sehir_nabiz_staging_user -d sehir_nabiz_staging -t -A -c "SELECT \\"accountStatus\\" FROM users WHERE id = '${citizenUserId}';"`,
     ).toString().trim();
     expect(userStatusCheck).toBe('DELETED');
   });
