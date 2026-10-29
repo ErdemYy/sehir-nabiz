@@ -1,8 +1,8 @@
 {
   "AGENTS.md": {
-    "mtime": 1793273322.1330462,
-    "seen": 1793273388.5340507,
-    "ast_hash": "3280f21d10bb67b74e56c7f6e5dde6ba",
+    "mtime": 1793275184.7288587,
+    "seen": 1793275235.0478597,
+    "ast_hash": "345d02ba737bedb6c6471892942dec04",
     "semantic_hash": ""
   },
   "docs/architecture/ARCHITECTURE.md": {
@@ -102,8 +102,8 @@
     "semantic_hash": ""
   },
   "apps/mobile/app.json": {
-    "mtime": 1793125520.400162,
-    "seen": 1793125994.6606667,
+    "mtime": 1793274982.8064563,
+    "seen": 1793275235.0057533,
     "ast_hash": "4d755e9e292f1bc3a08d0bcab8104734",
     "semantic_hash": ""
   },
@@ -126,9 +126,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/package.json": {
-    "mtime": 1793170845.535618,
-    "seen": 1793171324.7429373,
-    "ast_hash": "a6edf26e03583189b2b759fd5450068d",
+    "mtime": 1793274958.9206946,
+    "seen": 1793275235.0098479,
+    "ast_hash": "878937908d39e6d99571ec5feb4f3fc7",
     "semantic_hash": ""
   },
   "apps/mobile/src/components/ErrorBoundary.tsx": {
@@ -1446,9 +1446,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/app/events/[id].tsx": {
-    "mtime": 1793112033.5326064,
-    "seen": 1793112506.591634,
-    "ast_hash": "4a2479bd23bfc1da21e7d52f98f01f54",
+    "mtime": 1793274643.5721586,
+    "seen": 1793275235.0077696,
+    "ast_hash": "400a17ad889b8c9f382b63f4551f86a7",
     "semantic_hash": ""
   },
   "apps/mobile/app/moderation/index.tsx": {
@@ -1794,21 +1794,21 @@
     "semantic_hash": ""
   },
   "apps/mobile/app/profile/my-events.tsx": {
-    "mtime": 1793118010.124981,
-    "seen": 1793118394.0275538,
-    "ast_hash": "31c1210b7f69328ea1f78e3f8a99f2eb",
+    "mtime": 1793274843.7139025,
+    "seen": 1793275235.0087745,
+    "ast_hash": "15a65004cec78662227a3bd790c96e9b",
     "semantic_hash": ""
   },
   "apps/mobile/app/profile/settings.tsx": {
-    "mtime": 1793171132.0154235,
-    "seen": 1793171324.7429373,
-    "ast_hash": "6c17fd76bf41e6383f64624391ba4e67",
+    "mtime": 1793274780.8250613,
+    "seen": 1793275235.0087745,
+    "ast_hash": "4fc9c6693c2d60daf6a4778116e9f0a7",
     "semantic_hash": ""
   },
   "apps/mobile/app/stats/index.tsx": {
-    "mtime": 1793118074.7976398,
-    "seen": 1793118394.0275538,
-    "ast_hash": "591e26f81b7d9735281e6a8c83b864cc",
+    "mtime": 1793274688.277841,
+    "seen": 1793275235.0087745,
+    "ast_hash": "bc18b8f10f881ed1516746825f4743c8",
     "semantic_hash": ""
   },
   "apps/mobile/src/features/search/hooks/useSearchEvents.ts": {
@@ -2028,9 +2028,9 @@
     "semantic_hash": ""
   },
   "docs/KNOWN_ISSUES.md": {
-    "mtime": 1793273288.9908617,
-    "seen": 1793273388.537584,
-    "ast_hash": "4f325f31bf8e3370ecdf1570457cd5b0",
+    "mtime": 1793275143.2713625,
+    "seen": 1793275235.051346,
+    "ast_hash": "d7aaecef1ab7d8f75efd02ff9bcaea98",
     "semantic_hash": ""
   },
   "docs/MOBILE_UX_AUDIT.md": {
@@ -2052,9 +2052,9 @@
     "semantic_hash": ""
   },
   "docs/BETA_RELEASE_GATE.md": {
-    "mtime": 1793273313.622199,
-    "seen": 1793273388.5365765,
-    "ast_hash": "80133b034e32475f5b7a35bcb956b0bd",
+    "mtime": 1793275174.1560242,
+    "seen": 1793275235.0493069,
+    "ast_hash": "bbda94a547d21118e00a32afea0a8cca",
     "semantic_hash": ""
   },
   "docs/DATA_RETENTION_AND_DELETION.md": {
@@ -2367,6 +2367,42 @@
     "mtime": 1793189848.41658,
     "seen": 1793273388.544515,
     "ast_hash": "a2830f2f6fd030c0cb0f8bcb18d0ab3d",
+    "semantic_hash": ""
+  },
+  "apps/mobile/metro.config.js": {
+    "mtime": 1793274519.469738,
+    "seen": 1793275235.0098479,
+    "ast_hash": "234c086e7ab67c3cfce6f69e57706a17",
+    "semantic_hash": ""
+  },
+  "apps/mobile/test/phase_18a_build_readiness.test.js": {
+    "mtime": 1793274942.7669575,
+    "seen": 1793275235.0366538,
+    "ast_hash": "0d68056b846c7bd8df32e452a19b0e9e",
+    "semantic_hash": ""
+  },
+  "docs/ANDROID_BUILD_READINESS.md": {
+    "mtime": 1793275044.420019,
+    "seen": 1793275235.0493069,
+    "ast_hash": "dbc3d48c1b4376db9ef3abcf00ffd74c",
+    "semantic_hash": ""
+  },
+  "docs/DEVICE_NETWORK_SETUP.md": {
+    "mtime": 1793275061.7586703,
+    "seen": 1793275235.0503144,
+    "ast_hash": "cea42076a668f9ee106ea3b0a00e6687",
+    "semantic_hash": ""
+  },
+  "docs/MOBILE_VISUAL_QA_PLAN.md": {
+    "mtime": 1793275086.2416692,
+    "seen": 1793275235.0516725,
+    "ast_hash": "019c70c22707fa59f0da903b5a4f671f",
+    "semantic_hash": ""
+  },
+  "docs/PHASE_18A_REPORT.md": {
+    "mtime": 1793275212.4423416,
+    "seen": 1793275235.0516725,
+    "ast_hash": "b3248546bf4d3819b3d39cf18cc651d2",
     "semantic_hash": ""
   }
 }

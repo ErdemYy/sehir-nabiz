@@ -9,6 +9,7 @@ import {
   TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ChevronLeft,
   Sun,
@@ -37,6 +38,7 @@ import { useNotificationPreferences } from '../../src/features/notifications';
 
 export default function SettingsScreen(): React.ReactElement {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { theme, spacing, radii, themeMode, setThemeMode } = useAppTheme();
   const { isAuthenticated, accessToken, getValidAccessToken, logout } = useAuthStore();
   const { preferences, updatePreferences, isUpdating } = useNotificationPreferences();
@@ -118,7 +120,7 @@ export default function SettingsScreen(): React.ReactElement {
   };
 
   return (
-    <AppScreen scrollable contentContainerStyle={{ paddingBottom: 60 }}>
+    <AppScreen scrollable contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 32, 60) }}>
       {/* Üst Navigasyon */}
       <View
         style={{

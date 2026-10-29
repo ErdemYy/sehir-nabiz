@@ -7,6 +7,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   BarChart3,
   MapPin,
@@ -49,9 +50,10 @@ export default function StatsScreen(): React.ReactElement {
   );
 
   const screenWidth = Dimensions.get('window').width;
+  const insets = useSafeAreaInsets();
 
   return (
-    <AppScreen scrollable contentContainerStyle={{ paddingBottom: 60 }}>
+    <AppScreen scrollable contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 32, 60) }}>
       {/* Özel Başlık ve Geri Dön Butonu */}
       <View
         style={{

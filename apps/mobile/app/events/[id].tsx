@@ -233,7 +233,7 @@ export default function EventDetailScreen(): React.ReactElement {
         }
       />
 
-      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: 60 }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: Math.max(insets.bottom + 32, 60) }}>
         {/* Başarılı İşlem Bildirimi */}
         {successBanner ? (
           <AppCard

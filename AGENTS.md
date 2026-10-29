@@ -133,3 +133,4 @@ sehir-nabiz/
 | **Phase 15**| Hesap Silme Doğrulama, Gizlilik Sertleştirmesi & Staging Hazırlığı | **Tamamlandı** |
 | **Phase 16**| Staging Dry-Run, Load Testing, Security Verification & Production Hardening | **Tamamlandı** |
 | **Phase 17**| Distributed Reliability, Outbox Delivery Assurance & Deployment Hardening | **Tamamlandı** |
+| **Phase 18A**| Android Native Build Readiness & Mobile Visual QA | **Tamamlandı** |

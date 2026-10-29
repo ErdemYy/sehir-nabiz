@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ChevronLeft,
   AlertCircle,
@@ -37,6 +38,7 @@ const STATUS_FILTERS: { label: string; value: EventStatus | 'ALL' }[] = [
 
 export default function MyEventsScreen(): React.ReactElement {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { theme, spacing, radii } = useAppTheme();
   const { isAuthenticated } = useAuthStore();
   const [authModalVisible, setAuthModalVisible] = useState(false);
@@ -51,7 +53,7 @@ export default function MyEventsScreen(): React.ReactElement {
   const events = data?.items || [];
 
   return (
-    <AppScreen scrollable contentContainerStyle={{ paddingBottom: 60 }}>
+    <AppScreen scrollable contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 32, 60) }}>
       {/* Üst Navigasyon */}
       <View
         style={{

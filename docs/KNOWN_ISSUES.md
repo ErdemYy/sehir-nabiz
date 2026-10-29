@@ -1,8 +1,8 @@
 # ŞehirNabız — Bilinen Sorunlar ve Teknik Borç Envanteri (Known Issues)
 
 **Tarih:** 29 Ekim 2026  
-**Faz:** Phase 17 — Distributed Reliability, Outbox Delivery Assurance & Deployment Hardening  
-**Son Durum:** Dağıtık Outbox Güvencesi, Çoklu Instance Gerçek Zamanlı Dağıtım ve Dağıtım Sertleştirmesi Tamamlandı  
+**Faz:** Phase 18A — Android Native Build Readiness & Mobile Visual QA  
+**Son Durum:** Android Native Derleme Hazırlığı, Metro Monorepo ve Mobil Görsel Kalite Denetimi Tamamlandı  
 
 ---
 
@@ -19,64 +19,58 @@ Bu belge, ŞehirNabız projesinde mevcut bilinen sınırları, ertelenen maddele
 #### 1. Fiziksel Cihaz Donanım Doğrulaması Yapılmadı
 - **Açıklama:** Uygulama Expo Dev Client, Metro bundler ve simülatör/web ortamlarında test edilmiştir. Farklı ekran boyutlarına, GPU yongalarına (Adreno, Mali) ve RAM kısıtlarına sahip gerçek fiziksel Android ve iOS cihazlarında kapsamlı alan testleri henüz gerçekleştirilmemiştir.
 - **Risk:** Eski donanımlı Android cihazlarda MapLibre GPU yükü altında FPS düşüşü veya batarya tüketimi yaşanabilir.
-- **Çözüm Planı:** Faz 18 veya mağaza yayını öncesinde fiziksel Android ve iOS cihazlarında termal ve bellek profillemesi (Android Studio Profiler / Xcode Instruments) yapılmalıdır.
+- **Çözüm Planı:** Faz 18B'de üretilecek ilk test APK'sı ile fiziksel Android telefon üzerinde termal ve bellek profillemesi (Android Studio Profiler) yapılmalıdır.
 - **Geçici Çözüm:** Beta testleri kontrollü simülatör veya yüksek güçlü test cihazlarıyla sınırlandırılmalıdır.
 
 #### 2. Bağımsız Android APK / AAB ve iOS IPA Üretimi Ertelendi
-- **Açıklama:** Kapsam sınırları uyarınca APK/AAB/IPA oluşturulmamış, mağazalara gönderilmemiştir.
+- **Açıklama:** Kapsam sınırları uyarınca henüz bağımsız APK/AAB/IPA oluşturulmamış, mağazalara gönderilmemiştir.
 - **Risk:** Üretim (production) derleme bayraklarında ProGuard veya Hermes bytecode optimizasyonlarından kaynaklanan beklenmedik kütüphane çakışmaları oluşabilir.
-- **Çözüm Planı:** EAS Build veya yerel Gradle pipeline (`cd apps/mobile/android && ./gradlew assembleRelease`) çalıştırılarak imzalı ilk paketler üretilmelidir.
+- **Çözüm Planı:** Faz 18B'de `eas build --platform android --profile preview` veya yerel Gradle pipeline (`cd apps/mobile/android && ./gradlew assembleRelease`) çalıştırılarak imzalı ilk paket üretilmelidir.
 
-#### 3. Gerçek Push Bildirim (FCM / APNs) Canlı Teslimatı Ertelendi
+#### 3. EAS Proje Kimliği (`extra.eas.projectId`) ve Oturumu Eksik
+- **Açıklama:** `apps/mobile/app.json` dosyasında `extra.eas.projectId` tanımlı değildir ve ortamda aktif bir EAS CLI oturumu bulunmamaktadır.
+- **Risk:** `eas build` komutu proje kimliği ve kullanıcı kimlik doğrulaması olmadan çalıştırılamaz.
+- **Çözüm Planı:** Faz 18B'de `npx eas login` ile giriş yapılmalı ve `npx eas init` ile proje kimliği oluşturulup `app.json`'a yazılmalıdır.
+
+#### 4. Gerçek Push Bildirim (FCM / APNs) Canlı Teslimatı Ertelendi
 - **Açıklama:** Push bildirim veritabanı şeması, token kaydı, outbox entegrasyonu ve geliştirici simülasyon adaptörü hazırdır; ancak Apple Developer Program ve Google Firebase Cloud Messaging canlı üretim sertifikaları / anahtarları henüz yüklenmemiştir.
 - **Risk:** Uygulama kapalıyken (arka planda) kullanıcının kilit ekranına bildirim düşmesi fiziksel olarak doğrulanamamıştır.
 - **Çözüm Planı:** Canlı sunucu ortam değişkenlerine `FIREBASE_SERVICE_ACCOUNT` ve `APNS_KEY_ID` tanımlanarak uçtan uca bildirim iletimi test edilmelidir.
 
-#### 4. Canlı API ve Web Alan Adı DNS/SSL Kurulumu
+#### 5. Canlı API ve Web Alan Adı DNS/SSL Kurulumu
 - **Açıklama:** Üretim HTTPS API (`api.sehirnabiz.com`) DNS/SSL provizyonu yapılmamıştır. Staging reverse proxy yapılandırması (`docker/staging/nginx.conf`) ve `.env.staging` yerel kendinden imzalı sertifikayla doğrulanmış ancak harici canlı sunucuya kurulmamıştır.
 
 ---
 
-### 🟢 Çözülen Blockerlar ve İyileştirmeler (Phase 14, 15, 16 & 17)
+### 🟢 Çözülen Blockerlar ve İyileştirmeler (Phase 14 - 18A)
+
+#### [ÇÖZÜLDÜ - Phase 18A] Android Native Derleme Hazırlığı & Metro Monorepo Yapılandırması
+- MapLibre Native 11.5.0 plugin ve Gradle ayarları doğrulandı.
+- `apps/mobile/metro.config.js` oluşturularak monorepo kök dizini izleme (`watchFolders`) ve `nodeModulesPaths` pnpm çözümleme sıralaması güvenceye alındı.
+- `expo-doctor` ile 18/20 kontrol doğrulandı; Prebuild ve patch sürümleri belgelendi.
+
+#### [ÇÖZÜLDÜ - Phase 18A] Presigned S3/MinIO İmza Güvenliği & LAN Rehberi
+- S3 AWS V4 HMAC imzasının `Host` başlığına bağlı olduğu, istemci tarafında URL mutasyonunun imza hatası (`403 SignatureDoesNotMatch`) doğuracağı tespit edilerek backend `STORAGE_ENDPOINT` LAN IP hizalama politikası belgelendi.
+- WebSocket `/realtime` soket adresinin API base URL'sinden otomatik türetildiği kanıtlandı.
+
+#### [ÇÖZÜLDÜ - Phase 18A] Mobil Bağımsız Ekranlarda Safe Area Standardizasyonu
+- Olay Detayı (`/events/[id]`), İstatistikler (`/stats`), Ayarlar (`/profile/settings`) ve Olaylarım (`/profile/my-events`) ekranlarında gesture navigation bar'ı için `Math.max(insets.bottom + 32, 60)` alt kenar payı standardı uygulandı.
 
 #### [ÇÖZÜLDÜ - Phase 17] Redis Kesintisinde Outbox Teslimat Semantiği & Güvence Mimarisi
-- 5 bağımsız teslimat kanalı ayrıştırıldı (`inAppNotification`, `websocketBroadcast`, `redisPubSub`, `pushNotification`, `cacheInvalidation`).
-- `inAppNotification` zorunlu kılındı; DB hatasında Outbox ASLA `PROCESSED` yapılmaz, exponential backoff ile tekrar denenir.
-- Redis kesintisinde yerel soket yayını korunur, kanal `DEGRADED` olarak işaretlenir ve veri kaybı önlenir.
-- `idempotencyKey` koruması ile worker crash sonrası mükerrer bildirim riski tamamen ortadan kaldırıldı.
+- 5 bağımsız teslimat kanalı ayrıştırıldı; `inAppNotification` zorunlu kılındı. Redis kesintisinde yerel yayın korunarak `DEGRADED` durumu uygulandı. `idempotencyKey` ile worker crash sonrası mükerrer bildirim riski sıfırlandı.
 
 #### [ÇÖZÜLDÜ - Phase 17] Çoklu API Instance (Dual-Instance) Socket.IO & Redis Adapter Doğrulaması
-- Port 3181 ve 3182 üzerinde iki bağımsız instance ile gerçek Redis adapter üzerinden çapraz yayın (4 ms teslimat gecikmesi) doğrulandı.
-- Oda bazlı izolasyon (kullanıcıya özel odalar ve moderatör odası yetkilendirmesi) ve failover reconnect kanıtlandı.
-- WebSocket-only ve Polling taşıma ayrımı ile Nginx `ip_hash` sticky-session gereksinimi analiz edildi ve belgelendi.
+- Çift API instance'ı ile gerçek Redis adapter üzerinden çapraz yayın (4 ms teslimat gecikmesi) ve failover reconnect doğrulandı.
 
-#### [ÇÖZÜLDÜ - Phase 17] Yerel Reverse Proxy Port Güvenliği (127.0.0.1 Bind)
-- Staging Nginx portları `0.0.0.0` yerine strictly `127.0.0.1:80` ve `127.0.0.1:443`'e bağlandı.
-- PostgreSQL, Redis ve MinIO portları Docker host'una kapatıldı; yerel ağ sızıntısı engellendi.
+#### [ÇÖZÜLDÜ - Phase 17] Reverse Proxy 127.0.0.1 Bind ve Readiness Bilgi Sızıntısı Engeli
+- Nginx portları strictly `127.0.0.1:80/443`'e bağlandı; kamusal `/health/ready` iç altyapı ifşası kapatıldı; timing-safe secret rotasyonu sağlandı.
 
-#### [ÇÖZÜLDÜ - Phase 17] Kamuya Açık Readiness Bilgi Sızıntısının Kapatılması
-- `GET /health/ready` uç noktasında kamusal istemcilere iç altyapı topology ayrıntılarının dönülmesi engellendi; yalnızca `{ status: "ok" }` sunuluyor.
-- `GET /health/diagnostics` uç noktası `crypto.timingSafeEqual` timing attack koruması, sıfır kesintili virgüllü secret rotasyonu ve log sanitizasyonu ile sertleştirildi.
-
-#### [ÇÖZÜLDÜ - Phase 17] TCKN ve Sabit Hatları Kapsayan Gelişmiş PiiScrubber & Regex Sınır Yönetimi
-- `PiiScrubber` sınıfı ile Türkiye cep telefonları, sabit hatları, 11 haneli TCKN ve e-posta adresleri maskelendi; koordinat ve tarih false-positive koruması sağlandı.
-- Regex sınırları (açık adresler, şahıs adları) belgelenerek ihbar, gizleme, silme ve inceleme kuyruğu ile güvence altına alındı.
-
-#### [ÇÖZÜLDÜ - Phase 17] Canlı Üretime Yönelik Fail-Closed Ortam Doğrulayıcısı
-- `NODE_ENV === 'production'` modunda localhost DB/Redis/S3, zayıf/varsayılan parolalar ve wildcard CORS'a karşı API'nin başlamasını engelleyen fail-closed doğrulayıcı (`env.validation.ts`) devreye alındı.
-
-#### [ÇÖZÜLDÜ - Phase 16] Yerel Staging Mimarisinin Fiilen Çalıştırılması (Dry-Run)
-- İzole Docker staging ortamı ayağa kaldırıldı, tüm migration'lar çalıştırıldı ve 12 adımlı yaşam döngüsü E2E testi başarıyla tamamlandı.
-
-#### [ÇÖZÜLDÜ - Phase 16] WebSocket Yük ve PostGIS Performans Doğrulaması
-- 500 eşzamanlı WebSocket bağlantısı test edildi (%100 başarı, p95: 108ms). PostGIS BBox sorgusu 0.45 ms ile tamamlandı.
-
-#### [ÇÖZÜLDÜ - Phase 14 & 15] Gerçek MinIO Fiziksel Medya Temizliği ve @AllowPendingDeletion Kalkanı
-- Gerçek S3 nesnelerinin fiziksel olarak silindiği ve 404 NoSuchKey döndüğü E2E ile kanıtlandı.
+#### [ÇÖZÜLDÜ - Phase 16] Yerel Staging Mimarisinin Fiilen Çalıştırılması (Dry-Run) & Yük Testi
+- İzole Docker staging ortamı ayağa kaldırıldı, 500 eşzamanlı WebSocket bağlantısı test edildi (%100 başarı).
 
 ---
 
 ### 🟠 High (Yüksek Öncelikli İyileştirmeler)
 
-#### 5. Web Tarayıcılarında MapLibre WebGL Uyumluluğu
+#### 6. Web Tarayıcılarında MapLibre WebGL Uyumluluğu
 - **Açıklama:** Proje birincil olarak mobil odaklıdır (React Native + Expo). Masaüstü tarayıcılarda (`pnpm run web`) MapLibre native modülü yerine canvas veya fallback katmanı gerekmektedir.
