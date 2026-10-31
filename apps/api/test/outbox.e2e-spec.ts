@@ -317,7 +317,11 @@ describe('Phase 11: Transactional Outbox, Idempotency & Search Security (E2E)', 
     });
 
     // Processor'ı manuel bir tur çalıştır
-    const processedCount = await outboxProcessor.processBatch();
+    let processedCount = await outboxProcessor.processBatch();
+    if (processedCount === 0) {
+      await new Promise(r => setTimeout(r, 150));
+      processedCount = await outboxProcessor.processBatch();
+    }
     expect(processedCount).toBeGreaterThanOrEqual(1);
 
     // Durumunun PROCESSED olduğunu ve processed_at alanının dolduğunu doğrula

@@ -18,11 +18,22 @@ build/
 
 # Environment variables
 .env
+.env.*
 .env.staging
 .env.local
 .env.*.local
 !.env.example
 !.env.staging.example
+!.env.*.example
+
+# Private credentials and distribution artifacts
+*.keystore
+*.pem
+credentials.json
+service-account*.json
+*.apk
+*.aab
+coverage/
 
 # Local SSL certificates
 docker/staging/ssl/*.crt

@@ -13,7 +13,8 @@
         "gradleCommand": ":app:assembleDebug"
       },
       "ios": {
-        "simulator": true
+        "simulator": true,
+        "scheme": "SehirNabiz"
       },
       "env": {
         "EXPO_PUBLIC_APP_ENV": "development",
@@ -23,12 +24,28 @@
     "preview": {
       "distribution": "internal",
       "channel": "preview",
+      "developmentClient": false,
       "android": {
         "buildType": "apk"
       },
       "env": {
         "EXPO_PUBLIC_APP_ENV": "staging",
-        "EXPO_PUBLIC_ENABLE_DEMO_MODE": "false"
+        "EXPO_PUBLIC_ENABLE_DEMO_MODE": "false",
+        "EXPO_PUBLIC_API_URL": "http://172.2.0.130:3001/api/v1"
+      }
+    },
+    "ios-simulator": {
+      "distribution": "internal",
+      "channel": "preview",
+      "developmentClient": false,
+      "ios": {
+        "simulator": true,
+        "scheme": "SehirNabiz"
+      },
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "staging",
+        "EXPO_PUBLIC_ENABLE_DEMO_MODE": "false",
+        "EXPO_PUBLIC_API_URL": "http://172.2.0.130:3001/api/v1"
       }
     },
     "production": {

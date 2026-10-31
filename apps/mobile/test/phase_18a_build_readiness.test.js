@@ -50,6 +50,7 @@ describe('Phase 18A — Android Native Build Readiness & Mobile Visual QA', () =
     // Preview profili (İç test / QA)
     assert.strictEqual(easJson.build.preview.distribution, 'internal', 'Preview internal dağıtımlı olmalı');
     assert.strictEqual(easJson.build.preview.android.buildType, 'apk', 'Preview APK çıktısı üretmeli');
+    assert.strictEqual(easJson.build.preview.developmentClient, false, 'Preview developmentClient false olmalı');
 
     // Production profili
     assert.strictEqual(easJson.build.production.android.buildType, 'app-bundle', 'Production AAB çıktısı üretmeli');

@@ -18,7 +18,9 @@ export interface MobileEnv {
 export function getApiBaseUrl(): string {
   const customUrl = process.env.EXPO_PUBLIC_API_URL;
   const appEnv = (process.env.EXPO_PUBLIC_APP_ENV as MobileEnv['appEnv']) || 'development';
-  const isProd = appEnv === 'production' || (!__DEV__ && process.env.NODE_ENV === 'production');
+  const isProd =
+    appEnv === 'production' ||
+    (!process.env.EXPO_PUBLIC_APP_ENV && !__DEV__ && process.env.NODE_ENV === 'production');
 
   if (customUrl) {
     const trimmed = customUrl.trim();
@@ -27,7 +29,8 @@ export function getApiBaseUrl(): string {
       trimmed.includes('127.0.0.1') ||
       trimmed.includes('10.0.2.2') ||
       trimmed.startsWith('http://192.168.') ||
-      trimmed.startsWith('http://10.');
+      trimmed.startsWith('http://10.') ||
+      trimmed.startsWith('http://172.');
 
     if (isProd && isLocalhostOrLoopback) {
       console.error(

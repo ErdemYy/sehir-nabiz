@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "ŞehirNabız",
+    "name": "SehirNabiz",
     "slug": "sehir-nabiz",
     "version": "0.1.0",
     "orientation": "portrait",
@@ -21,6 +21,8 @@
       "bundleIdentifier": "com.sehirnabiz.app",
       "buildNumber": "1",
       "infoPlist": {
+        "CFBundleDisplayName": "ŞehirNabız",
+        "ITSAppUsesNonExemptEncryption": false,
         "NSLocationWhenInUseUsageDescription": "ŞehirNabız, harita üzerinde çevrenizdeki olayları göstermek ve konumunuza yakın bildirimlerde bulunmanızı sağlamak için konum izni gerektirir.",
         "NSPhotoLibraryUsageDescription": "ŞehirNabız, bildirdiğiniz olaya fotoğraf ekleyebilmeniz için galerinize erişim izni gerektirir.",
         "NSCameraUsageDescription": "ŞehirNabız, olayı doğrudan fotoğraflayabilmeniz için kamera erişim izni gerektirir."
@@ -71,6 +73,17 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "f69b5cd2-90cb-430a-b4fe-1b18aabe3636"
+      }
+    },
+    "owner": "erdem0w"
   }
 }

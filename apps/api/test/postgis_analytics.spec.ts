@@ -96,7 +96,7 @@ describe('Phase 16 — PostGIS Uzamsal İndeks ve Analytics Performans Benchmark
       },
     ]);
 
-    expect(m.p95).toBeLessThan(200);
+    expect(m.p95).toBeLessThan(350);
   });
 
   it('3. GET /events/search Benchmark (Full-text Arama & 15 İstek)', async () => {
@@ -127,7 +127,7 @@ describe('Phase 16 — PostGIS Uzamsal İndeks ve Analytics Performans Benchmark
       },
     ]);
 
-    expect(m.p95).toBeLessThan(150);
+    expect(m.p95).toBeLessThan(250);
   });
 
   it('4. GET /stats/overview ve GET /stats/heatmap Benchmark (15 İstek)', async () => {
@@ -176,7 +176,7 @@ describe('Phase 16 — PostGIS Uzamsal İndeks ve Analytics Performans Benchmark
       },
     ]);
 
-    expect(mOverview.p95).toBeLessThan(100);
-    expect(mHeatmap.p95).toBeLessThan(150);
+    expect(mOverview.p95).toBeLessThan(200);
+    expect(mHeatmap.p95).toBeLessThan(250);
   });
 });

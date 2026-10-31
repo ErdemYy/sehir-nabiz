@@ -23,6 +23,8 @@ import * as Location from 'expo-location';
 import { AppText, AppButton, FloatingIconButton } from '../../../components/ui';
 import { useAppTheme } from '../../../theme';
 import { MAP_CONFIG } from '../../map/config/mapConfig';
+import { isExpoGoPreview } from '../../../config/preview';
+import { ExpoGoLocationPickerPreview } from './ExpoGoLocationPickerPreview';
 import type { SelectedLocation } from '../types/events.types';
 
 export interface LocationPickerModalProps {
@@ -32,12 +34,18 @@ export interface LocationPickerModalProps {
   initialCoords?: { latitude: number; longitude: number } | null;
 }
 
-export function LocationPickerModal({
-  visible,
-  onClose,
-  onSelectLocation,
-  initialCoords,
-}: LocationPickerModalProps): React.ReactElement {
+export function LocationPickerModal(props: LocationPickerModalProps): React.ReactElement {
+  // Expo Go Önizleme Modu Aktif İse Expo Go Uyumlu Konum Seçiciyi Kullan
+  if (isExpoGoPreview()) {
+    return <ExpoGoLocationPickerPreview {...props} />;
+  }
+
+  const {
+    visible,
+    onClose,
+    onSelectLocation,
+    initialCoords,
+  } = props;
   const insets = useSafeAreaInsets();
   const { theme, spacing, radii, isDark } = useAppTheme();
   const cameraRef = useRef<CameraRef>(null);

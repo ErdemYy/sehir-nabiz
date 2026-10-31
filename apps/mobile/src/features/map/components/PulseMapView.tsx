@@ -13,6 +13,8 @@ import {
 } from '@maplibre/maplibre-react-native';
 import { useAppTheme } from '../../../theme';
 import { MAP_CONFIG } from '../config/mapConfig';
+import { isExpoGoPreview } from '../../../config/preview';
+import { ExpoGoMapPreview } from './ExpoGoMapPreview';
 import type {
   BBoxCoordinates,
   EventGeoJsonCollection,
@@ -32,17 +34,23 @@ export interface PulseMapViewProps {
   heatmapGeoJson?: any;
 }
 
-export function PulseMapView({
-  geoJson,
-  styleMode = 'light',
-  selectedEventId,
-  onSelectEvent,
-  onBBoxChange,
-  userCoords,
-  cameraRef: externalCameraRef,
-  showHeatmap = false,
-  heatmapGeoJson,
-}: PulseMapViewProps): React.ReactElement {
+export function PulseMapView(props: PulseMapViewProps): React.ReactElement {
+  // Expo Go Önizleme Modu Devrede İse Native Olmayan Önizleme Bileşenini Render Et
+  if (isExpoGoPreview()) {
+    return <ExpoGoMapPreview {...props} />;
+  }
+
+  const {
+    geoJson,
+    styleMode = 'light',
+    selectedEventId,
+    onSelectEvent,
+    onBBoxChange,
+    userCoords,
+    cameraRef: externalCameraRef,
+    showHeatmap = false,
+    heatmapGeoJson,
+  } = props;
   const { isDark } = useAppTheme();
   const mapRef = useRef<MapRef>(null);
   const internalCameraRef = useRef<CameraRef>(null);

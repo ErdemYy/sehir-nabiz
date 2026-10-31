@@ -102,9 +102,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/app.json": {
-    "mtime": 1793274982.8064563,
-    "seen": 1793275235.0057533,
-    "ast_hash": "4d755e9e292f1bc3a08d0bcab8104734",
+    "mtime": 1793286767.932652,
+    "seen": 1793287727.9432366,
+    "ast_hash": "4581c6932963221b54324d4ba9cbbac2",
     "semantic_hash": ""
   },
   "apps/mobile/app/+not-found.tsx": {
@@ -126,9 +126,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/package.json": {
-    "mtime": 1793274958.9206946,
-    "seen": 1793275235.0098479,
-    "ast_hash": "878937908d39e6d99571ec5feb4f3fc7",
+    "mtime": 1793288406.9539912,
+    "seen": 1793289583.0709145,
+    "ast_hash": "2c2c3b78fba6774cba6bee413c649d08",
     "semantic_hash": ""
   },
   "apps/mobile/src/components/ErrorBoundary.tsx": {
@@ -144,9 +144,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/src/config/env.ts": {
-    "mtime": 1793125266.202947,
-    "seen": 1793125994.6606667,
-    "ast_hash": "107821d1d0543e4d8579db919ea9d46e",
+    "mtime": 1793282994.2909524,
+    "seen": 1793284041.2982519,
+    "ast_hash": "1751c773bdde8ea4702fa24c880d4fc1",
     "semantic_hash": ""
   },
   "apps/mobile/src/providers/AppProvider.tsx": {
@@ -222,9 +222,9 @@
     "semantic_hash": ""
   },
   "packages/design-tokens/package.json": {
-    "mtime": 1792941917.0240135,
-    "seen": 1792942093.6707883,
-    "ast_hash": "f147c7f25a712772604b8badcdad0730",
+    "mtime": 1793291107.6775937,
+    "seen": 1793292496.1136303,
+    "ast_hash": "6f980d7d6fc09279cd2ab0200fad220b",
     "semantic_hash": ""
   },
   "packages/design-tokens/src/colors.ts": {
@@ -258,9 +258,9 @@
     "semantic_hash": ""
   },
   "packages/shared/package.json": {
-    "mtime": 1792933643.8400636,
-    "seen": 1792933949.8174255,
-    "ast_hash": "dded468ea4e6e53816e18dc5d867ede4",
+    "mtime": 1793291102.345914,
+    "seen": 1793292496.1158936,
+    "ast_hash": "e88c663306f659175f6541b9a4dff7c6",
     "semantic_hash": ""
   },
   "packages/shared/src/enums/index.ts": {
@@ -342,9 +342,9 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1792936271.6041121,
-    "seen": 1792936281.7167182,
-    "ast_hash": "f2162de700c6a9659b4af9a1a1cd476a",
+    "mtime": 1793458640.0686839,
+    "seen": 1793458750.840356,
+    "ast_hash": "da7dcb490bf51b1732cc18e75d6e071a",
     "semantic_hash": ""
   },
   "docs/DEVELOPMENT.md": {
@@ -1056,9 +1056,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/src/features/map/components/PulseMapView.tsx": {
-    "mtime": 1793117385.4351847,
-    "seen": 1793118394.0275538,
-    "ast_hash": "d96adca4ad81157b6293ee16913a4590",
+    "mtime": 1793288370.6934357,
+    "seen": 1793289583.0816731,
+    "ast_hash": "e45a865d0cd26e93f3eb3b77f0bdc57d",
     "semantic_hash": ""
   },
   "apps/mobile/src/features/map/config/mapConfig.ts": {
@@ -1260,9 +1260,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/eas.json": {
-    "mtime": 1793125250.853759,
-    "seen": 1793125994.6606667,
-    "ast_hash": "74df61089941bdc230496f926879151b",
+    "mtime": 1793286416.0317552,
+    "seen": 1793287727.9432366,
+    "ast_hash": "cf613e04664412d061515b66e3b6c78d",
     "semantic_hash": ""
   },
   "apps/mobile/test/phase_6_5.test.js": {
@@ -1272,9 +1272,9 @@
     "semantic_hash": ""
   },
   "eas.json": {
-    "mtime": 1793023609.9741387,
-    "seen": 1793023812.1168976,
-    "ast_hash": "23f53f914851291db4fa8c0ca396bc24",
+    "mtime": 1793286430.5631697,
+    "seen": 1793287727.9638784,
+    "ast_hash": "6077e49e01a7bb8d6811e6a84db7d661",
     "semantic_hash": ""
   },
   "docs/PHASE_6_REPORT.md": {
@@ -1326,9 +1326,9 @@
     "semantic_hash": ""
   },
   "apps/mobile/src/features/events/components/LocationPickerModal.tsx": {
-    "mtime": 1793025800.6895432,
-    "seen": 1793025972.1761065,
-    "ast_hash": "ca43b219d9f4ec49f4049799071447d7",
+    "mtime": 1793288380.3314536,
+    "seen": 1793289583.079146,
+    "ast_hash": "fe3cde304346e2bff246f187f0568eeb",
     "semantic_hash": ""
   },
   "apps/mobile/src/features/events/components/PhotoPickerSection.tsx": {
@@ -1944,9 +1944,9 @@
     "semantic_hash": ""
   },
   "apps/api/test/outbox.e2e-spec.ts": {
-    "mtime": 1793122413.7808518,
-    "seen": 1793122704.7535424,
-    "ast_hash": "dfb66013a71e0471ea1c22b354af1109",
+    "mtime": 1793283371.788856,
+    "seen": 1793284041.2840831,
+    "ast_hash": "bcc8e1e8e54f587bcd8def35c2d0d18d",
     "semantic_hash": ""
   },
   "apps/mobile/src/features/events/components/LocationPickerModal.web.tsx": {
@@ -2262,9 +2262,9 @@
     "semantic_hash": ""
   },
   "apps/api/test/postgis_analytics.spec.ts": {
-    "mtime": 1793189250.7388637,
-    "seen": 1793189676.147571,
-    "ast_hash": "20e910230159a02312fa4ebda94befa3",
+    "mtime": 1793283677.3163521,
+    "seen": 1793284041.2840831,
+    "ast_hash": "8b2bd554f2f0ab83a1068b0f3dea297b",
     "semantic_hash": ""
   },
   "apps/api/test/staging_lifecycle.e2e-spec.ts": {
@@ -2370,15 +2370,15 @@
     "semantic_hash": ""
   },
   "apps/mobile/metro.config.js": {
-    "mtime": 1793274519.469738,
-    "seen": 1793275235.0098479,
-    "ast_hash": "234c086e7ab67c3cfce6f69e57706a17",
+    "mtime": 1793291543.2465832,
+    "seen": 1793292496.0623739,
+    "ast_hash": "eff41da9975d91e88b266fe92b73871f",
     "semantic_hash": ""
   },
   "apps/mobile/test/phase_18a_build_readiness.test.js": {
-    "mtime": 1793274942.7669575,
-    "seen": 1793275235.0366538,
-    "ast_hash": "0d68056b846c7bd8df32e452a19b0e9e",
+    "mtime": 1793283059.0974479,
+    "seen": 1793284041.3100984,
+    "ast_hash": "1fa806f86059e1ce8a4857fc6f1bf725",
     "semantic_hash": ""
   },
   "docs/ANDROID_BUILD_READINESS.md": {
@@ -2403,6 +2403,72 @@
     "mtime": 1793275212.4423416,
     "seen": 1793275235.0516725,
     "ast_hash": "b3248546bf4d3819b3d39cf18cc651d2",
+    "semantic_hash": ""
+  },
+  "docs/PHASE_18B_REPORT.md": {
+    "mtime": 1793284088.8418887,
+    "seen": 1793285418.127084,
+    "ast_hash": "b12633bc6b0f65fa863ac7e573ffcafe",
+    "semantic_hash": ""
+  },
+  "docs/PHASE_18B_IOS_PREPARATION.md": {
+    "mtime": 1793287735.6279428,
+    "seen": 1793289583.1151633,
+    "ast_hash": "6d877bc8b88ce5ec676a9b61e667b2fe",
+    "semantic_hash": ""
+  },
+  "apps/mobile/src/config/preview.ts": {
+    "mtime": 1793288270.2632198,
+    "seen": 1793289583.0771291,
+    "ast_hash": "2f4a2e2eeb8c4c098afd26180606c79d",
+    "semantic_hash": ""
+  },
+  "apps/mobile/src/features/events/components/ExpoGoLocationPickerPreview.tsx": {
+    "mtime": 1793288478.2397118,
+    "seen": 1793289583.079146,
+    "ast_hash": "59d99a30da6f4331bd68a07e93060233",
+    "semantic_hash": ""
+  },
+  "apps/mobile/src/features/map/components/ExpoGoMapPreview.tsx": {
+    "mtime": 1793288608.7679975,
+    "seen": 1793289583.0816731,
+    "ast_hash": "ca546f155dd1acfc99b6b50add1f8ae3",
+    "semantic_hash": ""
+  },
+  "apps/mobile/src/mocks/maplibre-stub.tsx": {
+    "mtime": 1793288282.0008402,
+    "seen": 1793289583.0880437,
+    "ast_hash": "9302242f1e2f47b54261579d4e8036ab",
+    "semantic_hash": ""
+  },
+  "docs/EXPO_GO_IPHONE_PREVIEW.md": {
+    "mtime": 1793290328.8434708,
+    "seen": 1793292496.1443381,
+    "ast_hash": "37074393852f6659fd595bc0500c7174",
+    "semantic_hash": ""
+  },
+  "CONTRIBUTING.md": {
+    "mtime": 1793458640.070218,
+    "seen": 1793458750.840356,
+    "ast_hash": "b71e414896407d9a5622bdeb3bd8a5aa",
+    "semantic_hash": ""
+  },
+  "SECURITY.md": {
+    "mtime": 1793458640.070725,
+    "seen": 1793458750.840356,
+    "ast_hash": "299d30cfeb7e92b53fb88602e9a7c00f",
+    "semantic_hash": ""
+  },
+  "docs/assets/architecture.svg": {
+    "mtime": 1793458683.4623845,
+    "seen": 1793458750.8826401,
+    "ast_hash": "a7079477a16dad2457ff0d9049b69ad8",
+    "semantic_hash": ""
+  },
+  "docs/assets/hero.svg": {
+    "mtime": 1793458683.4623845,
+    "seen": 1793458750.8826401,
+    "ast_hash": "e6233065a6037f66bdc4d5c25705f6c5",
     "semantic_hash": ""
   }
 }
