@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/assets/hero.svg" alt="ŞehirNabız — Şehrin ritmini yakala" width="100%" /></p>
+# ŞehirNabız
 <p align="center"><strong>Şehrinde neler olduğunu keşfet. Bildir, teyit et, birlikte haberdar ol.</strong></p>
 <p align="center">
 <a href="LICENSE"><img alt="MIT lisansı" src="https://img.shields.io/badge/Lisans-MIT-14b8a6" /></a>
@@ -11,6 +11,23 @@
 ŞehirNabız, Türkiye'deki kaza, yol çalışması, altyapı arızası, afet, ulaşım aksaklığı ve yerel etkinlikleri konum üzerinden takip etmek için geliştirilen topluluk odaklı bir mobil platformdur. Olay bildirimi, topluluk teyidi ve moderasyonu tek bir harita deneyiminde birleştirir.
 
 > **Geliştirme durumu:** MVP kod tabanı ve Phase 18A doğrulama raporu mevcuttur. Phase 18B cihaz ve dağıtım hazırlıkları sürmektedir. Bu depo, mağazada yayımlanmış bir uygulama veya canlı bir kamu bilgilendirme hizmeti duyurusu değildir. Demo olaylar sentetiktir.
+
+## Uygulamadan ekran görüntüleri
+
+Aşağıdaki görüntüler çalışan uygulamanın 430 × 932 boyutundaki web önizlemesinden doğrudan alınmıştır. Çizim veya tasarım maketi değildir. Profil ekranı misafir oturumunu gösterir; native Android/iOS cihaz görüntüsü değildir.
+
+<table>
+  <tr>
+    <th>Olay bildirimi</th>
+    <th>Profil</th>
+    <th>Ayarlar ve gizlilik</th>
+  </tr>
+  <tr>
+    <td><img src="docs/assets/screenshots/event-report.jpg" alt="Çalışan uygulamanın olay bildirim formu" width="280" /></td>
+    <td><img src="docs/assets/screenshots/profile.jpg" alt="Çalışan uygulamanın misafir profil ekranı" width="280" /></td>
+    <td><img src="docs/assets/screenshots/settings.jpg" alt="Çalışan uygulamanın tema, bildirim ve gizlilik ayarları" width="280" /></td>
+  </tr>
+</table>
 
 ## Özellikler
 
@@ -25,8 +42,6 @@
 | Güvenilir teslimat | Transactional outbox, yeniden deneme ve dağıtık çalışma hazırlıkları |
 
 ## Mimari
-
-<img src="docs/assets/architecture.svg" alt="Mobil, NestJS API, PostgreSQL/PostGIS, Redis ve S3 uyumlu depolama mimarisi" width="100%" />
 
 | Katman | Teknolojiler |
 | --- | --- |
@@ -147,4 +162,4 @@ Güvenlik açığı bildirim yöntemi: [SECURITY.md](SECURITY.md).
 
 Hata ve geliştirme önerileri için [Issues](https://github.com/ErdemYy/sehir-nabiz/issues), kod katkıları için [katkı rehberi](CONTRIBUTING.md) kullanılabilir.
 
-ŞehirNabız kaynak kodu [MIT lisansı](LICENSE) ile sunulur. Üçüncü taraf kütüphaneler, fontlar, harita verileri ve tile servisleri kendi lisanslarına ve kullanım koşullarına tabidir; ilgili atıfları koruyun. Tanıtım çizimleri şematiktir ve uygulama ekran görüntüsü değildir.
+ŞehirNabız kaynak kodu [MIT lisansı](LICENSE) ile sunulur. Üçüncü taraf kütüphaneler, fontlar, harita verileri ve tile servisleri kendi lisanslarına ve kullanım koşullarına tabidir; ilgili atıfları koruyun.
